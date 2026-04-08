@@ -1,0 +1,35 @@
+# --- Données volumineuses (ne jamais commiter) ---
+las/
+data/tiles/
+data/*.tif
+data/*.tiff
+
+# --- Données sensibles / générées ---
+fes2022/
+
+# --- Node.js ---
+node_modules/
+.npm/
+
+# --- R ---
+.Rhistory
+.RData
+.Rproj.user/
+*.Rproj
+
+# --- Python ---
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+env/
+*.egg-info/
+
+# --- OS ---
+.DS_Store
+Thumbs.db
+
+# --- Éditeurs ---
+.vscode/
+*.swp
+*.swo
