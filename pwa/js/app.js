@@ -14,6 +14,12 @@ const App = (() => {
   async function init() {
     console.log('🚀 SMPE Plongée — démarrage');
 
+    // Authentification
+    Auth.init(_startApp);
+  }
+
+  async function _startApp() {
+
     // Horloge locale
     _startClock();
 

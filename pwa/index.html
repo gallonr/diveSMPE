@@ -26,6 +26,31 @@
 <body>
 
   <!-- ═══════════════════════════════════════════════════════════
+       ÉCRAN DE LOGIN
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">🤿</div>
+      <h2 class="login-title">SMPE Plongée</h2>
+      <p class="login-subtitle">Accès réservé aux membres</p>
+      <form id="login-form" autocomplete="off">
+        <div class="login-field">
+          <label for="login-input">Identifiant</label>
+          <input id="login-input" type="text" autocomplete="username"
+                 placeholder="Identifiant" required />
+        </div>
+        <div class="login-field">
+          <label for="login-password">Mot de passe</label>
+          <input id="login-password" type="password" autocomplete="current-password"
+                 placeholder="Mot de passe" required />
+        </div>
+        <p id="login-error" class="login-error hidden"></p>
+        <button type="submit" class="login-btn">Connexion</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        BANDEAU OFFLINE
   ══════════════════════════════════════════════════════════════ -->
   <div id="offline-banner" class="offline-banner hidden">
@@ -58,6 +83,9 @@
       <button id="btn-meteo" class="btn-icon" title="Météo marine" aria-label="Météo">
         🌬
       </button>
+      <a href="https://gallonr.github.io/diveSMPE/guide-utilisateur.html" target="_blank" class="btn-icon" title="Documentation" aria-label="Documentation">
+        📖
+      </a>
     </div>
   </header>
 
@@ -350,6 +378,7 @@
   <script src="js/prevision.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/meteo.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 
   <!-- Enregistrement Service Worker -->
