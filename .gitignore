@@ -3,9 +3,19 @@ las/
 data/tiles/
 data/*.tif
 data/*.tiff
+currents/
 
 # --- Données sensibles / générées ---
 fes2022/
+
+# --- Logs et artefacts générés ---
+data/log_*.txt
+Rplots.pdf
+*.bak
+
+# --- Outils locaux ---
+.claude/
+.superpowers/
 
 # --- Node.js ---
 node_modules/
