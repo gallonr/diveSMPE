@@ -13,6 +13,10 @@ const App = (() => {
 
   async function init() {
     console.log('🚀 SMPE Plongée — démarrage');
+    await _startApp();
+  }
+
+  async function _startApp() {
 
     // Horloge locale
     _startClock();
@@ -203,6 +207,3 @@ const App = (() => {
 
   return { init, ouvrirFiche };
 })();
-
-// ── Démarrage ────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', App.init);
