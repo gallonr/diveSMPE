@@ -1272,8 +1272,15 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 
 .login-logo {
-  font-size: 3rem;
-  margin-bottom: 0.4rem;
+  margin-bottom: 0.8rem;
+}
+
+.login-logo-img {
+  width: 110px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
 }
 
 .login-title {
