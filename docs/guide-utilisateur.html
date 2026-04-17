@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guide utilisateur — SMPE Plongée</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=Signika:wght@300;400;600;700&display=swap" />
+  <style>
+    :root {
+      --bg: #031F1B;
+      --surface: #0c3e44;
+      --surface2: #0e4a52;
+      --accent: #2ec4b6;
+      --accent2: #ffd166;
+      --text: #e8f4f2;
+      --text-muted: #8bb8b4;
+      --border: #1a5560;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Signika', sans-serif;
+      font-size: 16px;
+      line-height: 1.7;
+    }
+    header {
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header img { height: 40px; }
+    header h1 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.3rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    header a.btn-back {
+      margin-left: auto;
+      background: var(--surface2);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      padding: 0.4rem 1rem;
+      text-decoration: none;
+      font-family: 'Oswald', sans-serif;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    header a.btn-back:hover { background: var(--accent); color: var(--bg); }
+    main {
+      max-width: 820px;
+      margin: 2rem auto;
+      padding: 0 1.5rem 4rem;
+    }
+    h2 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.4rem;
+      color: var(--accent);
+      margin: 2.5rem 0 0.8rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1.1rem;
+      color: var(--accent2);
+      margin: 1.8rem 0 0.5rem;
+    }
+    h4 {
+      font-family: 'Oswald', sans-serif;
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin: 1.2rem 0 0.4rem;
+    }
+    p { margin-bottom: 0.8rem; }
+    a { color: var(--accent); }
+    strong { color: var(--accent2); }
+    em { color: var(--text-muted); }
+    ul, ol {
+      margin: 0.5rem 0 0.8rem 1.5rem;
+    }
+    li { margin-bottom: 0.3rem; }
+    blockquote {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent);
+      padding: 0.8rem 1rem;
+      border-radius: 0 6px 6px 0;
+      margin: 1rem 0;
+      color: var(--text-muted);
+    }
+    code {
+      background: var(--surface2);
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      font-size: 0.88em;
+      color: var(--accent);
+    }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    pre code {
+      background: none;
+      padding: 0;
+      color: var(--text);
+      font-size: 0.85rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    th {
+      background: var(--surface);
+      color: var(--accent);
+      font-family: 'Oswald', sans-serif;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      padding: 0.6rem 0.8rem;
+      text-align: left;
+      border-bottom: 2px solid var(--accent);
+    }
+    td {
+      padding: 0.5rem 0.8rem;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:hover td { background: var(--surface2); }
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .toc h2 {
+      margin-top: 0;
+      font-size: 1rem;
+      border: none;
+      margin-bottom: 0.5rem;
+    }
+    .toc ul { margin: 0; list-style: none; padding: 0; }
+    .toc li { margin: 0.2rem 0; }
+    .toc a { color: var(--text-muted); text-decoration: none; font-size: 0.9rem; }
+    .toc a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <img src="icons/logo-smpe.png" alt="SMPE" />
+  <h1>Guide utilisateur — SMPE Plongée</h1>
+  <a class="btn-back" href="index.html">← Application</a>
+</header>
+
+<main>
+
+  <nav class="toc">
+    <h2>📋 Sommaire</h2>
+    <ul>
+      <li><a href="#install">Installer l'application</a></li>
+      <li><a href="#ecran">L'écran principal</a></li>
+      <li><a href="#sites">Trouver un site</a></li>
+      <li><a href="#fiche">Fiche site</a></li>
+      <li><a href="#navigation">Navigation GPS</a></li>
+      <li><a href="#marees">Marées</a></li>
+      <li><a href="#prevision">Prévision plongeabilité</a></li>
+      <li><a href="#meteo">Météo marine</a></li>
+      <li><a href="#offline">Mode hors ligne</a></li>
+      <li><a href="#faq">Questions fréquentes</a></li>
+    </ul>
+  </nav>
+
+  <p>Application de catalogue et d'aide à la navigation pour les sites de plongée de la Baie de Saint-Malo.</p>
+
+  <hr>
+
+  <h2 id="install">Installer l'application sur la tablette</h2>
+
+  <p>L'application fonctionne dans le navigateur — <strong>Chrome</strong> est recommandé sur Android.</p>
+
+  <ol>
+    <li>Connecter la tablette au <strong>WiFi du centre</strong> de plongée</li>
+    <li>Ouvrir Chrome et aller à l'adresse fournie par le responsable (ex. <code>http://192.168.1.10</code>)</li>
+    <li>Chrome propose d'installer l'application : appuyer sur <strong>"Ajouter à l'écran d'accueil"</strong></li>
+    <li>L'icône SMPE apparaît sur l'écran — l'application est prête à être utilisée hors ligne</li>
+  </ol>
+
+  <blockquote>Une fois installée, l'application fonctionne <strong>sans réseau</strong>. Il suffit de la mettre à jour avant chaque sortie en se connectant au WiFi du centre.</blockquote>
+
+  <hr>
+
+  <h2 id="ecran">L'écran principal</h2>
+
+<pre><code>┌─────────────────────────────────────────┐
+│ ☰  SMPE Plongée   10:32   📍 🗓 🌊 🌬 📖│  ← Barre d'outils
+├─────────────────────────────────────────┤
+│  3,45 m  |  BM 11h20 (0,85 m)  |  C 98 │  ← Bandeau marées
+├─────────────────────────────────────────┤
+│                                         │
+│           Carte interactive             │
+│                                         │
+│  ● Sites de plongée                     │
+│                                         │
+└─────────────────────────────────────────┘</code></pre>
+
+  <h3>Barre d'outils (haut de l'écran)</h3>
+  <table>
+    <thead><tr><th>Bouton</th><th>Fonction</th></tr></thead>
+    <tbody>
+      <tr><td><strong>☰</strong></td><td>Ouvrir la liste des sites</td></tr>
+      <tr><td><strong>📍</strong></td><td>Centrer la carte sur votre position GPS</td></tr>
+      <tr><td><strong>🗓</strong></td><td>Prévision plongeabilité (choisir une date/heure)</td></tr>
+      <tr><td><strong>🌊</strong></td><td>Courbe de marée (J-1 à J+2)</td></tr>
+      <tr><td><strong>🌬</strong></td><td>Météo marine (nécessite le réseau)</td></tr>
+      <tr><td><strong>📖</strong></td><td>Guide utilisateur (cette page)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Bandeau marées (toujours visible)</h3>
+  <p>Affiche en permanence :</p>
+  <ul>
+    <li>La <strong>hauteur d'eau actuelle</strong> (en mètres, mise à jour toutes les minutes)</li>
+    <li>La <strong>prochaine PM ou BM</strong> (heure + hauteur)</li>
+    <li>Le <strong>coefficient de marée</strong> du jour</li>
+    <li>Un indicateur <strong>"Étale dans Xmin"</strong> quand on approche de l'étale (±2h)</li>
+  </ul>
+
+  <hr>
+
+  <h2 id="sites">Trouver un site</h2>
+
+  <h3>Depuis la carte</h3>
+  <p>Les sites sont affichés par des marqueurs colorés selon leur type :</p>
+  <ul>
+    <li>🪸 <strong>Récif</strong> — marqueur vert</li>
+    <li>⚓ <strong>Épave</strong> — marqueur rouge</li>
+    <li>🪨 <strong>Roche</strong> — marqueur gris</li>
+  </ul>
+  <p>Appuyer sur un marqueur pour ouvrir la fiche du site.</p>
+
+  <h3>Depuis la liste</h3>
+  <ol>
+    <li>Appuyer sur <strong>☰</strong> en haut à gauche</li>
+    <li>Utiliser la <strong>barre de recherche</strong> (nom du site)</li>
+    <li>Filtrer par type : <strong>Tous / Récif / Épave / Roche</strong></li>
+    <li>Filtrer par profondeur : <strong>≤ 6 m / ≤ 10 m / ≤ 20 m / +20 m</strong></li>
+  </ol>
+
+  <p>Chaque site dans la liste affiche un <strong>badge coloré</strong> indiquant si la plongée est possible maintenant :</p>
+  <table>
+    <thead><tr><th>Couleur</th><th>Signification</th></tr></thead>
+    <tbody>
+      <tr><td>🟢 Vert</td><td>Fenêtre de plongée active</td></tr>
+      <tr><td>🟠 Orange</td><td>Fenêtre dans moins de 2h</td></tr>
+      <tr><td>🔴 Rouge</td><td>Hors fenêtre de plongée</td></tr>
+      <tr><td>⚪ Gris</td><td>Pas d'information marée pour ce site</td></tr>
+    </tbody>
+  </table>
+
+  <hr>
+
+  <h2 id="fiche">Fiche site</h2>
+  <p>La fiche s'ouvre en bas de l'écran (mobile) ou sur la droite (tablette en paysage). Elle contient trois onglets.</p>
+
+  <h3>Onglet Infos</h3>
+  <ul>
+    <li><strong>Type de plongée</strong>, niveau requis, accessibilité, mouillage</li>
+    <li><strong>Bloc marée</strong> : fenêtre de plongée optimale avec l'heure et le statut</li>
+    <li><strong>Profondeurs actuelles</strong> (si données LiDAR disponibles) : profondeur min/max corrigée avec la hauteur de marée en cours</li>
+    <li><strong>Commentaire</strong> du responsable technique</li>
+  </ul>
+
+  <h4>Saisir les horaires de plongée</h4>
+  <p>Deux champs permettent de saisir l'heure de début et de fin de plongée. La durée est calculée automatiquement.</p>
+
+  <h3>Onglet Bathymétrie</h3>
+  <p>Affiche la carte de fond du site issue du LiDAR LITTO3D (données IGN, résolution 5 m).</p>
+  <p><strong>Miniature MNT</strong> — vue de dessus colorée selon la profondeur (bleu foncé = profond).</p>
+  <p><strong>Profil bathymétrique</strong> — coupe Est→Ouest du fond, avec les profondeurs en mètres (zéro hydrographique).</p>
+
+  <h4>Tracer un transect libre</h4>
+  <ol>
+    <li>Appuyer sur <strong>✏️ Tracer un transect</strong></li>
+    <li>Cliquer le <strong>point A</strong> sur la miniature</li>
+    <li>Cliquer le <strong>point B</strong> sur la miniature</li>
+    <li>Le profil se recalcule selon cet axe</li>
+    <li>Appuyer sur <strong>↺ Défaut</strong> pour revenir au transect Est→Ouest</li>
+  </ol>
+  <p><strong>Opacité de l'overlay</strong> — le curseur permet de superposer la bathymétrie sur la carte en réglant la transparence.</p>
+
+  <h3>Onglet Conditions</h3>
+  <ul>
+    <li><strong>Accès vent</strong> : orientations de vent à éviter</li>
+    <li><strong>Houle</strong> : sensibilité du site à la houle</li>
+    <li><strong>Météo en temps réel</strong> : vent, vagues, visibilité (si réseau disponible)</li>
+  </ul>
+
+  <hr>
+
+  <h2 id="navigation">Navigation GPS</h2>
+
+  <h3>Activer le GPS</h3>
+  <p>Appuyer sur <strong>📍</strong> dans la barre d'outils. La carte se centre sur votre position et un marqueur pulsant vert apparaît.</p>
+
+  <h3>Naviguer vers un site</h3>
+  <ol>
+    <li>Ouvrir la fiche d'un site</li>
+    <li>Appuyer sur <strong>🧭 Naviguer vers ce site</strong></li>
+    <li>Un HUD de navigation apparaît en bas de la carte :</li>
+  </ol>
+
+<pre><code>📍  48°41.2'N  /  2°02.1'W
+CAP          VITESSE        DIST. SITE
+247°         6 kt           1,2 Nm</code></pre>
+
+  <ul>
+    <li><strong>Cap</strong> : direction à suivre vers le site (degrés magnétiques)</li>
+    <li><strong>Vitesse</strong> : vitesse GPS détectée (ou 6 nœuds par défaut)</li>
+    <li><strong>Distance</strong> : distance au site en milles nautiques</li>
+  </ul>
+  <p>Une ligne verte pointillée relie votre position au site sur la carte.</p>
+
+  <hr>
+
+  <h2 id="marees">Marées</h2>
+  <p>Appuyer sur <strong>🌊</strong> pour ouvrir la fenêtre marées.</p>
+  <ul>
+    <li><strong>Courbe graphique</strong> sur 4 jours (J-1 à J+2) avec l'heure actuelle indiquée</li>
+    <li><strong>Tableau PM/BM</strong> : horaires, hauteurs et coefficients</li>
+  </ul>
+  <p>Les hauteurs sont exprimées en mètres au-dessus du <strong>zéro hydrographique</strong> (ZH SHOM Saint-Malo), calculées à partir du modèle FES2022 (CNES/LEGOS).</p>
+
+  <hr>
+
+  <h2 id="prevision">Prévision plongeabilité</h2>
+  <p>Appuyer sur <strong>🗓</strong> pour simuler les conditions à une date et heure futures.</p>
+  <ol>
+    <li>Choisir une <strong>date</strong></li>
+    <li>Choisir une <strong>heure</strong></li>
+    <li>Appuyer sur <strong>Calculer</strong></li>
+  </ol>
+  <p>L'application affiche :</p>
+  <ul>
+    <li>La hauteur de marée prévue à ce moment</li>
+    <li>La liste des <strong>sites plongeables</strong> à cette heure (fenêtre marée compatible)</li>
+  </ul>
+  <p>Utile pour préparer une sortie plusieurs jours à l'avance.</p>
+
+  <hr>
+
+  <h2 id="meteo">Météo marine</h2>
+  <p>Appuyer sur <strong>🌬</strong> pour ouvrir la météo (nécessite le réseau 4G ou WiFi).</p>
+  <p>Données fournies par <strong>Open-Meteo</strong> pour la Baie de Saint-Malo :</p>
+  <ul>
+    <li>Vent : direction et force (nœuds)</li>
+    <li>Vagues : hauteur significative, direction</li>
+    <li>Visibilité</li>
+  </ul>
+  <p>En l'absence de réseau, le message <em>"Météo non disponible offline"</em> s'affiche.</p>
+
+  <hr>
+
+  <h2 id="offline">Mode hors ligne</h2>
+  <p>Dès que l'application a été ouverte une fois sur WiFi, elle fonctionne <strong>sans réseau</strong> :</p>
+  <ul>
+    <li>Carte, sites, marées, bathymétrie → disponibles offline</li>
+    <li>Météo → non disponible offline</li>
+    <li>Un bandeau orange <strong>"Mode hors-ligne — données locales"</strong> s'affiche en haut de l'écran</li>
+  </ul>
+
+  <h3>Mettre à jour l'application avant une sortie</h3>
+  <ol>
+    <li>Se connecter au WiFi du centre de plongée</li>
+    <li>Ouvrir l'application dans Chrome</li>
+    <li>Laisser charger quelques secondes — la mise à jour se fait automatiquement en arrière-plan</li>
+    <li>Fermer et rouvrir l'application pour appliquer la mise à jour</li>
+  </ol>
+
+  <hr>
+
+  <h2 id="faq">Questions fréquentes</h2>
+
+  <h3>Les profondeurs affichées sont-elles exactes ?</h3>
+  <p>Les cotes de fond sont issues du LiDAR LITTO3D (IGN), avec une résolution de 5 m. La profondeur affichée dans l'onglet Infos intègre la hauteur de marée actuelle (modèle FES2022 calibré sur l'annuaire SHOM). Tolérance : ±20 cm sur la marée, ±0,5 m sur le fond.</p>
+
+  <h3>15 sites n'ont pas de miniature bathymétrique — pourquoi ?</h3>
+  <p>Le fichier LiDAR disponible ne couvre pas l'ensemble de la baie. Ces sites sont en dehors de l'emprise des données LITTO3D.</p>
+
+  <h3>L'heure de l'étale ne correspond pas à celle du SHOM.</h3>
+  <p>Le modèle FES2022 a une précision de ±5 minutes sur les horaires. Pour des plongées techniques, se référer à l'annuaire officiel SHOM.</p>
+
+  <h3>La carte ne charge plus les tuiles OSM/OpenSeaMap.</h3>
+  <p>Normal en mode offline — seules les tuiles déjà consultées sont mises en cache. Parcourir la zone en WiFi avant la sortie pour pré-charger les tuiles.</p>
+
+</main>
+</body>
+</html>
