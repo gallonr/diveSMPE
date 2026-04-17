@@ -13,9 +13,7 @@ const App = (() => {
 
   async function init() {
     console.log('🚀 SMPE Plongée — démarrage');
-
-    // Authentification
-    Auth.init(_startApp);
+    await _startApp();
   }
 
   async function _startApp() {
@@ -209,6 +207,3 @@ const App = (() => {
 
   return { init, ouvrirFiche };
 })();
-
-// ── Démarrage ────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', App.init);

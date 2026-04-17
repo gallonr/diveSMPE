@@ -391,5 +391,12 @@
       });
     }
   </script>
+
+  <!-- Démarrage : Auth puis App -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Auth.init(() => App.init());
+    });
+  </script>
 </body>
 </html>
