@@ -26,9 +26,9 @@ const MaréeSite = (() => {
   /** "1h30" | "2h15" | "45'" | "15'-20'" → minutes (valeur centrale si plage) */
   function _parseDureeMin(s) {
     if (!s || s === 'H') return 0;
-    // Plage "15'-20'" → moyenne
+    // Plage "15'-20'" → moyenne arrondie
     const plage = s.match(/^(\d+)['']?-(\d+)['']$/);
-    if (plage) return (parseInt(plage[1]) + parseInt(plage[2])) / 2;
+    if (plage) return Math.round((parseInt(plage[1]) + parseInt(plage[2])) / 2);
     // "2h30"
     const hm = s.match(/^(\d+)h(\d+)?$/);
     if (hm) return parseInt(hm[1]) * 60 + (hm[2] ? parseInt(hm[2]) : 0);
@@ -303,8 +303,9 @@ const MaréeSite = (() => {
 
   function _minToHHMM(min) {
     if (min == null) return '?';
-    const h = Math.floor(((min % 1440) + 1440) % 1440 / 60);
-    const m = ((min % 1440) + 1440) % 1440 % 60;
+    const total = Math.round(((min % 1440) + 1440) % 1440);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
     return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
   }
 

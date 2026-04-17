@@ -204,7 +204,7 @@ const Sites = (() => {
     // Convertir debutMin/finMin (minutes depuis minuit) en "HH:MM"
     function minToHHMM(min) {
       if (min == null) return '';
-      const total = ((min % 1440) + 1440) % 1440;
+      const total = Math.round(((min % 1440) + 1440) % 1440);
       return `${String(Math.floor(total / 60)).padStart(2,'0')}:${String(total % 60).padStart(2,'0')}`;
     }
 
