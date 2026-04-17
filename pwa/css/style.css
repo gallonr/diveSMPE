@@ -1241,3 +1241,115 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 /* Groupes repliés */
 .prev-liste-cachee { display: none; }
 
+/* ══════════════════════════════════════════════════════════════
+   ÉCRAN DE LOGIN
+══════════════════════════════════════════════════════════════ */
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--emeraude-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.login-overlay.hidden {
+  display: none;
+}
+
+.login-card {
+  background: var(--gris-card);
+  border: 1px solid var(--emeraude-mid);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 2.2rem 2rem;
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.login-logo {
+  font-size: 3rem;
+  margin-bottom: 0.4rem;
+}
+
+.login-title {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.6rem;
+  color: var(--emeraude-light);
+  margin: 0 0 0.2rem;
+  letter-spacing: 0.04em;
+}
+
+.login-subtitle {
+  font-size: 0.82rem;
+  color: var(--gris-texte);
+  margin: 0 0 1.6rem;
+}
+
+.login-field {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.login-field label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.login-field input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--gris-fond);
+  border: 1px solid var(--emeraude-mid);
+  border-radius: var(--radius);
+  color: var(--blanc);
+  font-size: 1rem;
+  padding: 0.6rem 0.8rem;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.login-field input:focus {
+  border-color: var(--emeraude-light);
+}
+
+.login-error {
+  color: var(--rouge);
+  font-size: 0.85rem;
+  margin: 0.4rem 0 0.8rem;
+  min-height: 1.2em;
+}
+
+.login-error.hidden {
+  visibility: hidden;
+}
+
+.login-btn {
+  width: 100%;
+  background: var(--emeraude);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: background var(--transition);
+  margin-top: 0.4rem;
+}
+
+.login-btn:hover {
+  background: var(--emeraude-light);
+  color: var(--emeraude-deep);
+}
+
+
