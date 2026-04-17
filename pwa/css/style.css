@@ -1,0 +1,1243 @@
+/* ══════════════════════════════════════════════════════════════
+   SMPE Plongée — style.css
+   Design inspiré de saintmaloplongee.com
+   Palette Côte d'Émeraude : teal #3aafa8, sombre #0c3e44
+══════════════════════════════════════════════════════════════ */
+
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  /* Palette SMPE */
+  --emeraude:      #3aafa8;   /* teal émeraude principal */
+  --emeraude-dark: #0c3e44;   /* vert-bleu sombre (header) */
+  --emeraude-deep: #031F1B;   /* presque noir (fond) */
+  --emeraude-mid:  #267973;   /* intermédiaire */
+  --emeraude-light:#69d6d0;   /* survol/accentuation */
+  --emeraude-pale: #b3d7d4;   /* très clair */
+  --orange-smpe:   #ffa301;   /* orange accent SMPE */
+  --orange-light:  #ffba41;   /* orange clair */
+  --blanc:         #f8f8f4;   /* blanc cassé */
+  --gris-fond:     #0f2e2c;   /* fond panneaux (vert très sombre) */
+  --gris-card:     #163632;   /* cartes (légèrement plus clair) */
+  --gris-texte:    #9ecbc8;   /* texte secondaire */
+  --vert-ok:       #2ecc71;
+  --orange-warn:   #f39c12;
+  --rouge:         #e74c3c;
+
+  --header-h:      52px;
+  --bandeau-h:     36px;
+  --radius:        8px;
+  --shadow:        0 4px 16px rgba(0,0,0,0.45);
+  --transition:    0.22s ease;
+  --font-body:     'Signika', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-title:    'Oswald', 'Signika', sans-serif;
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--emeraude-deep);
+  color: var(--blanc);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+}
+
+/* ── Utilitaires ────────────────────────────────────────────── */
+.hidden { display: none !important; }
+
+/* ── Offline banner ─────────────────────────────────────────── */
+.offline-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: var(--orange-warn);
+  color: #000;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.app-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--header-h);
+  z-index: 1000;
+  background: var(--emeraude-dark);
+  border-bottom: 2px solid var(--emeraude);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  box-shadow: var(--shadow);
+}
+
+.header-left, .header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.local-time {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--emeraude-light);
+  letter-spacing: 2px;
+}
+
+.app-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--blanc);
+  letter-spacing: 1.5px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+}
+
+/* ── Boutons icône ──────────────────────────────────────────── */
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  color: var(--blanc);
+  padding: 6px;
+  border-radius: var(--radius);
+  transition: background var(--transition);
+  line-height: 1;
+}
+.btn-icon:hover, .btn-icon:focus {
+  background: rgba(58,175,168,0.2);
+  outline: none;
+}
+.btn-icon.active {
+  color: var(--emeraude-light);
+  background: rgba(58,175,168,0.2);
+}
+
+/* ── Bandeau marées ─────────────────────────────────────────── */
+.bandeau-marees {
+  position: fixed;
+  top: var(--header-h);
+  left: 0; right: 0;
+  height: var(--bandeau-h);
+  z-index: 999;
+  background: rgba(3,31,27,0.95);
+  border-bottom: 1px solid rgba(58,175,168,0.35);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+.maree-live {
+  font-weight: 700;
+  color: var(--emeraude);
+  font-size: 13px;
+  font-family: var(--font-title);
+  letter-spacing: 0.5px;
+}
+.maree-sep { color: rgba(255,255,255,0.25); }
+.maree-item { color: var(--gris-texte); }
+.maree-item strong { color: var(--blanc); }
+.maree-coeff {
+  font-weight: 700;
+  color: var(--orange-smpe);
+  background: rgba(255,163,1,0.15);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.maree-etale {
+  color: var(--vert-ok);
+  font-weight: 600;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ── Carte ──────────────────────────────────────────────────── */
+#map {
+  position: fixed;
+  top: calc(var(--header-h) + var(--bandeau-h));
+  left: 0; right: 0; bottom: 0;
+  z-index: 1;
+}
+
+/* Watermark logo bas-droite */
+.map-watermark {
+  position: fixed;
+  bottom: 28px;
+  right: 12px;
+  z-index: 400;
+  width: 72px;
+  height: auto;
+  opacity: 0.5;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+  transition: opacity 0.3s ease;
+}
+.map-watermark:hover { opacity: 0.7; }
+
+/* Marqueurs personnalisés */
+.marker-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  border: 2px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow);
+  position: relative;
+}
+.marker-recif   { background: var(--emeraude); }
+.marker-epave   { background: #7d5a3c; }
+.marker-roche   { background: #5a6e6d; }
+.marker-default { background: var(--emeraude-mid); }
+
+/* Indicateur de plongeabilité (dot coloré en haut à droite de l'icône) */
+.marker-maree-dot {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  transform: rotate(45deg); /* compense la rotation du parent */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.marker-maree-dot-vert   { background: #2ecc71; }
+.marker-maree-dot-orange { background: #ffa301; }
+.marker-maree-dot-rouge  { background: #e74c3c; }
+
+.marker-gps {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--vert-ok);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 6px rgba(46,204,113,0.3);
+  animation: gps-pulse 2s infinite;
+}
+@keyframes gps-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(46,204,113,0.5); }
+  70%  { box-shadow: 0 0 0 12px rgba(46,204,113,0); }
+  100% { box-shadow: 0 0 0 0 rgba(46,204,113,0); }
+}
+
+/* ── Panneau liste sites ─────────────────────────────────────── */
+.panel-sites {
+  position: fixed;
+  top: calc(var(--header-h) + var(--bandeau-h));
+  left: 0; bottom: 0;
+  width: min(340px, 100vw);
+  z-index: 500;
+  background: var(--gris-fond);
+  border-right: 1px solid rgba(58,175,168,0.25);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  transition: transform var(--transition);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(58,175,168,0.15);
+  background: var(--emeraude-dark);
+}
+.panel-header h2 {
+  font-size: 15px;
+  color: var(--blanc);
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.panel-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(58,175,168,0.1);
+}
+.panel-search input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  border: 1px solid rgba(58,175,168,0.35);
+  background: var(--gris-card);
+  color: var(--blanc);
+  font-size: 13px;
+  font-family: var(--font-body);
+}
+.panel-search input:focus {
+  outline: none;
+  border-color: var(--emeraude);
+}
+
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid rgba(58,175,168,0.1);
+}
+.filter-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(58,175,168,0.4);
+  background: transparent;
+  color: var(--gris-texte);
+  font-size: 11px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.filter-btn.active, .filter-btn:hover {
+  background: var(--emeraude);
+  color: var(--blanc);
+  border-color: var(--emeraude);
+}
+
+.filter-bar-prof {
+  border-bottom: 1px solid rgba(58,175,168,0.18);
+  background: rgba(58,175,168,0.04);
+}
+.filter-prof-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(120,180,220,0.45);
+  background: transparent;
+  color: var(--gris-texte);
+  font-size: 11px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.filter-prof-btn.active, .filter-prof-btn:hover {
+  background: #2980b9;
+  color: var(--blanc);
+  border-color: #2980b9;
+}
+
+.liste-sites {
+  list-style: none;
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0;
+}
+.site-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(58,175,168,0.07);
+  transition: background var(--transition);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.site-item:hover { background: rgba(58,175,168,0.12); }
+.site-item.active { background: rgba(58,175,168,0.2); border-left: 3px solid var(--emeraude); }
+.site-nom { font-weight: 600; font-size: 14px; color: var(--blanc); }
+.site-meta { font-size: 11px; color: var(--gris-texte); }
+.badge-type {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-recif   { background: var(--emeraude);     color: #fff; }
+.badge-epave   { background: #7d5a3c;             color: #fff; }
+.badge-roche   { background: #4a6060;             color: #fff; }
+.badge-default { background: var(--gris-card);    color: var(--gris-texte); }
+
+/* ── Fiche site ──────────────────────────────────────────────── */
+.fiche-site {
+  position: fixed;
+  z-index: 600;
+  background: var(--gris-fond);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition);
+}
+
+/* Mobile : drawer bas */
+@media (max-width: 768px) {
+  .fiche-site {
+    bottom: 0; left: 0; right: 0;
+    height: 65vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    border-top: 2px solid var(--emeraude);
+  }
+}
+/* Desktop : panneau droit */
+@media (min-width: 769px) {
+  .fiche-site {
+    top: calc(var(--header-h) + var(--bandeau-h));
+    right: 0; bottom: 0;
+    width: 380px;
+    border-left: 1px solid rgba(58,175,168,0.25);
+  }
+}
+
+.fiche-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(58,175,168,0.15);
+  flex-shrink: 0;
+  background: var(--emeraude-dark);
+}
+.fiche-titre-bloc { display: flex; flex-direction: column; gap: 4px; }
+.fiche-titre-bloc h2 {
+  font-size: 18px;
+  color: var(--blanc);
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.fiche-id { font-size: 11px; color: var(--emeraude-pale); }
+
+/* Navigation GPS */
+.nav-info {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(58,175,168,0.1);
+  font-size: 13px;
+  border-bottom: 1px solid rgba(58,175,168,0.12);
+  flex-shrink: 0;
+}
+.nav-info span { color: var(--emeraude); font-weight: 600; }
+
+.btn-naviguer {
+  margin: 8px 16px;
+  padding: 8px 0;
+  background: var(--emeraude);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background var(--transition);
+  width: calc(100% - 32px);
+  flex-shrink: 0;
+}
+.btn-naviguer:hover { background: var(--emeraude-light); color: var(--emeraude-deep); }
+.btn-naviguer.active { background: var(--rouge); }
+
+/* Onglets */
+.fiche-tabs {
+  display: flex;
+  border-bottom: 1px solid rgba(58,175,168,0.15);
+  flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  color: var(--gris-texte);
+  font-size: 12px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+}
+.tab-btn.active {
+  color: var(--emeraude);
+  border-bottom-color: var(--emeraude);
+}
+
+/* Contenu onglets */
+.tab-content {
+  padding: 14px 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.info-grid { display: flex; flex-direction: column; gap: 8px; }
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(58,175,168,0.08);
+}
+.info-label { color: var(--gris-texte); font-size: 12px; flex-shrink: 0; }
+.info-val { color: var(--blanc); font-size: 13px; text-align: right; }
+
+/* Champs heure de plongée */
+input.heure-plongee {
+  background: var(--gris-card);
+  border: 1px solid var(--gris-bord, #444);
+  border-radius: 6px;
+  color: var(--blanc);
+  font-size: 13px;
+  padding: 2px 6px;
+  text-align: right;
+  width: 100px;
+  cursor: pointer;
+}
+input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: var(--emeraude); }
+.duree-plongee { font-weight: 600; color: var(--emeraude); }
+
+.commentaire-bloc {
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--gris-card);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--emeraude);
+}
+.commentaire { font-size: 13px; color: var(--gris-texte); line-height: 1.5; font-style: italic; }
+
+/* Profondeurs dynamiques (LiDAR + marée) */
+.profondeur-bloc {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: rgba(12, 62, 68, 0.4);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--emeraude);
+}
+.profondeur-titre {
+  font-size: 12px;
+  color: var(--gris-texte);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prof-maree-badge {
+  background: var(--emeraude);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+.profondeur-row {
+  display: flex;
+  gap: 12px;
+}
+.prof-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 6px 4px;
+}
+.prof-label {
+  font-size: 10px;
+  color: var(--gris-texte);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 3px;
+}
+.prof-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--emeraude);
+}
+.prof-note {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  text-align: center;
+  margin-top: 6px;
+  font-style: italic;
+}
+.prof-lidar-manquant {
+  margin-top: 10px;
+  padding: 7px 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius);
+  border-left: 3px solid rgba(255,255,255,0.15);
+  font-size: 11px;
+  color: rgba(255,255,255,0.35);
+  font-style: italic;
+}
+
+/* Bathy */
+.bathy-placeholder { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+#canvas-bathy { border-radius: var(--radius); background: var(--gris-card); width: 100%; height: auto; }
+.bathy-note { font-size: 11px; color: var(--gris-texte); text-align: center; }
+
+/* Bathy réelle LiDAR */
+.bathy-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius);
+}
+.bathy-ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.bathy-ctrl-label {
+  font-size: 11px;
+  color: var(--gris-texte);
+  white-space: nowrap;
+  min-width: 90px;
+}
+.bathy-slider {
+  flex: 1;
+  accent-color: var(--bleu-clair);
+  height: 4px;
+}
+.bathy-slider-val {
+  font-size: 11px;
+  color: var(--bleu-clair);
+  min-width: 30px;
+  text-align: right;
+}
+.btn-transect {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(0,119,182,0.3);
+  border: 1px solid rgba(0,180,216,0.4);
+  border-radius: var(--radius);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-transect:hover, .btn-transect.active {
+  background: rgba(0,119,182,0.6);
+}
+.btn-transect-reset {
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius);
+  color: var(--gris-texte);
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-transect-reset:hover { background: rgba(255,255,255,0.15); }
+.transect-aide {
+  font-size: 11px;
+  color: #ffd166;
+  font-style: italic;
+  margin: 0;
+}
+
+.bathy-thumb-bloc {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+  cursor: crosshair;
+}
+.bathy-thumb {
+  width: 100%;
+  max-width: 256px;
+  height: auto;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255,255,255,0.12);
+  image-rendering: pixelated;
+  display: block;
+}
+.transect-sel-canvas {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;  /* le clic passe à travers vers img */
+  border-radius: var(--radius);
+}
+.bathy-thumb-absent {
+  font-size: 12px;
+  color: var(--gris-texte);
+  font-style: italic;
+  text-align: center;
+  padding: 8px;
+}
+.bathy-profil-bloc {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.bathy-profil-titre {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bleu-clair);
+  letter-spacing: 0.02em;
+}
+.bathy-prof-maree {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 6px 10px;
+  background: rgba(0,180,216,0.1);
+  border-left: 3px solid var(--bleu-clair);
+  border-radius: 4px;
+}
+.prof-label-sm {
+  font-size: 11px;
+  color: var(--gris-texte);
+  flex: 1;
+}
+.prof-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0,119,182,0.6);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+/* Overlay Leaflet semi-transparent */
+.bathy-overlay { image-rendering: pixelated; }
+
+/* Météo site */
+.meteo-bloc { margin-top: 12px; }
+
+/* ── Modales ─────────────────────────────────────────────────── */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+@media (min-width: 769px) {
+  .modal { align-items: center; }
+}
+
+.modal-content {
+  background: var(--gris-fond);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 16px;
+  box-shadow: var(--shadow);
+  border-top: 2px solid var(--emeraude);
+}
+@media (min-width: 769px) {
+  .modal-content { border-radius: var(--radius); border-top: none; border: 2px solid var(--emeraude); }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  border-bottom: 1px solid rgba(58,175,168,0.2);
+  padding-bottom: 10px;
+}
+.modal-header h2 {
+  font-size: 16px;
+  color: var(--emeraude);
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ── Marées : graphique + tableau ───────────────────────────── */
+#canvas-marees {
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  background: var(--gris-card);
+  display: block;
+}
+.marees-detail { display: flex; flex-direction: column; gap: 16px; }
+
+.marees-tableau { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.maree-card {
+  background: var(--gris-card);
+  border-radius: var(--radius);
+  padding: 10px;
+  text-align: center;
+}
+.maree-card .heure { font-size: 18px; font-weight: 700; color: var(--blanc); font-family: var(--font-title); }
+.maree-card .hauteur { font-size: 13px; color: var(--gris-texte); }
+.maree-card .coeff-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--emeraude);
+  color: #fff;
+}
+.maree-card.pm { border-top: 2px solid var(--emeraude); }
+.maree-card.bm { border-top: 2px solid var(--gris-texte); }
+.maree-card.now { border: 2px solid var(--orange-smpe); }
+.maree-card .type-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--gris-texte); }
+
+/* ── Météo ───────────────────────────────────────────────────── */
+.meteo-contenu { display: flex; flex-direction: column; gap: 12px; }
+.meteo-card {
+  background: var(--gris-card);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+.meteo-icon { font-size: 32px; }
+.meteo-data { display: flex; flex-direction: column; gap: 4px; }
+.meteo-data strong { font-size: 15px; color: var(--blanc); }
+.meteo-data span { font-size: 12px; color: var(--gris-texte); }
+.meteo-val { font-size: 20px; font-weight: 700; color: var(--emeraude); }
+
+.offline-msg {
+  text-align: center;
+  color: var(--gris-texte);
+  font-size: 14px;
+  padding: 20px;
+}
+
+.loading {
+  text-align: center;
+  color: var(--gris-texte);
+  padding: 20px;
+  font-size: 13px;
+}
+
+/* ── Leaflet overrides ──────────────────────────────────────── */
+.leaflet-container { background: var(--emeraude-deep); }
+.leaflet-control-zoom a {
+  background: var(--gris-fond) !important;
+  color: var(--blanc) !important;
+  border-color: rgba(58,175,168,0.35) !important;
+}
+.leaflet-popup-content-wrapper {
+  background: var(--gris-fond);
+  color: var(--blanc);
+  border: 1px solid var(--emeraude);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.leaflet-popup-tip { background: var(--gris-fond); }
+.popup-titre { font-weight: 700; font-size: 14px; color: var(--emeraude); margin-bottom: 4px; font-family: var(--font-title); text-transform: uppercase; letter-spacing: 0.5px; }
+.popup-id { font-size: 11px; color: var(--gris-texte); }
+.popup-type { font-size: 12px; margin-top: 4px; }
+.popup-btn {
+  margin-top: 8px;
+  padding: 5px 12px;
+  background: var(--emeraude);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 100%;
+}
+.popup-btn:hover { background: var(--emeraude-light); color: var(--emeraude-deep); }
+
+/* ── HUD Navigation (flottant sur carte) ────────────────────── */
+.nav-hud {
+  position: fixed;
+  bottom: 18px;
+  left: 12px;
+  z-index: 800;
+  background: rgba(3, 31, 27, 0.9);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(58, 175, 168, 0.4);
+  border-radius: var(--radius);
+  padding: 8px 12px 10px;
+  min-width: 200px;
+  max-width: 260px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  font-family: var(--font-body);
+}
+
+/* Ligne lat/lon */
+.hud-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--gris-texte);
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+}
+.hud-row .hud-val {
+  color: var(--emeraude-pale);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hud-sep { color: rgba(255,255,255,0.2); }
+.hud-icon { font-size: 12px; }
+
+/* Grille cap / vitesse / distance */
+.hud-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 8px;
+}
+.hud-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+}
+.hud-cell-wide {
+  grid-column: 1 / -1; /* pleine largeur */
+}
+.hud-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(58, 175, 168, 0.8);
+  font-weight: 600;
+}
+.hud-big {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--blanc);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+/* Indicateur de cap : rotation de la flèche */
+#hud-cap::before {
+  content: '↑ ';
+  display: inline-block;
+  transform-origin: center;
+  font-size: 14px;
+  color: var(--emeraude);
+  /* la rotation est appliquée via JS sur .hud-arrow */
+}
+
+/* Mise en valeur vitesse élevée */
+.hud-vitesse-alerte { color: var(--orange-warn) !important; }
+
+/* Animation d'acquisition GPS */
+@keyframes hud-acq {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.hud-acquiring .hud-big { animation: hud-acq 1.2s infinite; color: var(--gris-texte); }
+
+/* Responsive : sur mobile on remonte légèrement pour éviter les contrôles Leaflet */
+@media (max-width: 768px) {
+  .nav-hud { bottom: 24px; left: 8px; min-width: 180px; }
+  .hud-big { font-size: 16px; }
+  /* watermark remonte au-dessus de la barre Leaflet */
+  .map-watermark { bottom: 60px; right: 8px; width: 56px; }
+}
+/* Sur desktop, décaler à gauche de la fiche quand elle est visible */
+@media (min-width: 769px) {
+  .map-watermark { right: 16px; }
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(58,175,168,0.4); border-radius: 3px; }
+
+/* ── Indicateurs marée site ─────────────────────────────────── */
+
+/* Badge dans la liste des sites */
+.maree-badge-liste {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.maree-badge-vert   { background: rgba(46,204,113,0.2);   color: #2ecc71; border: 1px solid rgba(46,204,113,0.5); }
+.maree-badge-orange { background: rgba(255,163,1,0.2);    color: var(--orange-smpe); border: 1px solid rgba(255,163,1,0.5); }
+.maree-badge-rouge  { background: rgba(231,76,60,0.18);   color: #e74c3c; border: 1px solid rgba(231,76,60,0.35); }
+.maree-badge-gris   { background: rgba(158,203,200,0.1);  color: var(--gris-texte); border: 1px solid rgba(158,203,200,0.3); }
+
+/* Bloc marée interprété dans la fiche */
+.maree-site-bloc {
+  background: rgba(12,62,68,0.35);
+  border: 1px solid rgba(58,175,168,0.3);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.maree-site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.maree-site-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.maree-site-code {
+  font-family: monospace;
+  font-size: 11px;
+  color: var(--emeraude);
+  opacity: 0.8;
+}
+.maree-site-detail {
+  font-size: 12px;
+  color: var(--blanc);
+  line-height: 1.45;
+}
+.maree-site-decoded {
+  font-size: 11px;
+  color: var(--gris-texte);
+  font-style: italic;
+  line-height: 1.4;
+}
+.maree-site-meta {
+  font-size: 11px;
+  color: rgba(58,175,168,0.9);
+}
+.maree-site-meta strong {
+  color: var(--blanc);
+}
+
+/* Forcer flexbox sur site-meta pour aligner badge à droite */
+.site-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODULE PRÉVISION
+══════════════════════════════════════════════════════════════ */
+
+.modal-content-prevision {
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Contrôles date/heure ─────────────────────────────────── */
+.prev-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--gris-card);
+  border-bottom: 1px solid rgba(58,175,168,0.2);
+  flex-wrap: wrap;
+}
+.prev-ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.prev-label {
+  font-size: 0.72rem;
+  color: var(--gris-texte);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.prev-input {
+  background: #0f2e2c;
+  border: 1px solid rgba(58,175,168,0.35);
+  border-radius: var(--radius);
+  color: var(--blanc);
+  padding: 6px 10px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+  color-scheme: dark;
+}
+.prev-input:focus {
+  border-color: var(--emeraude);
+}
+.btn-prev-calc {
+  padding: 7px 18px;
+  background: var(--emeraude);
+  color: var(--emeraude-deep);
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: background var(--transition);
+}
+.btn-prev-calc:hover { background: var(--emeraude-light); }
+
+/* ── Bloc marée résumé ────────────────────────────────────── */
+.prev-maree-bloc {
+  padding: 10px 16px 0;
+  background: var(--gris-fond);
+}
+.prev-hauteur {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.prev-haut-val {
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-family: 'Oswald', sans-serif;
+  color: var(--emeraude-light);
+}
+.prev-coeff-badge {
+  font-size: 0.8rem;
+  background: rgba(58,175,168,0.12);
+  border: 1px solid rgba(58,175,168,0.3);
+  color: var(--gris-texte);
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+.prev-haut-absent {
+  color: var(--gris-texte);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+.canvas-prev {
+  width: 100%;
+  height: 100px;
+  display: block;
+  border-radius: var(--radius);
+}
+
+/* ── Liste des sites résultats ────────────────────────────── */
+.prev-sites {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px 16px;
+}
+.prev-empty {
+  color: var(--gris-texte);
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 24px 0;
+  font-style: italic;
+}
+
+/* Titres groupes */
+.prev-groupe-titre {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 8px 4px 4px;
+  margin-top: 8px;
+}
+.prev-titre-vert   { color: var(--vert-ok); }
+.prev-titre-orange { color: var(--orange-smpe); }
+.prev-titre-rouge  { color: var(--rouge); }
+.prev-titre-gris   { color: var(--gris-texte); }
+.prev-toggle-rouge,
+.prev-toggle-gris {
+  font-size: 0.75rem;
+  padding: 0 4px;
+  opacity: 0.7;
+  margin-left: auto;
+}
+
+/* Cartes de sites */
+.prev-site-card {
+  background: var(--gris-card);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-left: 3px solid transparent;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+.prev-site-card:hover {
+  background: #1e4845;
+  transform: translateX(2px);
+}
+.prev-card-vert   { border-left-color: var(--vert-ok); }
+.prev-card-orange { border-left-color: var(--orange-smpe); }
+.prev-card-rouge  { border-left-color: var(--rouge); opacity: 0.75; }
+.prev-card-gris   { border-left-color: var(--gris-texte); opacity: 0.6; }
+
+.prev-site-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.prev-site-nom {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--blanc);
+}
+.prev-site-detail {
+  font-size: 0.82rem;
+  color: var(--gris-texte);
+  line-height: 1.4;
+}
+.prev-site-type {
+  font-size: 0.75rem;
+  color: var(--emeraude);
+  margin-top: 3px;
+  text-transform: capitalize;
+}
+
+/* Groupes repliés */
+.prev-liste-cachee { display: none; }
+
