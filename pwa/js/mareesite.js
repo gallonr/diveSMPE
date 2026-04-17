@@ -65,16 +65,32 @@ const MaréeSite = (() => {
   }
 
   /**
-   * Parse la durée tpsEtale "2h15" | "1h-1h30" | "45'" → minutes (centrale)
+   * Parse la durée tpsEtale → objet { VE: minutes, ME: minutes }
+   *
+   * Formats acceptés :
+   *   "2h15"              → { VE: 135, ME: 135 }
+   *   "1h-1h30"           → { VE: 75,  ME: 75  }  (moyenne de la plage)
+   *   "1h(VE)/1h30(ME)"   → { VE: 60,  ME: 90  }
+   *   "1h30(ME)/1h(VE)"   → { VE: 60,  ME: 90  }  (ordre libre)
    */
   function _parseTpsEtale(s) {
-    if (!s) return 60; // défaut 1h si manquant
-    // Plage "1h-1h30"
+    if (!s) return { VE: 60, ME: 60 }; // défaut 1h
+
+    // Format "Xh(VE)/Yh(ME)" ou "Yh(ME)/Xh(VE)" (ordre libre)
+    const veMe = s.match(/(\S+)\(VE\)\/(\S+)\(ME\)/i);
+    if (veMe) return { VE: _parseDureeMin(veMe[1]), ME: _parseDureeMin(veMe[2]) };
+    const meVe = s.match(/(\S+)\(ME\)\/(\S+)\(VE\)/i);
+    if (meVe) return { VE: _parseDureeMin(meVe[2]), ME: _parseDureeMin(meVe[1]) };
+
+    // Plage "1h-1h30" → moyenne
     const plageH = s.match(/^(\d+h?\d*['']?)-(\d+h?\d*['']?)$/);
     if (plageH) {
-      return (_parseDureeMin(plageH[1]) + _parseDureeMin(plageH[2])) / 2;
+      const avg = (_parseDureeMin(plageH[1]) + _parseDureeMin(plageH[2])) / 2;
+      return { VE: avg, ME: avg };
     }
-    return _parseDureeMin(s);
+
+    const val = _parseDureeMin(s);
+    return { VE: val, ME: val };
   }
 
   // ── Calcul de l'étale de référence ───────────────────────────
@@ -154,7 +170,7 @@ const MaréeSite = (() => {
       return { statut: 'gris', label: '?', detail: `Code marée non reconnu : ${codeRaw}`, prochaineFenetre: null };
     }
 
-    const fenetreMin = _parseTpsEtale(tpsRaw); // durée en minutes
+    const tpsParsed = _parseTpsEtale(tpsRaw); // { VE: minutes, ME: minutes }
 
     // Heure actuelle en minutes depuis minuit
     const nowMin = now.getHours() * 60 + now.getMinutes();
@@ -164,6 +180,7 @@ const MaréeSite = (() => {
     const fenetres = [];
 
     for (const code of codes) {
+      const fenetreMin = tpsParsed[code.eau] ?? 60; // durée spécifique VE ou ME
       // Filtrer les étales compatibles avec le type PM/BM et ME/VE
       const etalesCompatibles = etalesJour.filter(e => {
         if (e.typeEtale !== code.type) return false;
