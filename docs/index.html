@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="Catalogue des sites de plongée SMPE — Baie de Saint-Malo" />
+  <meta name="theme-color" content="#0c3e44" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SMPE Plongée" />
+
+  <title>SMPE — Sites de Plongée</title>
+  <link rel="manifest" href="manifest.json" />
+
+  <!-- Google Fonts : Oswald (titres) + Signika (corps) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;600;700&family=Signika:wght@300;400;600;700&display=swap" />
+
+  <!-- Leaflet CSS (local) -->
+  <link rel="stylesheet" href="libs/leaflet/leaflet.css" />
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       BANDEAU OFFLINE
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="offline-banner" class="offline-banner hidden">
+    📡 Mode hors-ligne — données locales
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HEADER
+  ══════════════════════════════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <button id="btn-menu" class="btn-icon" title="Menu sites" aria-label="Liste des sites">
+        ☰
+      </button>
+      <h1 class="app-title">SMPE Plongée</h1>
+    </div>
+    <div class="header-center">
+      <span id="local-time" class="local-time"></span>
+    </div>
+    <div class="header-right">
+      <button id="btn-gps" class="btn-icon btn-gps" title="Centrer sur ma position" aria-label="GPS">
+        📍
+      </button>
+      <button id="btn-prevision" class="btn-icon" title="Prévision plongeabilité" aria-label="Prévision">
+        🗓
+      </button>
+      <button id="btn-marees" class="btn-icon" title="Marées" aria-label="Marées">
+        🌊
+      </button>
+      <button id="btn-meteo" class="btn-icon" title="Météo marine" aria-label="Météo">
+        🌬
+      </button>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       BANDEAU MARÉES (toujours visible)
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="bandeau-marees" class="bandeau-marees">
+    <span id="maree-hauteur-actuelle" class="maree-live">…</span>
+    <span class="maree-sep">|</span>
+    <span id="maree-extrema"></span>
+    <span class="maree-sep">|</span>
+    <span id="maree-coeff" class="maree-coeff">Coeff …</span>
+    <span id="maree-etale" class="maree-etale hidden">🤿 Étale dans …</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       CARTE
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="map"></div>
+  <img src="icons/logo-smpe.png" alt="SMPE" class="map-watermark" />
+
+  <!-- ═══════════════════════════════════════════════════════════
+       HUD NAVIGATION (flottant sur la carte, coin bas-gauche)
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="nav-hud" class="nav-hud hidden">
+    <div class="hud-row hud-pos">
+      <span class="hud-icon">📍</span>
+      <span id="hud-lat" class="hud-val">—</span>
+      <span class="hud-sep">/</span>
+      <span id="hud-lon" class="hud-val">—</span>
+    </div>
+    <div class="hud-grid">
+      <div class="hud-cell">
+        <span class="hud-label">CAP</span>
+        <span id="hud-cap" class="hud-big">—°</span>
+      </div>
+      <div class="hud-cell">
+        <span class="hud-label">VITESSE</span>
+        <span id="hud-vitesse" class="hud-big">— kt</span>
+      </div>
+      <div class="hud-cell hud-cell-wide" id="hud-dist-bloc">
+        <span class="hud-label">DIST. SITE</span>
+        <span id="hud-dist" class="hud-big">— Nm</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PANNEAU LISTE SITES (drawer gauche)
+  ══════════════════════════════════════════════════════════════ -->
+  <aside id="panel-sites" class="panel-sites hidden">
+    <div class="panel-header">
+      <h2>Sites de plongée</h2>
+      <button id="btn-close-sites" class="btn-icon" aria-label="Fermer">✕</button>
+    </div>
+    <div class="panel-search">
+      <input type="text" id="search-sites" placeholder="🔍 Rechercher un site…" autocomplete="off" />
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">Tous</button>
+      <button class="filter-btn" data-filter="récif">Récif</button>
+      <button class="filter-btn" data-filter="épave">Épave</button>
+      <button class="filter-btn" data-filter="roche">Roche</button>
+    </div>
+    <div class="filter-bar filter-bar-prof">
+      <button class="filter-prof-btn active" data-prof="all">Toute prof.</button>
+      <button class="filter-prof-btn" data-prof="6">≤ 6 m</button>
+      <button class="filter-prof-btn" data-prof="10">≤ 10 m</button>
+      <button class="filter-prof-btn" data-prof="20">≤ 20 m</button>
+      <button class="filter-prof-btn" data-prof="20+">+20 m</button>
+    </div>
+    <ul id="liste-sites" class="liste-sites"></ul>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       FICHE SITE (drawer bas sur mobile, panneau droit sur desktop)
+  ══════════════════════════════════════════════════════════════ -->
+  <aside id="fiche-site" class="fiche-site hidden">
+    <div class="fiche-header">
+      <div class="fiche-titre-bloc">
+        <span id="fiche-badge-type" class="badge-type">—</span>
+        <h2 id="fiche-nom">—</h2>
+        <span id="fiche-id" class="fiche-id">—</span>
+      </div>
+      <button id="btn-close-fiche" class="btn-icon" aria-label="Fermer">✕</button>
+    </div>
+
+    <!-- Navigation GPS vers le site -->
+    <div id="nav-info" class="nav-info hidden">
+      <span id="nav-distance">— km</span>
+      <span id="nav-cap">— °</span>
+      <span id="nav-eta">ETA —</span>
+    </div>
+    <button id="btn-naviguer" class="btn-naviguer hidden">🧭 Naviguer vers ce site</button>
+
+    <!-- Onglets fiche -->
+    <div class="fiche-tabs">
+      <button class="tab-btn active" data-tab="infos">Infos</button>
+      <button class="tab-btn" data-tab="bathy">Bathymétrie</button>
+      <button class="tab-btn" data-tab="conditions">Conditions</button>
+    </div>
+
+    <!-- Onglet Infos -->
+    <div id="tab-infos" class="tab-content active">
+      <div class="info-grid">
+        <div class="info-row"><span class="info-label">Type de plongée</span><span id="f-typePlongee" class="info-val">—</span></div>
+        <div class="info-row"><span class="info-label">Niveau requis</span><span id="f-niveauPlongee" class="info-val">—</span></div>
+        <div class="info-row"><span class="info-label">Accessibilité</span><span id="f-accessibilite" class="info-val">—</span></div>
+        <div class="info-row"><span class="info-label">Mouillage</span><span id="f-mouillage" class="info-val">—</span></div>
+        <!-- Horaires de plongée -->
+        <div class="info-row">
+          <span class="info-label">⏱ Début plongée</span>
+          <input type="time" id="f-heure-debut" class="info-val heure-plongee" />
+        </div>
+        <div class="info-row">
+          <span class="info-label">⏱ Fin plongée</span>
+          <input type="time" id="f-heure-fin" class="info-val heure-plongee" />
+        </div>
+        <div class="info-row" id="f-duree-plongee-row" style="display:none">
+          <span class="info-label">⏳ Durée</span>
+          <span id="f-duree-plongee" class="info-val duree-plongee">—</span>
+        </div>
+        <!-- Bloc marée interprété (remplace les champs statiques maree/tpsEtale) -->
+        <div id="f-maree-bloc"></div>
+      </div>
+
+      <!-- Bloc profondeurs dynamiques (marée + LiDAR) -->
+      <div id="f-profondeur-bloc" class="profondeur-bloc hidden">
+        <div class="profondeur-titre">🌊 Profondeur actuelle <span id="f-prof-maree-val" class="prof-maree-badge">— m</span></div>
+        <div class="profondeur-row">
+          <div class="prof-cell">
+            <span class="prof-label">Prof min</span>
+            <span id="f-prof-min" class="prof-val">—</span>
+          </div>
+          <div class="prof-cell">
+            <span class="prof-label">Prof max</span>
+            <span id="f-prof-max" class="prof-val">—</span>
+          </div>
+        </div>
+        <p class="prof-note">Profondeur = cote LiDAR + hauteur marée actuelle</p>
+      </div>
+      <div id="f-profondeur-lidar-manquant" class="prof-lidar-manquant hidden">
+        <span>⏳ Données bathymétriques LiDAR à intégrer</span>
+      </div>
+
+      <div class="commentaire-bloc">
+        <p id="f-commentaire" class="commentaire">—</p>
+      </div>
+    </div>
+
+    <!-- Onglet Bathymétrie -->
+    <div id="tab-bathy" class="tab-content hidden">
+
+      <!-- Contrôles -->
+      <div class="bathy-controls">
+        <!-- Overlay LiDAR sur carte -->
+        <div class="bathy-ctrl-row">
+          <label class="bathy-ctrl-label" for="slider-overlay-opacity">🗺 Overlay carte</label>
+          <input type="range" id="slider-overlay-opacity" min="0" max="1" step="0.05" value="0.65" class="bathy-slider" />
+          <span id="overlay-opacity-val" class="bathy-slider-val">65%</span>
+        </div>
+        <!-- Bouton transect libre -->
+        <div class="bathy-ctrl-row">
+          <button id="btn-transect-libre" class="btn-transect" title="Cliquer 2 points sur la miniature pour tracer un profil">
+            ✏️ Tracer un transect
+          </button>
+          <button id="btn-transect-reset" class="btn-transect-reset hidden" title="Revenir au transect E→O par défaut">
+            ↺ Défaut
+          </button>
+        </div>
+        <p id="transect-aide" class="transect-aide hidden">Cliquez un 1<sup>er</sup> point <span id="transect-step">A</span> sur la miniature ci-dessous</p>
+      </div>
+
+      <!-- Miniature MNT cliquable -->
+      <div class="bathy-thumb-bloc" id="bathy-thumb-container">
+        <img id="bathy-thumb" class="bathy-thumb" src="" alt="Miniature bathymétrie" />
+        <!-- Canvas overlay pour la sélection des points du transect -->
+        <canvas id="canvas-transect-sel" class="transect-sel-canvas hidden" width="256" height="256"></canvas>
+        <span id="bathy-thumb-absent" class="bathy-thumb-absent hidden">Aucune miniature</span>
+      </div>
+
+      <!-- Profil transect (LiDAR) -->
+      <div class="bathy-profil-bloc">
+        <div id="bathy-profil-titre" class="bathy-profil-titre">Profil bathymétrique — transect E→O</div>
+        <canvas id="canvas-bathy" width="400" height="180"></canvas>
+        <p id="bathy-profil-note" class="bathy-note">Source : LiDAR LITTO3D · résolution 0,5 m · ZH</p>
+      </div>
+
+      <!-- Profondeurs corrigées marée -->
+      <div id="bathy-prof-maree" class="bathy-prof-maree hidden">
+        <span class="prof-label-sm">Avec marée actuelle</span>
+        <span class="prof-badge">Min <span id="bathy-prof-min">—</span></span>
+        <span class="prof-badge">Max <span id="bathy-prof-max">—</span></span>
+      </div>
+    </div>
+
+    <!-- Onglet Conditions -->
+    <div id="tab-conditions" class="tab-content hidden">
+      <div class="info-grid">
+        <div class="info-row"><span class="info-label">Accès vent</span><span id="f-accesVent" class="info-val">—</span></div>
+        <div class="info-row"><span class="info-label">Houle</span><span id="f-houle" class="info-val">—</span></div>
+      </div>
+      <div id="meteo-site" class="meteo-bloc">
+        <p class="meteo-loading">🌬 Chargement météo…</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MODAL PRÉVISION
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-prevision" class="modal hidden">
+    <div class="modal-content modal-content-prevision">
+      <div class="modal-header">
+        <h2>🗓 Prévision plongeabilité</h2>
+        <button id="btn-close-prevision" class="btn-icon">✕</button>
+      </div>
+
+      <!-- Sélecteurs date / heure -->
+      <div class="prev-controls">
+        <div class="prev-ctrl-group">
+          <label class="prev-label" for="prev-date">📅 Date</label>
+          <input type="date" id="prev-date" class="prev-input" />
+        </div>
+        <div class="prev-ctrl-group">
+          <label class="prev-label" for="prev-time">⏱ Heure</label>
+          <input type="time" id="prev-time" class="prev-input" step="900" />
+        </div>
+        <button id="btn-prev-calculer" class="btn-prev-calc">Calculer</button>
+      </div>
+
+      <!-- Résumé hauteur de marée + mini-courbe -->
+      <div class="prev-maree-bloc">
+        <div id="prev-hauteur" class="prev-hauteur">…</div>
+        <canvas id="canvas-prev" class="canvas-prev" width="480" height="100"></canvas>
+      </div>
+
+      <!-- Liste des sites -->
+      <div id="prev-sites" class="prev-sites">
+        <p class="prev-empty">Choisissez une date et une heure pour voir les sites plongeables.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MODAL MARÉES
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-marees" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🌊 Marées — Saint-Malo</h2>
+        <button id="btn-close-marees" class="btn-icon">✕</button>
+      </div>
+      <div id="marees-detail" class="marees-detail">
+        <canvas id="canvas-marees" width="480" height="200"></canvas>
+        <div id="marees-tableau" class="marees-tableau"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MODAL MÉTÉO
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-meteo" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>🌬 Météo marine</h2>
+        <button id="btn-close-meteo" class="btn-icon">✕</button>
+      </div>
+      <div id="meteo-contenu" class="meteo-contenu">
+        <p class="loading">Chargement…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SCRIPTS
+  ══════════════════════════════════════════════════════════════ -->
+  <!-- Leaflet JS (local) -->
+  <script src="libs/leaflet/leaflet.js"></script>
+  <!-- Turf JS (local) -->
+  <script src="libs/turf/turf.min.js"></script>
+  <!-- Modules app -->
+  <script src="js/config.js"></script>
+  <script src="js/marees.js"></script>
+  <script src="js/mareesite.js"></script>
+  <script src="js/bathy.js"></script>
+  <script src="js/carte.js"></script>
+  <script src="js/sites.js"></script>
+  <script src="js/prevision.js"></script>
+  <script src="js/navigation.js"></script>
+  <script src="js/meteo.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- Enregistrement Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(reg => console.log('✅ Service Worker enregistré', reg.scope))
+          .catch(err => console.warn('⚠️ Service Worker non enregistré', err));
+      });
+    }
+  </script>
+</body>
+</html>
