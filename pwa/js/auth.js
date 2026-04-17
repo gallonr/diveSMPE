@@ -73,7 +73,7 @@ const Auth = (() => {
 
   function init(onSuccess) {
     if (isAuthenticated()) {
-      hideLoginScreen();
+      // Session encore valide, démarrage direct
       if (onSuccess) onSuccess();
       return;
     }

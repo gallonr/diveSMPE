@@ -1329,7 +1329,7 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 
 .login-error.hidden {
-  visibility: hidden;
+  display: none;
 }
 
 .login-btn {
