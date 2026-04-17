@@ -360,11 +360,11 @@ const MaréeSite = (() => {
         decalLabel = 'à l\'étale';
       } else if (p.dir === 'A') {
         decalLabel = p.decalMin > 0
-          ? `${p.decalMin} min avant l'étale`
+          ? `${_formatDuree(p.decalMin)} avant l'étale`
           : 'à l\'étale';
       } else {
         decalLabel = p.decalMin > 0
-          ? `${p.decalMin} min après l'étale`
+          ? `${_formatDuree(p.decalMin)} après l'étale`
           : 'à l\'étale';
       }
       return `${typeLabel} ${eauLabel} (${decalLabel})`;
