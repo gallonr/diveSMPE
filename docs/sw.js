@@ -6,7 +6,7 @@
 
 // ── Configuration ─────────────────────────────────────────────
 const DEBUG   = false;          // Passer à true pour les logs en développement
-const VERSION = 'v6';
+const VERSION = 'v7';
 
 const CACHE_STATIC  = `smpe-static-${VERSION}`;
 const CACHE_DYNAMIC = `smpe-dynamic-${VERSION}`;
@@ -32,6 +32,7 @@ const ASSETS_STATIQUES = [
   '/js/sites.js',
   '/js/navigation.js',
   '/js/meteo.js',
+  '/js/auth.js',
   '/js/app.js',
   '/data/sites.geojson',
   '/data/marees.json',
