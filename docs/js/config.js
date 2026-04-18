@@ -77,6 +77,18 @@ const CONFIG = {
     MSL_OFFSET_M: 6.5278,  // offset MSL FES2022 → ZH SHOM Saint-Malo (m)
   },
 
+  // ── Port (seuil + pieds de pilote des bateaux) ────────────
+  PORT: {
+    // Hauteur du seuil d'entrée du port au-dessus du zéro hydrographique (m ZH)
+    seuilZH: 2.0,
+    // Embarcations du club : nom + tirant d'eau (m)
+    bateaux: [
+      { nom: 'Maclow',     tirant: 1.3 },
+      { nom: 'Cassiopée',  tirant: 1.1 },
+      { nom: 'Neptune',    tirant: 0.7 },
+    ],
+  },
+
   // ── Météo (OpenMeteo — gratuit, pas de clé) ────────────────
   METEO: {
     // Coordonnées de Saint-Malo pour la météo générale

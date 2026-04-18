@@ -1124,6 +1124,7 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 .prev-maree-bloc {
   padding: 10px 16px 0;
   background: var(--gris-fond);
+  flex-shrink: 0;
 }
 .prev-hauteur {
   display: flex;
@@ -1156,6 +1157,163 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
   display: block;
   border-radius: var(--radius);
 }
+
+/* ── Bloc Port (prévision) ────────────────────────────────── */
+.prev-port {
+  margin: 8px 12px 8px;
+  background: rgba(3,31,27,0.85);
+  border: 1px solid rgba(58,175,168,0.35);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.prev-port:empty { display: none; }
+
+.prev-port-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgba(58,175,168,0.22);
+  background: rgba(58,175,168,0.1);
+}
+.prev-port-titre {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--emeraude-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.prev-port-seuil {
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  background: rgba(255,255,255,0.07);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.prev-port-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.prev-port-row {
+  padding: 9px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.prev-port-row:last-child { border-bottom: none; }
+
+.prev-port-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 5px;
+}
+.prev-port-nom {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--blanc);
+  min-width: 88px;
+}
+.prev-port-meta {
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+}
+.port-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 10px;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.port-badge-ok {
+  background: rgba(46,204,113,0.18);
+  color: #2ecc71;
+  border: 1px solid rgba(46,204,113,0.4);
+}
+.port-badge-bloque {
+  background: rgba(231,76,60,0.18);
+  color: #e74c3c;
+  border: 1px solid rgba(231,76,60,0.4);
+}
+
+.prev-port-blocages {
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+.prev-port-label-bloque {
+  font-size: 0.75rem;
+  color: var(--gris-texte);
+}
+.port-fen-bloque {
+  background: rgba(231,76,60,0.15);
+  color: #f1948a;
+  border: 1px solid rgba(231,76,60,0.35);
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.port-fen-libre {
+  color: #2ecc71;
+  font-style: italic;
+}
+
+/* ── Widget Port (carte) ──────────────────────────────────── */
+.port-widget {
+  position: fixed;
+  bottom: 28px;
+  right: 12px;
+  z-index: 800;
+  background: rgba(3, 31, 27, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(58, 175, 168, 0.35);
+  border-radius: var(--radius);
+  padding: 7px 11px 8px;
+  min-width: 120px;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+.port-widget-titre {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--emeraude-light);
+  margin-bottom: 5px;
+  font-family: var(--font-title);
+}
+.port-widget-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.82rem;
+  margin: 2px 0;
+}
+.port-widget-nom {
+  color: var(--blanc);
+  font-weight: 600;
+}
+.port-widget-etat {
+  font-size: 0.9rem;
+}
+.port-widget-next {
+  font-size: 0.7rem;
+  color: var(--orange-smpe);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.port-ok  { color: #2ecc71; }
+.port-bloque { color: #e74c3c; }
 
 /* ── Liste des sites résultats ────────────────────────────── */
 .prev-sites {

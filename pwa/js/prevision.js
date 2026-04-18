@@ -192,6 +192,11 @@ const Prevision = (() => {
 
     _dessinerMiniCourbe('canvas-prev', entree, targetDate);
 
+    // Bloc Port : état des bateaux à l'heure choisie
+    if (typeof Port !== 'undefined') {
+      Port.renderPrevision(entree, hauteur, targetDate);
+    }
+
     // Calculer le statut de tous les sites
     const geojson = (typeof Sites !== 'undefined' && Sites.getGeojson)
       ? Sites.getGeojson()
