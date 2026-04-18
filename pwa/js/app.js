@@ -45,7 +45,10 @@ const App = (() => {
     // 7. Init module Prévision
     Prevision.init();
 
-    // 8. Événements UI
+    // 8. Init module Port (widget carte + créneaux bateaux)
+    Port.init();
+
+    // 9. Événements UI
     _bindEvents();
 
     // 8. Mode offline

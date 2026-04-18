@@ -110,6 +110,11 @@
   <img src="icons/logo-smpe.png" alt="SMPE" class="map-watermark" />
 
   <!-- ═══════════════════════════════════════════════════════════
+       WIDGET PORT (flottant sur la carte, coin bas-droit)
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="port-widget" class="port-widget hidden"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        HUD NAVIGATION (flottant sur la carte, coin bas-gauche)
   ══════════════════════════════════════════════════════════════ -->
   <div id="nav-hud" class="nav-hud hidden">
@@ -325,6 +330,9 @@
         <canvas id="canvas-prev" class="canvas-prev" width="480" height="100"></canvas>
       </div>
 
+      <!-- Bloc Port : état des bateaux pour la date/heure choisie -->
+      <div id="prev-port" class="prev-port"></div>
+
       <!-- Liste des sites -->
       <div id="prev-sites" class="prev-sites">
         <p class="prev-empty">Choisissez une date et une heure pour voir les sites plongeables.</p>
@@ -374,6 +382,7 @@
   <script src="js/config.js"></script>
   <script src="js/marees.js"></script>
   <script src="js/mareesite.js"></script>
+  <script src="js/port.js"></script>
   <script src="js/bathy.js"></script>
   <script src="js/carte.js"></script>
   <script src="js/sites.js"></script>
