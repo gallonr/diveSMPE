@@ -389,6 +389,29 @@ html, body {
   transition: transform var(--transition);
 }
 
+/* ── Header responsive ──────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Masquer l'heure centrale sur petit écran pour éviter les chevauchements */
+  .header-center { display: none; }
+}
+
+@media (max-width: 480px) {
+  /* Titre plus court */
+  .app-title {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+  }
+
+  /* Boutons plus compacts */
+  .btn-icon {
+    font-size: 17px;
+    padding: 4px 3px;
+  }
+
+  /* Réduire l'écart entre boutons */
+  .header-left, .header-right { gap: 2px; }
+}
+
 /* Mobile : drawer bas */
 @media (max-width: 768px) {
   .fiche-site {
