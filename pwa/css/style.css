@@ -381,7 +381,7 @@ html, body {
 /* ── Fiche site ──────────────────────────────────────────────── */
 .fiche-site {
   position: fixed;
-  z-index: 600;
+  z-index: 1050;
   background: var(--gris-fond);
   box-shadow: var(--shadow);
   display: flex;
