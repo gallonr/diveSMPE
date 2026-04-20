@@ -58,6 +58,15 @@ const CONFIG = {
       maxZoom: 18,
       opacity: 0.8,
     },
+    // SHOM Litto3D Bretagne 2018-2021 — WMS bathymétrie/altimétrie
+    litto3d: {
+      url:         'https://services.data.shom.fr/INSPIRE/wms/r?',
+      layer:       'LITTO3D_BZH_2018_2021_PYR_3857_WMSR',
+      attribution: '© <a href="https://www.shom.fr/">SHOM</a> — Litto3D Bretagne 2018-2021',
+      format:      'image/png',
+      transparent: true,
+      opacity:     0.7,
+    },
   },
 
   // ── Navigation ─────────────────────────────────────────────
