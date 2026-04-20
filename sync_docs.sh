@@ -18,6 +18,7 @@ cp pwa/js/marees.js    docs/js/marees.js
 cp pwa/js/mareesite.js docs/js/mareesite.js
 cp pwa/js/meteo.js     docs/js/meteo.js
 cp pwa/js/navigation.js docs/js/navigation.js
+cp pwa/js/port.js      docs/js/port.js
 cp pwa/js/prevision.js docs/js/prevision.js
 cp pwa/js/sites.js     docs/js/sites.js
 
