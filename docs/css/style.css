@@ -1313,7 +1313,7 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 .port-widget {
   position: fixed;
   bottom: 28px;
-  right: 12px;
+  left: 12px;
   z-index: 810;
   background: rgba(3, 31, 27, 0.92);
   backdrop-filter: blur(6px);
@@ -1360,6 +1360,11 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 .port-ok  { color: #2ecc71; }
 .port-bloque { color: #e74c3c; }
+
+/* Port widget remonte au-dessus du HUD quand navigation active */
+body:has(#nav-hud:not(.hidden)) .port-widget {
+  bottom: 175px;
+}
 
 /* ── Liste des sites résultats ────────────────────────────── */
 .prev-sites {
