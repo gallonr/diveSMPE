@@ -141,6 +141,11 @@ const App = (() => {
       }
     });
 
+    // ── HUD : arrêter la navigation
+    document.getElementById('btn-stop-nav')?.addEventListener('click', () => {
+      Navigation.arreter();
+    });
+
     // ── Recherche sites
     document.getElementById('search-sites')?.addEventListener('input', e => {
       _termeRecherche = e.target.value.trim();

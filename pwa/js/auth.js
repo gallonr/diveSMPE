@@ -15,7 +15,7 @@ const Auth = (() => {
   const VALID_LOGIN    = 'smpe';
   const HASH_PASSWORD  = 'cc45ac040c800aa7093a3f804b8dd284213bb5df03419526c00ba91881d565af';
   const SESSION_KEY    = 'smpe_auth';
-  const SESSION_EXPIRY = 8 * 60 * 60 * 1000; // 8 heures en ms
+  const SESSION_EXPIRY = 6 * 60 * 60 * 1000; // 6 heures en ms (persiste après fermeture)
 
   // ── Hash SHA-256 via Web Crypto API ──────────────────────────
 
@@ -30,7 +30,7 @@ const Auth = (() => {
 
   function isAuthenticated() {
     try {
-      const stored = sessionStorage.getItem(SESSION_KEY);
+      const stored = localStorage.getItem(SESSION_KEY);
       if (!stored) return false;
       const { ts } = JSON.parse(stored);
       return (Date.now() - ts) < SESSION_EXPIRY;
@@ -44,7 +44,7 @@ const Auth = (() => {
   async function login(loginInput, passwordInput) {
     const hash = await sha256(passwordInput);
     if (loginInput.trim().toLowerCase() === VALID_LOGIN && hash === HASH_PASSWORD) {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
       return true;
     }
     return false;
@@ -53,7 +53,7 @@ const Auth = (() => {
   // ── Déconnexion ──────────────────────────────────────────────
 
   function logout() {
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     location.reload();
   }
 

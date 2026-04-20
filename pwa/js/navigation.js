@@ -161,6 +161,10 @@ const Navigation = (() => {
     }
 
     document.getElementById('nav-info')?.classList.remove('hidden');
+
+    // Afficher le bouton stop dans le HUD
+    const btnStop = document.getElementById('btn-stop-nav');
+    if (btnStop) btnStop.classList.remove('hidden');
   }
 
   function arreter() {
@@ -180,6 +184,10 @@ const Navigation = (() => {
     // Réinitialiser distance HUD
     const elDist = document.getElementById('hud-dist');
     if (elDist) elDist.textContent = '— Nm';
+
+    // Masquer le bouton stop dans le HUD
+    const btnStop = document.getElementById('btn-stop-nav');
+    if (btnStop) btnStop.classList.add('hidden');
   }
 
   /** Définir le site affiché dans le HUD (sans démarrer la navigation active) */

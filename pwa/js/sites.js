@@ -546,7 +546,10 @@ const Sites = (() => {
     if (fiche) fiche.classList.add('hidden');
     _siteActif = null;
     document.querySelectorAll('.site-item').forEach(el => el.classList.remove('active'));
-    Navigation.arreter();
+    // Ne pas arrêter la navigation si elle est en cours : elle continue via le HUD
+    if (!Navigation.isActif()) {
+      Navigation.arreter();
+    }
   }
 
   function _activerOnglet(nom) {
