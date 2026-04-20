@@ -1332,6 +1332,9 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.port-widget-warn {
+  color: #e67e22;
+}
 .port-ok  { color: #2ecc71; }
 .port-bloque { color: #e74c3c; }
 
