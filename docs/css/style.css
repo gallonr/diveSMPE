@@ -460,6 +460,25 @@ html, body {
 .btn-naviguer:hover { background: var(--emeraude-light); color: var(--emeraude-deep); }
 .btn-naviguer.active { background: var(--rouge); }
 
+/* Bouton stop navigation dans le HUD */
+.btn-stop-nav {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: var(--rouge);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  width: 100%;
+  transition: background var(--transition);
+}
+.btn-stop-nav:hover { background: #ff6b6b; }
+
 /* Onglets */
 .fiche-tabs {
   display: flex;
@@ -1271,7 +1290,7 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
   position: fixed;
   bottom: 28px;
   right: 12px;
-  z-index: 800;
+  z-index: 810;
   background: rgba(3, 31, 27, 0.92);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
