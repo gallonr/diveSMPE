@@ -89,6 +89,9 @@ const Carte = (() => {
       { position: 'topright', collapsed: true }
     ).addTo(_map);
 
+    // OpenSeaMap toujours au-dessus des autres overlays
+    _map.on('overlayadd', () => openSeaMap.bringToFront());
+
     // Attribution compacte
     _map.attributionControl.setPrefix('');
 
