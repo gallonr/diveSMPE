@@ -127,7 +127,14 @@ const Port = (() => {
         if (futurs.length > 0) prochainAcces = _minToHHMM(futurs[0].t);
       }
 
-      return { nom: b.nom, tirant: b.tirant, hMin: hMinReq, peut, prochainAcces };
+      // Prochain blocage : premier point futur où h < hMin (seulement si actuellement accessible)
+      let prochainBlocage = null;
+      if (peut && points.length > 0) {
+        const futursBloques = points.filter(pt => pt.t > nowMin && pt.h < hMinReq);
+        if (futursBloques.length > 0) prochainBlocage = _minToHHMM(futursBloques[0].t);
+      }
+
+      return { nom: b.nom, tirant: b.tirant, hMin: hMinReq, peut, prochainAcces, prochainBlocage };
     });
   }
 
@@ -147,7 +154,10 @@ const Port = (() => {
           ${e.peut ? '✅' : '🚫'}
         </span>
         ${!e.peut && e.prochainAcces
-          ? `<span class="port-widget-next">⏱ ${e.prochainAcces}</span>`
+          ? `<span class="port-widget-next">⏱ Accès : ${e.prochainAcces}</span>`
+          : ''}
+        ${e.peut && e.prochainBlocage
+          ? `<span class="port-widget-next port-widget-warn">⚠️ Bloqué à : ${e.prochainBlocage}</span>`
           : ''}
       </div>
     `).join('');
@@ -188,8 +198,8 @@ const Port = (() => {
 
       const statutClass = etat.peut ? 'port-badge-ok' : 'port-badge-bloque';
       const statutText  = etat.peut
-        ? '✅ Peut sortir'
-        : `🚫 Bloqué${etat.prochainAcces ? ` · ⏱ ${etat.prochainAcces}` : ''}`;
+        ? `✅ Peut sortir${etat.prochainBlocage ? ` · ⚠️ bloqué à ${etat.prochainBlocage}` : ''}`
+        : `🚫 Bloqué${etat.prochainAcces ? ` · ⏱ accès à ${etat.prochainAcces}` : ''}`;
 
       let blocageHtml;
       if (fen.bloque.length === 0) {
