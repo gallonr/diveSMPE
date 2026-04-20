@@ -65,6 +65,15 @@ const Carte = (() => {
       opacity: CONFIG.TILES.openSeaMap.opacity,
     }).addTo(_map);
 
+    // Overlay WMS Litto3D SHOM Bretagne 2018-2021
+    const litto3d = L.tileLayer.wms(CONFIG.TILES.litto3d.url, {
+      layers:      CONFIG.TILES.litto3d.layer,
+      format:      CONFIG.TILES.litto3d.format,
+      transparent: CONFIG.TILES.litto3d.transparent,
+      attribution: CONFIG.TILES.litto3d.attribution,
+      opacity:     CONFIG.TILES.litto3d.opacity,
+    });
+
     // Contrôle des couches
     L.control.layers(
       {
@@ -73,7 +82,10 @@ const Carte = (() => {
         '🌊 ESRI Ocean':   esriOceanGroup,
         '🗾 OpenStreetMap': osm,
       },
-      { 'OpenSeaMap ⚓': openSeaMap },
+      {
+        'OpenSeaMap ⚓': openSeaMap,
+        '🏔️ Litto3D SHOM': litto3d,
+      },
       { position: 'topright', collapsed: true }
     ).addTo(_map);
 
