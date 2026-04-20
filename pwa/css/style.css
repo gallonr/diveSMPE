@@ -476,6 +476,7 @@ html, body {
   cursor: pointer;
   width: 100%;
   transition: background var(--transition);
+  pointer-events: all;
 }
 .btn-stop-nav:hover { background: #ff6b6b; }
 
