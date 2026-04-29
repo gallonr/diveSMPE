@@ -104,6 +104,7 @@ const Carte = (() => {
         attribution: cfg.attribution,
         opacity:     cfg.opacity,
         time:        timeStr,
+        tileSize:    512,    // tuiles 512px → 4× moins de requêtes (quota 50/min)
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
       return L.tileLayer.wms(url, opts);
@@ -111,16 +112,14 @@ const Carte = (() => {
 
     if (cfg_mf && cfg_mf.token) {
       const tok = cfg_mf.token;
-      // Analyse AROME — conditions actuelles (0–1h, données d'analyse)
-      mfOverlays['🔵 Vent actuel (analyse)']    = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
-      mfOverlays['🔵 Rafales actuelles (analyse)'] = _mfWmsLayer(CONFIG.TILES.analyseRafales, tok);
+      // 4 couches seulement → rester sous le quota 50 req/min (tileSize 512 aide aussi)
+      // Analyse AROME — conditions actuelles (0–1h)
+      mfOverlays['🔵 Vent actuel (analyse)']      = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
       // AROME 0.01° — prévisions jusqu'à +42h
-      mfOverlays['🌬️ Vent AROME']    = _mfWmsLayer(CONFIG.TILES.aromeVent,      tok);
-      mfOverlays['💨 Rafales AROME']  = _mfWmsLayer(CONFIG.TILES.aromeRafales,   tok);
-      // AROME-PI : nowcasting très court terme (0–6h), rafraîchi toutes les heures
-      mfOverlays['🌬️ Vent PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiVent,    tok);
-      mfOverlays['💨 Rafales PI (0–6h)']= _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
-      mfOverlays['🌧️ Pluie PI (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   tok);
+      mfOverlays['🌬️ Vent AROME (+42h)']          = _mfWmsLayer(CONFIG.TILES.aromeVent,      tok);
+      // AROME-PI : nowcasting très court terme (0–6h)
+      mfOverlays['💨 Rafales PI (0–6h)']           = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
+      mfOverlays['🌧️ Pluie PI (0–6h)']            = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   tok);
     }
 
     // Contrôle des couches
