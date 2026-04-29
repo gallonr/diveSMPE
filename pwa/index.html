@@ -381,6 +381,9 @@
   <script src="libs/turf/turf.min.js"></script>
   <!-- Modules app -->
   <script src="js/config.js"></script>
+  <!-- Secrets locaux (token Météo-France, etc.) — fichier gitignore, non versionné -->
+  <!-- Créer js/secrets.js localement si besoin : CONFIG.METEO_FRANCE.token = 'votre_token'; -->
+  <script src="js/secrets.js" onerror="void(0)"></script>
   <script src="js/marees.js"></script>
   <script src="js/mareesite.js"></script>
   <script src="js/port.js"></script>
