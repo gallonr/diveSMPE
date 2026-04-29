@@ -86,14 +86,30 @@ const Carte = (() => {
       // L.tileLayer.wms ne supporte pas les headers HTTP — on passe le token
       // en paramètre de requête (méthode supportée par l'API MF portail).
       const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
-      // Le WMS MF exige un paramètre TIME (ISO 8601 UTC arrondi à l'heure).
-      // AROME : runs toutes les 3h (00, 03, 06, 09, 12, 15, 18, 21 UTC).
-      // On prend le run de 3h le plus récent, avec 2h de marge de publication.
+      // Le WMS MF exige un paramètre TIME (ISO 8601 UTC).
+      // 3 modes selon le service :
+      //  - 'analyse'  : PAAROME — échéances 0h/1h, arrondi à l'heure courante UTC
+      //  - timeStep<60: AROME-PI — pas de 15 min, arrondi au quart d'heure passé
+      //  - défaut     : AROME — runs toutes 3h, arrondi au dernier run publié (-2h)
       const now = new Date();
-      const utcH = now.getUTCHours();
-      const runH = Math.floor((utcH - 2) / 3) * 3; // -2h marge de publication
-      const runDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), Math.max(runH, 0)));
-      const timeStr = runDate.toISOString().replace(/\.\d{3}Z$/, 'Z'); // ex: 2026-04-29T15:00:00Z
+      let timeStr;
+      if (cfg.timeMode === 'analyse') {
+        // Analyse : heure courante arrondie à l'heure passée
+        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours()));
+        timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      } else if (cfg.timeStep && cfg.timeStep < 60) {
+        // AROME-PI : arrondi au step de 15 min le plus récent
+        const totalMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+        const roundedMin = Math.floor(totalMin / cfg.timeStep) * cfg.timeStep;
+        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
+                                    Math.floor(roundedMin / 60), roundedMin % 60));
+        timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      } else {
+        // AROME : run toutes les 3h, avec 2h de marge de publication
+        const runH = Math.max(Math.floor((now.getUTCHours() - 2) / 3) * 3, 0);
+        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), runH));
+        timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
+      }
       const opts = {
         service:     'WMS',
         version:     '1.3.0',
@@ -110,16 +126,23 @@ const Carte = (() => {
       return L.tileLayer.wms(url, opts);
     }
 
+    if (cfg_mf && cfg_mf.tokenPaArome) {
+      const tok = cfg_mf.tokenPaArome;
+      // Analyse AROME (PAAROME) — conditions actuelles (échéances 0h et 1h)
+      mfOverlays['🔵 Vent actuel (analyse)']       = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
+      mfOverlays['🔵 Rafales actuelles (analyse)'] = _mfWmsLayer(CONFIG.TILES.analyseRafales, tok);
+    }
     if (cfg_mf && cfg_mf.token) {
       const tok = cfg_mf.token;
-      // 4 couches seulement → rester sous le quota 50 req/min (tileSize 512 aide aussi)
-      // Analyse AROME — conditions actuelles (0–1h)
-      mfOverlays['🔵 Vent actuel (analyse)']      = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
       // AROME 0.01° — prévisions jusqu'à +42h
-      mfOverlays['🌬️ Vent AROME (+42h)']          = _mfWmsLayer(CONFIG.TILES.aromeVent,      tok);
-      // AROME-PI : nowcasting très court terme (0–6h)
-      mfOverlays['💨 Rafales PI (0–6h)']           = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
-      mfOverlays['🌧️ Pluie PI (0–6h)']            = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   tok);
+      mfOverlays['🌬️ Vent AROME (+42h)']   = _mfWmsLayer(CONFIG.TILES.aromeVent,    tok);
+      mfOverlays['💨 Rafales AROME (+42h)'] = _mfWmsLayer(CONFIG.TILES.aromeRafales, tok);
+    }
+    if (cfg_mf && cfg_mf.tokenAromePi) {
+      const tok = cfg_mf.tokenAromePi;
+      // AROME-PI : nowcasting 0–360 min par pas de 15 min
+      mfOverlays['💨 Rafales PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
+      mfOverlays['🌧️ Pluie PI (0–6h)']   = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   tok);
     }
 
     // Contrôle des couches
