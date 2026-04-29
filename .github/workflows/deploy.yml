@@ -31,16 +31,20 @@ jobs:
       #   METEOFRANCE_TOKEN_PAAROME : token API PAAROME (analyse, conditions actuelles)
       - name: Injecter les tokens Météo-France
         run: |
-          {
-            if [ -n "${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}" ]; then
-              echo "CONFIG.METEO_FRANCE.tokenAromePi = '${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}';"
-              echo "✅ Token AROME-PI injecté" >&2
-            fi
-            if [ -n "${{ secrets.METEOFRANCE_TOKEN_PAAROME }}" ]; then
-              echo "CONFIG.METEO_FRANCE.tokenPaArome = '${{ secrets.METEOFRANCE_TOKEN_PAAROME }}';"
-              echo "✅ Token PAAROME injecté" >&2
-            fi
-          } > docs/js/secrets.js
+          echo "// secrets.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > docs/js/secrets.js
+          if [ -n "${{ secrets.METEOFRANCE_TOKEN_PAAROME }}" ]; then
+            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${{ secrets.METEOFRANCE_TOKEN_PAAROME }}';" >> docs/js/secrets.js
+            echo "✅ Token PAAROME injecté" >&2
+          else
+            echo "⚠️ Secret METEOFRANCE_TOKEN_PAAROME absent ou vide" >&2
+          fi
+          if [ -n "${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}" ]; then
+            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}';" >> docs/js/secrets.js
+            echo "✅ Token AROME-PI injecté" >&2
+          else
+            echo "⚠️ Secret METEOFRANCE_TOKEN_AROMEPI absent ou vide" >&2
+          fi
+          echo "📄 Contenu secrets.js généré ($(wc -l < docs/js/secrets.js) lignes)" >&2
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
