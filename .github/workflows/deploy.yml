@@ -37,30 +37,33 @@ jobs:
       # → Réglage : Settings → Secrets and variables → Actions → New secret
       #   METEOFRANCE_TOKEN_AROMEPI : token API AROME-PI (nowcasting 0–6h)
       #   METEOFRANCE_TOKEN_PAAROME : token API PAAROME (analyse, conditions actuelles)
-      - name: Injecter les tokens Météo-France
+      - name: Injecter indicateurs de tokens (ne pas exposer les secrets)
         run: |
           echo "// secrets.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > docs/js/secrets.js
-          # Support ancien secret METEOFRANCE_TOKEN (token unique couvrant AROME + AROME-PI)
+          # Ne PAS écrire les valeurs des tokens dans un fichier public.
+          # Écrire uniquement des drapeaux/presence ou des placeholders masqués.
           TOKEN_LEGACY="${{ secrets.METEOFRANCE_TOKEN }}"
           TOKEN_PAAROME="${{ secrets.METEOFRANCE_TOKEN_PAAROME }}"
           TOKEN_AROMEPI="${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}"
-          # Utiliser les tokens spécifiques, ou le token legacy en fallback
-          TOK_PA="${TOKEN_PAAROME:-$TOKEN_LEGACY}"
-          TOK_PI="${TOKEN_AROMEPI:-$TOKEN_LEGACY}"
-          if [ -n "$TOK_PA" ]; then
-            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${TOK_PA}';" >> docs/js/secrets.js
-            echo "✅ Token PAAROME injecté" >&2
+          TOK_PA_PRESENT=no
+          TOK_PI_PRESENT=no
+          if [ -n "${TOKEN_PAAROME:-}" ] || [ -n "${TOKEN_LEGACY:-}" ]; then
+            TOK_PA_PRESENT=yes
+            echo "// token PAAROME present: true (value NOT written to public file)" >> docs/js/secrets.js
+            echo "CONFIG.METEO_FRANCE.haveTokenPaArome = true;" >> docs/js/secrets.js
           else
-            echo "⚠️ Aucun token PAAROME disponible (METEOFRANCE_TOKEN_PAAROME et METEOFRANCE_TOKEN absents)" >&2
+            echo "CONFIG.METEO_FRANCE.haveTokenPaArome = false;" >> docs/js/secrets.js
           fi
-          if [ -n "$TOK_PI" ]; then
-            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${TOK_PI}';" >> docs/js/secrets.js
-            echo "✅ Token AROME-PI injecté" >&2
+          if [ -n "${TOKEN_AROMEPI:-}" ] || [ -n "${TOKEN_LEGACY:-}" ]; then
+            TOK_PI_PRESENT=yes
+            echo "// token AROME-PI present: true (value NOT written to public file)" >> docs/js/secrets.js
+            echo "CONFIG.METEO_FRANCE.haveTokenAromePi = true;" >> docs/js/secrets.js
           else
-            echo "⚠️ Aucun token AROME-PI disponible (METEOFRANCE_TOKEN_AROMEPI et METEOFRANCE_TOKEN absents)" >&2
+            echo "CONFIG.METEO_FRANCE.haveTokenAromePi = false;" >> docs/js/secrets.js
           fi
-          echo "📄 secrets.js final :" >&2
-          cat docs/js/secrets.js | sed 's/eyJ[^'\''"]*/[TOKEN_MASQUÉ]/g' >&2
+          # For debug in Actions logs only (do not print token values). Show masked presence only.
+          echo "✅ Token PAAROME present: ${TOK_PA_PRESENT}" >&2
+          echo "✅ Token AROME-PI present: ${TOK_PI_PRESENT}" >&2
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
