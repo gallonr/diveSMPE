@@ -81,9 +81,10 @@ const Carte = (() => {
     const mfOverlays = {};
     const cfg_mf = CONFIG.METEO_FRANCE;
 
-    // Fonction helper : construit une couche WMS MF avec le token en header HTTP.
-    // MF n'accepte pas le token en query param — on override createTile pour
-    // passer par fetch() avec { headers: { apikey: token } }.
+    // Fonction helper : construit une couche WMS MF.
+    // Le token est passé en query param (apikey=...).
+    // L'API MF retourne Access-Control-Allow-Origin:* uniquement quand le token
+    // est en query param — la méthode fetch()+header ne résout pas le CORS.
     function _mfWmsLayer(cfg, token) {
       const now = new Date();
       let timeStr;
@@ -105,24 +106,7 @@ const Carte = (() => {
         timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
       }
 
-      const MFWmsLayer = L.TileLayer.WMS.extend({
-        createTile(coords, done) {
-          const url = this.getTileUrl(coords);
-          const img = document.createElement('img');
-          img.crossOrigin = 'anonymous';
-          fetch(url, { headers: { apikey: token } })
-            .then(r => r.blob())
-            .then(blob => {
-              const src = URL.createObjectURL(blob);
-              img.onload = () => { URL.revokeObjectURL(src); done(null, img); };
-              img.onerror = e => done(e);
-              img.src = src;
-            })
-            .catch(e => done(e));
-          return img;
-        }
-      });
-
+      const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
       const opts = {
         service:     'WMS',
         version:     '1.3.0',
@@ -134,10 +118,9 @@ const Carte = (() => {
         opacity:     cfg.opacity,
         time:        timeStr,
         tileSize:    512,
-        crs:         L.CRS.EPSG4326,
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
-      return new MFWmsLayer(cfg.wmsUrl, opts);
+      return L.tileLayer.wms(url, opts);
     }
 
     if (cfg_mf && cfg_mf.tokenPaArome) {
