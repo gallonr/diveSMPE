@@ -25,20 +25,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Injection des tokens Météo-France depuis les GitHub Secrets
+      # Injection du token Météo-France depuis les GitHub Secrets
       # → Réglage : Settings → Secrets and variables → Actions → New secret
-      #   METEOFRANCE_TOKEN_AROMEPI  : token API "AROME Prévision Immédiate"
-      #   METEOFRANCE_TOKEN_PAAROME  : token API "PAAROME"
-      - name: Injecter les tokens Météo-France
+      #   METEOFRANCE_TOKEN  : token API portail MF (couvre AROME + AROME-PI)
+      - name: Injecter le token Météo-France
         run: |
           {
-            if [ -n "${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}" ]; then
-              echo "CONFIG.METEO_FRANCE.tokenAromePi = '${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}';"
-              echo "✅ Token AROME-PI injecté" >&2
-            fi
-            if [ -n "${{ secrets.METEOFRANCE_TOKEN_PAAROME }}" ]; then
-              echo "CONFIG.METEO_FRANCE.tokenPaArome = '${{ secrets.METEOFRANCE_TOKEN_PAAROME }}';"
-              echo "✅ Token PAAROME injecté" >&2
+            if [ -n "${{ secrets.METEOFRANCE_TOKEN }}" ]; then
+              echo "CONFIG.METEO_FRANCE.token = '${{ secrets.METEOFRANCE_TOKEN }}';"
+              echo "✅ Token Météo-France injecté" >&2
             fi
           } > docs/js/secrets.js
 
