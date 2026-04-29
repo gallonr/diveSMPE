@@ -102,6 +102,9 @@ const Carte = (() => {
 
     if (cfg_mf && cfg_mf.token) {
       const tok = cfg_mf.token;
+      // Analyse AROME — conditions actuelles (0–1h, données d'analyse)
+      mfOverlays['🔵 Vent actuel (analyse)']    = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
+      mfOverlays['🔵 Rafales actuelles (analyse)'] = _mfWmsLayer(CONFIG.TILES.analyseRafales, tok);
       // AROME 0.01° — prévisions jusqu'à +42h
       mfOverlays['🌬️ Vent AROME']    = _mfWmsLayer(CONFIG.TILES.aromeVent,      tok);
       mfOverlays['💨 Rafales AROME']  = _mfWmsLayer(CONFIG.TILES.aromeRafales,   tok);
