@@ -211,7 +211,6 @@ const CONFIG = {
   // Tokens gratuits : https://portail-api.meteofrance.fr/
   // Chaque API du portail peut avoir son propre token d'abonnement.
   METEO_FRANCE: {
-    token:        null,   // token API AROME (prévisions +42h, runs toutes 3h)
     tokenAromePi: null,   // token API AROME-PI (nowcasting 0–6h, pas 15 min)
     tokenPaArome: null,   // token API PAAROME = Analyse AROME (données d'analyse 0–1h)
     baseUrl: 'https://public-api.meteofrance.fr/public',
