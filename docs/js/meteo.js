@@ -1,6 +1,23 @@
 /**
  * meteo.js — Météo marine via Open-Meteo (Phase 10)
- * Gratuit, sans clé API, données WMO + marine
+ *
+ * Source données chiffrées : Open-Meteo (gratuit, sans clé, JSON)
+ *   → https://open-meteo.com/
+ *
+ * ── Note sur l'API Météo-France (AROME / MFWAM) ──────────────────────────
+ * L'API "Ciblée Modèles" de Météo-France est de type WCS/WMS OGC INSPIRE.
+ * Elle retourne soit :
+ *   - WCS : fichiers binaires GRIB2 → nécessitent eccodes (Python/C),
+ *            non décodables nativement dans un navigateur.
+ *   - WMS : images PNG d'un champ 2D → utilisables comme overlay Leaflet.
+ *
+ * L'intégration des données chiffrées MF (AROME/MFWAM) n'est donc possible
+ * que via un backend proxy (hors scope GitHub Pages).
+ *
+ * En revanche, les overlays cartographiques WMS (champ de vent, houle)
+ * peuvent être ajoutés directement sur la carte Leaflet via carte.js.
+ * Doc API : https://confluence-meteofrance.atlassian.net/wiki/x/AYCVKg
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
 const Meteo = (() => {

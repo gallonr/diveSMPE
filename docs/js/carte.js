@@ -74,6 +74,45 @@ const Carte = (() => {
       opacity:     CONFIG.TILES.litto3d.opacity,
     });
 
+    // ── Overlays WMS Météo-France ────────────────────────────────
+    // Chaque API MF portail a son propre token d'abonnement.
+    // Les tokens sont injectés via secrets.js (gitignore).
+    // Sans token, les couches correspondantes ne sont pas ajoutées.
+    const mfOverlays = {};
+    const cfg_mf = CONFIG.METEO_FRANCE;
+
+    // Fonction helper : construit une couche WMS MF avec le token injecté
+    function _mfWmsLayer(cfg, token) {
+      // L.tileLayer.wms ne supporte pas les headers HTTP — on passe le token
+      // en paramètre de requête (méthode supportée par l'API MF portail).
+      const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
+      const opts = {
+        service:     'WMS',
+        version:     '1.3.0',
+        request:     'GetMap',
+        crs:         'EPSG:4326',
+        layers:      cfg.layer,
+        styles:      cfg.style,
+        format:      cfg.format,
+        transparent: cfg.transparent,
+        attribution: cfg.attribution,
+        opacity:     cfg.opacity,
+      };
+      if (cfg.elevation) opts.elevation = cfg.elevation;
+      return L.tileLayer.wms(url, opts);
+    }
+
+    if (cfg_mf && cfg_mf.tokenPaArome) {
+      mfOverlays['🌬️ Vent PAAROME ⭐']   = _mfWmsLayer(CONFIG.TILES.paAromeVent,    cfg_mf.tokenPaArome);
+      mfOverlays['💨 Rafales PAAROME ⭐'] = _mfWmsLayer(CONFIG.TILES.paAromeRafales, cfg_mf.tokenPaArome);
+    }
+    if (cfg_mf && cfg_mf.tokenAromePi) {
+      // AROME-PI : nowcasting très court terme (0–6h), rafraîchi toutes les heures
+      mfOverlays['🌬️ Vent PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiVent,    cfg_mf.tokenAromePi);
+      mfOverlays['💨 Rafales PI (0–6h)']= _mfWmsLayer(CONFIG.TILES.aromePiRafales, cfg_mf.tokenAromePi);
+      mfOverlays['🌧️ Pluie PI (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   cfg_mf.tokenAromePi);
+    }
+
     // Contrôle des couches
     L.control.layers(
       {
@@ -82,10 +121,13 @@ const Carte = (() => {
         '🌊 ESRI Ocean':   esriOceanGroup,
         '🗾 OpenStreetMap': osm,
       },
-      {
-        'OpenSeaMap ⚓': openSeaMap,
-        '🏔️ Litto3D SHOM': litto3d,
-      },
+      Object.assign(
+        {
+          'OpenSeaMap ⚓':    openSeaMap,
+          '🏔️ Litto3D SHOM': litto3d,
+        },
+        mfOverlays   // vide si pas de token, sinon : Vent, Rafales, Houle MF
+      ),
       { position: 'topright', collapsed: true }
     ).addTo(_map);
 

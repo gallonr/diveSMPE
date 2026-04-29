@@ -8,6 +8,10 @@ currents/
 # --- Données sensibles / générées ---
 fes2022/
 
+# --- Tokens et clés API (ne jamais commiter) ---
+pwa/js/secrets.js
+docs/js/secrets.js
+
 # --- Logs et artefacts générés ---
 data/log_*.txt
 Rplots.pdf
