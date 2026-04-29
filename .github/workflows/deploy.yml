@@ -33,10 +33,6 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Build site (sync pwa → docs)
-        run: |
-          bash sync_docs.sh "build: sync pwa → docs avant injection tokens"
-
       # Injection des tokens Météo-France depuis les GitHub Secrets
       # → Réglage : Settings → Secrets and variables → Actions → New secret
       #   METEOFRANCE_TOKEN_AROMEPI : token API AROME-PI (nowcasting 0–6h)
