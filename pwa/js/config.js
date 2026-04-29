@@ -96,6 +96,31 @@ const CONFIG = {
       opacity:     0.55,
     },
 
+    // ── Analyse AROME (PAAROME) — conditions actuelles ─────────
+    // Données d'analyse (pas de prévision) : échéances 0h et 1h, toutes les heures.
+    // Utile pour comparer conditions actuelles vs prévisions AROME.
+    // Endpoint : MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS (inclus dans abonnement AROME).
+    analyseVent: {
+      wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
+      layer:       'WIND_SPEED__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
+      style:       'WINDV__HEIGHT__SHADING',
+      elevation:   '10',
+      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> Analyse',
+      format:      'image/png',
+      transparent: true,
+      opacity:     0.65,
+    },
+    analyseRafales: {
+      wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
+      layer:       'WIND_SPEED_GUST__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
+      style:       'FF_RAF__HEIGHT__SHADING',
+      elevation:   '10',
+      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> Analyse',
+      format:      'image/png',
+      transparent: true,
+      opacity:     0.65,
+    },
+
     // ── AROME-PI (Prévision Immédiate) ──────────────────────────
     // Modèle de nowcasting : très courtes échéances (0–6h), rafraîchi toutes les heures.
     // Résolution 0.01° (~1 km) — domaine France métropole.
