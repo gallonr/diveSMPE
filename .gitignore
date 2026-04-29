@@ -10,7 +10,7 @@ fes2022/
 
 # --- Tokens et clés API (ne jamais commiter) ---
 pwa/js/secrets.js
-# docs/js/secrets.js est commité comme stub vide — le workflow l'écrase avec les vrais tokens
+docs/js/secrets.js
 
 # --- Logs et artefacts générés ---
 data/log_*.txt
