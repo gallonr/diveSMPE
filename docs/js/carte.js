@@ -75,9 +75,9 @@ const Carte = (() => {
     });
 
     // ── Overlays WMS Météo-France ────────────────────────────────
-    // Chaque API MF portail a son propre token d'abonnement.
-    // Les tokens sont injectés via secrets.js (gitignore).
-    // Sans token, les couches correspondantes ne sont pas ajoutées.
+    // Un seul token couvre AROME + AROME-PI (même abonnement portail MF).
+    // Token injecté via secrets.js (gitignore).
+    // Sans token, les couches ne sont pas ajoutées.
     const mfOverlays = {};
     const cfg_mf = CONFIG.METEO_FRANCE;
 
@@ -100,15 +100,15 @@ const Carte = (() => {
       return L.tileLayer.wms(url, opts);
     }
 
-    if (cfg_mf && cfg_mf.tokenPaArome) {
-      mfOverlays['🌬️ Vent PAAROME ⭐']   = _mfWmsLayer(CONFIG.TILES.paAromeVent,    cfg_mf.tokenPaArome);
-      mfOverlays['💨 Rafales PAAROME ⭐'] = _mfWmsLayer(CONFIG.TILES.paAromeRafales, cfg_mf.tokenPaArome);
-    }
-    if (cfg_mf && cfg_mf.tokenAromePi) {
+    if (cfg_mf && cfg_mf.token) {
+      const tok = cfg_mf.token;
+      // AROME 0.01° — prévisions jusqu'à +42h
+      mfOverlays['🌬️ Vent AROME']    = _mfWmsLayer(CONFIG.TILES.aromeVent,      tok);
+      mfOverlays['💨 Rafales AROME']  = _mfWmsLayer(CONFIG.TILES.aromeRafales,   tok);
       // AROME-PI : nowcasting très court terme (0–6h), rafraîchi toutes les heures
-      mfOverlays['🌬️ Vent PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiVent,    cfg_mf.tokenAromePi);
-      mfOverlays['💨 Rafales PI (0–6h)']= _mfWmsLayer(CONFIG.TILES.aromePiRafales, cfg_mf.tokenAromePi);
-      mfOverlays['🌧️ Pluie PI (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   cfg_mf.tokenAromePi);
+      mfOverlays['🌬️ Vent PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiVent,    tok);
+      mfOverlays['💨 Rafales PI (0–6h)']= _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
+      mfOverlays['🌧️ Pluie PI (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   tok);
     }
 
     // Contrôle des couches
