@@ -32,19 +32,27 @@ jobs:
       - name: Injecter les tokens Météo-France
         run: |
           echo "// secrets.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > docs/js/secrets.js
-          if [ -n "${{ secrets.METEOFRANCE_TOKEN_PAAROME }}" ]; then
-            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${{ secrets.METEOFRANCE_TOKEN_PAAROME }}';" >> docs/js/secrets.js
+          # Support ancien secret METEOFRANCE_TOKEN (token unique couvrant AROME + AROME-PI)
+          TOKEN_LEGACY="${{ secrets.METEOFRANCE_TOKEN }}"
+          TOKEN_PAAROME="${{ secrets.METEOFRANCE_TOKEN_PAAROME }}"
+          TOKEN_AROMEPI="${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}"
+          # Utiliser les tokens spécifiques, ou le token legacy en fallback
+          TOK_PA="${TOKEN_PAAROME:-$TOKEN_LEGACY}"
+          TOK_PI="${TOKEN_AROMEPI:-$TOKEN_LEGACY}"
+          if [ -n "$TOK_PA" ]; then
+            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${TOK_PA}';" >> docs/js/secrets.js
             echo "✅ Token PAAROME injecté" >&2
           else
-            echo "⚠️ Secret METEOFRANCE_TOKEN_PAAROME absent ou vide" >&2
+            echo "⚠️ Aucun token PAAROME disponible (METEOFRANCE_TOKEN_PAAROME et METEOFRANCE_TOKEN absents)" >&2
           fi
-          if [ -n "${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}" ]; then
-            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}';" >> docs/js/secrets.js
+          if [ -n "$TOK_PI" ]; then
+            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${TOK_PI}';" >> docs/js/secrets.js
             echo "✅ Token AROME-PI injecté" >&2
           else
-            echo "⚠️ Secret METEOFRANCE_TOKEN_AROMEPI absent ou vide" >&2
+            echo "⚠️ Aucun token AROME-PI disponible (METEOFRANCE_TOKEN_AROMEPI et METEOFRANCE_TOKEN absents)" >&2
           fi
-          echo "📄 Contenu secrets.js généré ($(wc -l < docs/js/secrets.js) lignes)" >&2
+          echo "📄 secrets.js final :" >&2
+          cat docs/js/secrets.js | sed 's/eyJ[^'\''"]*/[TOKEN_MASQUÉ]/g' >&2
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
