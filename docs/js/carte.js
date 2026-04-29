@@ -80,6 +80,7 @@ const Carte = (() => {
     // Sans token, les couches ne sont pas ajoutées.
     const mfOverlays = {};
     const cfg_mf = CONFIG.METEO_FRANCE;
+    console.log('[MF] config:', cfg_mf ? `tokenPaArome=${!!cfg_mf.tokenPaArome}, tokenAromePi=${!!cfg_mf.tokenAromePi}` : 'null');
 
     // Fonction helper : construit une couche WMS MF.
     // Le token est passé en query param (apikey=...).
@@ -125,6 +126,7 @@ const Carte = (() => {
 
     if (cfg_mf && cfg_mf.tokenPaArome) {
       const tok = cfg_mf.tokenPaArome;
+      console.log('[MF] tokenPaArome présent, ajout overlays AROME + PAAROME');
       // AROME standard — prévisions toutes les 3h, horizon +42h
       mfOverlays['🌬️ Vent AROME (prévision)']    = _mfWmsLayer(CONFIG.TILES.aromeVent,     tok);
       mfOverlays['💨 Rafales AROME (prévision)'] = _mfWmsLayer(CONFIG.TILES.aromeRafales,  tok);
@@ -134,6 +136,7 @@ const Carte = (() => {
     }
     if (cfg_mf && cfg_mf.tokenAromePi) {
       const tok = cfg_mf.tokenAromePi;
+      console.log('[MF] tokenAromePi présent, ajout overlays AROME-PI');
       // AROME-PI : nowcasting 0–360 min par pas de 15 min
       mfOverlays['🌬️ Vent PI (0–6h)']    = _mfWmsLayer(CONFIG.TILES.aromePiVent,     tok);
       mfOverlays['💨 Rafales PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiRafales,  tok);
