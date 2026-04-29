@@ -97,8 +97,8 @@ const CONFIG = {
     },
 
     // ── Analyse AROME (PAAROME) — conditions actuelles ─────────
-    // Données d'analyse (pas de prévision) : échéances 0h et 1h, toutes les heures.
-    // Utile pour comparer conditions actuelles vs prévisions AROME.
+    // Données d'analyse (pas de prévision) : runs toutes les heures, délai de publication ~3h.
+    // Utile pour les conditions actuelles (données assimilées, pas de prévision).
     // Endpoint : MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS (token PAAROME distinct).
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
