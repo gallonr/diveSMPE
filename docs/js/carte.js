@@ -89,8 +89,6 @@ const Carte = (() => {
       const opts = {
         service:     'WMS',
         version:     '1.3.0',
-        request:     'GetMap',
-        crs:         'EPSG:4326',
         layers:      cfg.layer,
         styles:      cfg.style,
         format:      cfg.format,
