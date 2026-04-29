@@ -99,7 +99,7 @@ const CONFIG = {
     // ── Analyse AROME (PAAROME) — conditions actuelles ─────────
     // Données d'analyse (pas de prévision) : échéances 0h et 1h, toutes les heures.
     // Utile pour comparer conditions actuelles vs prévisions AROME.
-    // Endpoint : MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS (inclus dans abonnement AROME).
+    // Endpoint : MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS (token PAAROME distinct).
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
       layer:       'WIND_SPEED__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
@@ -109,6 +109,7 @@ const CONFIG = {
       format:      'image/png',
       transparent: true,
       opacity:     0.65,
+      timeMode:    'analyse',  // échéances 0h/1h — arrondi à l'heure courante UTC
     },
     analyseRafales: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
@@ -119,6 +120,7 @@ const CONFIG = {
       format:      'image/png',
       transparent: true,
       opacity:     0.65,
+      timeMode:    'analyse',  // échéances 0h/1h — arrondi à l'heure courante UTC
     },
 
     // ── AROME-PI (Prévision Immédiate) ──────────────────────────
@@ -134,6 +136,7 @@ const CONFIG = {
       format:      'image/png',
       transparent: true,
       opacity:     0.55,
+      timeStep:    15,   // minutes — pas de 15 min (0–360 min)
     },
     aromePiRafales: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
@@ -144,6 +147,7 @@ const CONFIG = {
       format:      'image/png',
       transparent: true,
       opacity:     0.55,
+      timeStep:    15,   // minutes
     },
     aromePiPluie: {
       // Précipitations cumulées sur 1h — utile pour la visibilité en surface
@@ -155,6 +159,7 @@ const CONFIG = {
       format:      'image/png',
       transparent: true,
       opacity:     0.60,
+      timeStep:    15,   // minutes
     },
   },
 
@@ -206,7 +211,9 @@ const CONFIG = {
   // Tokens gratuits : https://portail-api.meteofrance.fr/
   // Chaque API du portail peut avoir son propre token d'abonnement.
   METEO_FRANCE: {
-    token: null,          // token portail MF — couvre AROME + AROME-PI (même abonnement)
+    token:        null,   // token API AROME (prévisions +42h, runs toutes 3h)
+    tokenAromePi: null,   // token API AROME-PI (nowcasting 0–6h, pas 15 min)
+    tokenPaArome: null,   // token API PAAROME = Analyse AROME (données d'analyse 0–1h)
     baseUrl: 'https://public-api.meteofrance.fr/public',
     timeout: 7000,
   },
