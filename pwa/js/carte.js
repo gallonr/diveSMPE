@@ -122,6 +122,7 @@ const Carte = (() => {
         opacity:     cfg.opacity,
         time:        timeStr,
         tileSize:    512,    // tuiles 512px → 4× moins de requêtes (quota 50/min)
+        crs:         L.CRS.EPSG4326,  // MF n'accepte que EPSG:4326
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
       return L.tileLayer.wms(url, opts);
