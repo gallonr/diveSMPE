@@ -102,8 +102,8 @@ const CONFIG = {
     // Endpoint : MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS (token PAAROME distinct).
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       'WINDV__HEIGHT__SHADING',
+      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // direction + force (vérifié curl 200)
+      style:       'WIND__HEIGHT__BARBULES',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> Analyse',
       format:      'image/png',

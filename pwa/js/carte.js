@@ -81,64 +81,79 @@ const Carte = (() => {
     const mfOverlays = {};
     const cfg_mf = CONFIG.METEO_FRANCE;
 
-    // Fonction helper : construit une couche WMS MF avec le token injecté
+    // Fonction helper : construit une couche WMS MF avec le token en header HTTP.
+    // MF n'accepte pas le token en query param — on override createTile pour
+    // passer par fetch() avec { headers: { apikey: token } }.
     function _mfWmsLayer(cfg, token) {
-      // L.tileLayer.wms ne supporte pas les headers HTTP — on passe le token
-      // en paramètre de requête (méthode supportée par l'API MF portail).
-      const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
-      // Le WMS MF exige un paramètre TIME (ISO 8601 UTC).
-      // 3 modes selon le service :
-      //  - 'analyse'  : PAAROME — échéances 0h/1h, arrondi à l'heure courante UTC
-      //  - timeStep<60: AROME-PI — pas de 15 min, arrondi au quart d'heure passé
-      //  - défaut     : AROME — runs toutes 3h, arrondi au dernier run publié (-2h)
       const now = new Date();
       let timeStr;
       if (cfg.timeMode === 'analyse') {
-        // Analyse PAAROME : délai de publication ~2–3h (assimilation obs + calcul)
-        // → on recule de 3h pour pointer sur une analyse disponible.
+        // PAAROME : délai de publication ~2–3h → on recule de 3h
         const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() - 3));
         timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
       } else if (cfg.timeStep && cfg.timeStep < 60) {
-        // AROME-PI : arrondi au step de 15 min le plus récent
+        // AROME-PI : arrondi au pas de 15 min le plus récent
         const totalMin = now.getUTCHours() * 60 + now.getUTCMinutes();
         const roundedMin = Math.floor(totalMin / cfg.timeStep) * cfg.timeStep;
         const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
                                     Math.floor(roundedMin / 60), roundedMin % 60));
         timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
       } else {
-        // AROME : run toutes les 3h, avec 2h de marge de publication
+        // AROME : run toutes les 3h, marge de publication -2h
         const runH = Math.max(Math.floor((now.getUTCHours() - 2) / 3) * 3, 0);
         const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), runH));
         timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
       }
+
+      const MFWmsLayer = L.TileLayer.WMS.extend({
+        createTile(coords, done) {
+          const url = this.getTileUrl(coords);
+          const img = document.createElement('img');
+          img.crossOrigin = 'anonymous';
+          fetch(url, { headers: { apikey: token } })
+            .then(r => r.blob())
+            .then(blob => {
+              const src = URL.createObjectURL(blob);
+              img.onload = () => { URL.revokeObjectURL(src); done(null, img); };
+              img.onerror = e => done(e);
+              img.src = src;
+            })
+            .catch(e => done(e));
+          return img;
+        }
+      });
+
       const opts = {
         service:     'WMS',
         version:     '1.3.0',
         layers:      cfg.layer,
-        styles:      cfg.style,
+        styles:      cfg.style || '',
         format:      cfg.format,
         transparent: cfg.transparent,
         attribution: cfg.attribution,
         opacity:     cfg.opacity,
         time:        timeStr,
-        tileSize:    512,    // tuiles 512px → 4× moins de requêtes (quota 50/min)
-        crs:         L.CRS.EPSG4326,  // MF n'accepte que EPSG:4326
+        tileSize:    512,
+        crs:         L.CRS.EPSG4326,
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
-      return L.tileLayer.wms(url, opts);
+      return new MFWmsLayer(cfg.wmsUrl, opts);
     }
 
     if (cfg_mf && cfg_mf.tokenPaArome) {
       const tok = cfg_mf.tokenPaArome;
-      // Analyse AROME (PAAROME) — conditions actuelles (échéances 0h et 1h)
-      mfOverlays['🔵 Vent actuel (analyse)']       = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
-      mfOverlays['🔵 Rafales actuelles (analyse)'] = _mfWmsLayer(CONFIG.TILES.analyseRafales, tok);
+      // AROME standard — prévisions toutes les 3h, horizon +42h
+      mfOverlays['💨 Vent AROME (prévision)']    = _mfWmsLayer(CONFIG.TILES.aromeVent,     tok);
+      mfOverlays['💨 Rafales AROME (prévision)'] = _mfWmsLayer(CONFIG.TILES.aromeRafales,  tok);
+      // PAAROME désactivé — nécessite souscription séparée sur portail-api.meteofrance.fr
+      // À réactiver quand METEOFRANCE_TOKEN_PAAROME inclura "PAAROME" dans subscribedAPIs.
     }
     if (cfg_mf && cfg_mf.tokenAromePi) {
       const tok = cfg_mf.tokenAromePi;
       // AROME-PI : nowcasting 0–360 min par pas de 15 min
-      mfOverlays['💨 Rafales PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
-      mfOverlays['🌧️ Pluie PI (0–6h)']   = _mfWmsLayer(CONFIG.TILES.aromePiPluie,   tok);
+      mfOverlays['🌬️ Vent PI (0–6h)']    = _mfWmsLayer(CONFIG.TILES.aromePiVent,     tok);
+      mfOverlays['💨 Rafales PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiRafales,  tok);
+      mfOverlays['🌧️ Pluie PI (0–6h)']   = _mfWmsLayer(CONFIG.TILES.aromePiPluie,    tok);
     }
 
     // Contrôle des couches
