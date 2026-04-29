@@ -94,8 +94,9 @@ const Carte = (() => {
       const now = new Date();
       let timeStr;
       if (cfg.timeMode === 'analyse') {
-        // Analyse : heure courante arrondie à l'heure passée
-        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours()));
+        // Analyse PAAROME : délai de publication ~1–2h → on recule d'1 heure
+        // pour pointer sur une analyse déjà disponible.
+        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours() - 1));
         timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
       } else if (cfg.timeStep && cfg.timeStep < 60) {
         // AROME-PI : arrondi au step de 15 min le plus récent
