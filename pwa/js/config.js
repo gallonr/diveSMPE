@@ -77,13 +77,13 @@ const CONFIG = {
     // AROME 0.01° — prévisions jusqu'à +42h
     aromeVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-AROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       'WINDV__HEIGHT__SHADING',
+      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // vecteur vent : direction + force
+      style:       'WINDV__HEIGHT__BARBULES',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME',
       format:      'image/png',
       transparent: true,
-      opacity:     0.55,
+      opacity:     0.75,
     },
     aromeRafales: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-AROME-001-FRANCE-WMS/GetMap',
@@ -103,7 +103,7 @@ const CONFIG = {
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
       layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // direction + force (vérifié curl 200)
-      style:       'WIND__HEIGHT__BARBULES',
+      style:       'WINDV__HEIGHT__BARBULES',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> Analyse',
       format:      'image/png',
@@ -129,13 +129,13 @@ const CONFIG = {
     // Même token que AROME.
     aromePiVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       'WINDV__HEIGHT__SHADING',
+      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // vecteur vent : direction + force
+      style:       'WINDV__HEIGHT__BARBULES',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME-PI',
       format:      'image/png',
       transparent: true,
-      opacity:     0.55,
+      opacity:     0.75,
       timeStep:    15,   // minutes — pas de 15 min (0–360 min)
     },
     aromePiRafales: {

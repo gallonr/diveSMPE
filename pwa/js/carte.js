@@ -143,10 +143,11 @@ const Carte = (() => {
     if (cfg_mf && cfg_mf.tokenPaArome) {
       const tok = cfg_mf.tokenPaArome;
       // AROME standard — prévisions toutes les 3h, horizon +42h
-      mfOverlays['💨 Vent AROME (prévision)']    = _mfWmsLayer(CONFIG.TILES.aromeVent,     tok);
+      mfOverlays['🌬️ Vent AROME (prévision)']    = _mfWmsLayer(CONFIG.TILES.aromeVent,     tok);
       mfOverlays['💨 Rafales AROME (prévision)'] = _mfWmsLayer(CONFIG.TILES.aromeRafales,  tok);
-      // PAAROME désactivé — nécessite souscription séparée sur portail-api.meteofrance.fr
-      // À réactiver quand METEOFRANCE_TOKEN_PAAROME inclura "PAAROME" dans subscribedAPIs.
+      // PAAROME — analyse conditions actuelles (échéances 0h/1h)
+      mfOverlays['🔵 Vent actuel (analyse)']      = _mfWmsLayer(CONFIG.TILES.analyseVent,   tok);
+      mfOverlays['🔵 Rafales actuelles (analyse)']= _mfWmsLayer(CONFIG.TILES.analyseRafales,tok);
     }
     if (cfg_mf && cfg_mf.tokenAromePi) {
       const tok = cfg_mf.tokenAromePi;
