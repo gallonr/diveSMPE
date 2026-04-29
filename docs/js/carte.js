@@ -132,12 +132,6 @@ const Carte = (() => {
       mfOverlays['🔵 Vent actuel (analyse)']       = _mfWmsLayer(CONFIG.TILES.analyseVent,    tok);
       mfOverlays['🔵 Rafales actuelles (analyse)'] = _mfWmsLayer(CONFIG.TILES.analyseRafales, tok);
     }
-    if (cfg_mf && cfg_mf.token) {
-      const tok = cfg_mf.token;
-      // AROME 0.01° — prévisions jusqu'à +42h
-      mfOverlays['🌬️ Vent AROME (+42h)']   = _mfWmsLayer(CONFIG.TILES.aromeVent,    tok);
-      mfOverlays['💨 Rafales AROME (+42h)'] = _mfWmsLayer(CONFIG.TILES.aromeRafales, tok);
-    }
     if (cfg_mf && cfg_mf.tokenAromePi) {
       const tok = cfg_mf.tokenAromePi;
       // AROME-PI : nowcasting 0–360 min par pas de 15 min
