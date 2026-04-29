@@ -6,7 +6,7 @@
 
 // ── Configuration ─────────────────────────────────────────────
 const DEBUG   = false;          // Passer à true pour les logs en développement
-const VERSION = 'v9';
+const VERSION = 'v10';
 
 const CACHE_STATIC  = `smpe-static-${VERSION}`;
 const CACHE_DYNAMIC = `smpe-dynamic-${VERSION}`;
