@@ -87,10 +87,13 @@ const Carte = (() => {
       // en paramètre de requête (méthode supportée par l'API MF portail).
       const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
       // Le WMS MF exige un paramètre TIME (ISO 8601 UTC arrondi à l'heure).
-      // On prend l'heure courante, arrondie au passé.
+      // AROME : runs toutes les 3h (00, 03, 06, 09, 12, 15, 18, 21 UTC).
+      // On prend le run de 3h le plus récent, avec 2h de marge de publication.
       const now = new Date();
-      now.setMinutes(0, 0, 0);
-      const timeStr = now.toISOString().replace(/\.\d{3}Z$/, 'Z'); // ex: 2026-04-29T14:00:00Z
+      const utcH = now.getUTCHours();
+      const runH = Math.floor((utcH - 2) / 3) * 3; // -2h marge de publication
+      const runDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), Math.max(runH, 0)));
+      const timeStr = runDate.toISOString().replace(/\.\d{3}Z$/, 'Z'); // ex: 2026-04-29T15:00:00Z
       const opts = {
         service:     'WMS',
         version:     '1.3.0',
