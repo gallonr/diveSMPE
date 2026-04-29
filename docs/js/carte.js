@@ -86,6 +86,11 @@ const Carte = (() => {
       // L.tileLayer.wms ne supporte pas les headers HTTP — on passe le token
       // en paramètre de requête (méthode supportée par l'API MF portail).
       const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
+      // Le WMS MF exige un paramètre TIME (ISO 8601 UTC arrondi à l'heure).
+      // On prend l'heure courante, arrondie au passé.
+      const now = new Date();
+      now.setMinutes(0, 0, 0);
+      const timeStr = now.toISOString().replace(/\.\d{3}Z$/, 'Z'); // ex: 2026-04-29T14:00:00Z
       const opts = {
         service:     'WMS',
         version:     '1.3.0',
@@ -95,6 +100,7 @@ const Carte = (() => {
         transparent: cfg.transparent,
         attribution: cfg.attribution,
         opacity:     cfg.opacity,
+        time:        timeStr,
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
       return L.tileLayer.wms(url, opts);
