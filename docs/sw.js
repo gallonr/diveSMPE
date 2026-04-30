@@ -29,7 +29,6 @@ const ASSETS_STATIQUES = [
   BASE + 'manifest.json',
   BASE + 'css/style.css',
   BASE + 'js/config.js',
-  BASE + 'js/secrets.js',
   BASE + 'js/marees.js',
   BASE + 'js/mareesite.js',
   BASE + 'js/bathy.js',
