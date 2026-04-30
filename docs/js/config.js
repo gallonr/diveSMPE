@@ -68,98 +68,35 @@ const CONFIG = {
       opacity:     0.7,
     },
 
-    // ── Overlays WMS Météo-France (AROME / AROME-PI) ───────────
+    // ── Overlays WMS Météo-France ───────────────────────────────
     // Token requis : CONFIG.METEO_FRANCE.token (injecté via secrets.js)
-    // Abonnements couverts : API "AROME" + API "AROME-PI" (même token).
     // L'API WMS retourne des images PNG d'un champ 2D → overlay Leaflet.
     // ⚠️  Visible dans les DevTools (réseau) — acceptable pour usage associatif.
-    // Doc : https://confluence-meteofrance.atlassian.net/wiki/x/AYCVKg
-    // AROME 0.01° — prévisions jusqu'à +42h
-    aromeVent: {
-      wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-AROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // vecteur vent : direction + force
-      style:       'WINDV__HEIGHT__BARBULES',
-      elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.75,
-    },
-    aromeRafales: {
-      wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-AROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED_GUST__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       'FF_RAF__HEIGHT__SHADING',
-      elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.55,
-    },
 
-    // ── Analyse AROME (PAAROME) — conditions actuelles ─────────
-    // Données d'analyse (pas de prévision) : runs toutes les heures, délai de publication ~3h.
-    // Utile pour les conditions actuelles (données assimilées, pas de prévision).
-    // Endpoint : MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS (token PAAROME distinct).
+    // PAAROME — analyse conditions actuelles (assimilation, délai ~3h)
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // direction + force (vérifié curl 200)
+      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
       style:       'WINDV__HEIGHT__BARBULES',
       elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> Analyse',
+      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> PAAROME',
       format:      'image/png',
       transparent: true,
       opacity:     0.65,
-      timeMode:    'analyse',  // échéances 0h/1h — arrondi à l'heure courante UTC
-    },
-    analyseRafales: {
-      wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED_GUST__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       'FF_RAF__HEIGHT__SHADING',
-      elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> Analyse',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.65,
-      timeMode:    'analyse',  // échéances 0h/1h — arrondi à l'heure courante UTC
+      timeMode:    'analyse',
     },
 
-    // ── AROME-PI (Prévision Immédiate) ──────────────────────────
-    // Modèle de nowcasting : très courtes échéances (0–6h), rafraîchi toutes les heures.
-    // Résolution 0.01° (~1 km) — domaine France métropole.
-    // Même token que AROME.
-    aromePiVent: {
-      wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
-      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',  // vecteur vent : direction + force
-      style:       'WINDV__HEIGHT__BARBULES',
-      elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME-PI',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.75,
-      timeStep:    15,   // minutes — pas de 15 min (0–360 min)
-    },
+    // AROME-PI — rafales 15 min, nowcasting 0–6h
     aromePiRafales: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED_GUST__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
+      layer:       'WIND_GUST_15MIN__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
       style:       'FF_RAF__HEIGHT__SHADING',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME-PI',
       format:      'image/png',
       transparent: true,
       opacity:     0.55,
-      timeStep:    15,   // minutes
-    },
-    aromePiPluie: {
-      // Précipitations cumulées sur 1h — utile pour la visibilité en surface
-      wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
-      layer:       'TOTAL_WATER_PRECIPITATION__GROUND_OR_WATER_SURFACE',
-      style:       'PRECIP__GOR__SHADING',
-      elevation:   null,
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME-PI',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.60,
-      timeStep:    15,   // minutes
+      timeStep:    15,
     },
   },
 
