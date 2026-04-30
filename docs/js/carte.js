@@ -75,22 +75,11 @@ const Carte = (() => {
     });
 
     // ── Overlays WMS Météo-France ────────────────────────────────
-    // Un seul token couvre AROME + AROME-PI (même abonnement portail MF).
-    // Token injecté via secrets.js (gitignore).
+    // Tokens injectés par la pipeline GitHub Actions via docs/js/secrets.js.
     // Sans token, les couches ne sont pas ajoutées.
     const mfOverlays = {};
     const cfg_mf = CONFIG.METEO_FRANCE;
-    // Afficher à la fois la présence des valeurs de token et les drapeaux
-    // injectés par la pipeline de déploiement (haveToken...) pour faciliter
-    // le débogage quand les overlays WMS Météo-France ne s'affichent pas.
-    console.log('[MF] config:', cfg_mf ? `tokenPaArome=${!!cfg_mf.tokenPaArome}, tokenAromePi=${!!cfg_mf.tokenAromePi}, haveTokenPaArome=${!!cfg_mf.haveTokenPaArome}, haveTokenAromePi=${!!cfg_mf.haveTokenAromePi}` : 'null');
-
-    // Si la pipeline a indiqué la présence d'un token (haveToken*) mais que
-    // la valeur réelle du token n'est pas disponible en runtime (fichier
-    // secrets.js non fourni), prévenir explicitement dans la console.
-    if (cfg_mf && (cfg_mf.haveTokenPaArome || cfg_mf.haveTokenAromePi) && !cfg_mf.tokenPaArome && !cfg_mf.tokenAromePi) {
-      console.warn('[MF] Déploiement indique un token présent (haveToken* = true) mais aucune valeur de token n\'a été chargée en runtime.\n  - Pour tester localement : copiez `pwa/js/secrets.js.example` → `pwa/js/secrets.js` et renseignez CONFIG.METEO_FRANCE.tokenPaArome / tokenAromePi.\n  - Sur GitHub Pages : la pipeline n\'écrit pas les valeurs des secrets dans les fichiers publics; utilisez un proxy serveur ou une solution serveur pour injecter le token côté serveur.');
-    }
+    console.log('[MF] tokenPaArome:', !!cfg_mf?.tokenPaArome, '/ tokenAromePi:', !!cfg_mf?.tokenAromePi);
 
     // Fonction helper : construit une couche WMS MF.
     // Le token est passé en query param (apikey=...).
