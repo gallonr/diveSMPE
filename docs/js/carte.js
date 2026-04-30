@@ -80,7 +80,17 @@ const Carte = (() => {
     // Sans token, les couches ne sont pas ajoutées.
     const mfOverlays = {};
     const cfg_mf = CONFIG.METEO_FRANCE;
-    console.log('[MF] config:', cfg_mf ? `tokenPaArome=${!!cfg_mf.tokenPaArome}, tokenAromePi=${!!cfg_mf.tokenAromePi}` : 'null');
+    // Afficher à la fois la présence des valeurs de token et les drapeaux
+    // injectés par la pipeline de déploiement (haveToken...) pour faciliter
+    // le débogage quand les overlays WMS Météo-France ne s'affichent pas.
+    console.log('[MF] config:', cfg_mf ? `tokenPaArome=${!!cfg_mf.tokenPaArome}, tokenAromePi=${!!cfg_mf.tokenAromePi}, haveTokenPaArome=${!!cfg_mf.haveTokenPaArome}, haveTokenAromePi=${!!cfg_mf.haveTokenAromePi}` : 'null');
+
+    // Si la pipeline a indiqué la présence d'un token (haveToken*) mais que
+    // la valeur réelle du token n'est pas disponible en runtime (fichier
+    // secrets.js non fourni), prévenir explicitement dans la console.
+    if (cfg_mf && (cfg_mf.haveTokenPaArome || cfg_mf.haveTokenAromePi) && !cfg_mf.tokenPaArome && !cfg_mf.tokenAromePi) {
+      console.warn('[MF] Déploiement indique un token présent (haveToken* = true) mais aucune valeur de token n\'a été chargée en runtime.\n  - Pour tester localement : copiez `pwa/js/secrets.js.example` → `pwa/js/secrets.js` et renseignez CONFIG.METEO_FRANCE.tokenPaArome / tokenAromePi.\n  - Sur GitHub Pages : la pipeline n\'écrit pas les valeurs des secrets dans les fichiers publics; utilisez un proxy serveur ou une solution serveur pour injecter le token côté serveur.');
+    }
 
     // Fonction helper : construit une couche WMS MF.
     // Le token est passé en query param (apikey=...).
@@ -126,21 +136,13 @@ const Carte = (() => {
 
     if (cfg_mf && cfg_mf.tokenPaArome) {
       const tok = cfg_mf.tokenPaArome;
-      console.log('[MF] tokenPaArome présent, ajout overlays AROME + PAAROME');
-      // AROME standard — prévisions toutes les 3h, horizon +42h
-      mfOverlays['🌬️ Vent AROME (prévision)']    = _mfWmsLayer(CONFIG.TILES.aromeVent,     tok);
-      mfOverlays['💨 Rafales AROME (prévision)'] = _mfWmsLayer(CONFIG.TILES.aromeRafales,  tok);
-      // PAAROME — analyse conditions actuelles (échéances 0h/1h)
-      mfOverlays['🔵 Vent actuel (analyse)']      = _mfWmsLayer(CONFIG.TILES.analyseVent,   tok);
-      mfOverlays['🔵 Rafales actuelles (analyse)']= _mfWmsLayer(CONFIG.TILES.analyseRafales,tok);
+      console.log('[MF] tokenPaArome présent, ajout overlay PAAROME');
+      mfOverlays['🔵 Vent actuel (PAAROME)'] = _mfWmsLayer(CONFIG.TILES.analyseVent, tok);
     }
     if (cfg_mf && cfg_mf.tokenAromePi) {
       const tok = cfg_mf.tokenAromePi;
-      console.log('[MF] tokenAromePi présent, ajout overlays AROME-PI');
-      // AROME-PI : nowcasting 0–360 min par pas de 15 min
-      mfOverlays['🌬️ Vent PI (0–6h)']    = _mfWmsLayer(CONFIG.TILES.aromePiVent,     tok);
-      mfOverlays['💨 Rafales PI (0–6h)']  = _mfWmsLayer(CONFIG.TILES.aromePiRafales,  tok);
-      mfOverlays['🌧️ Pluie PI (0–6h)']   = _mfWmsLayer(CONFIG.TILES.aromePiPluie,    tok);
+      console.log('[MF] tokenAromePi présent, ajout overlay AROME-PI');
+      mfOverlays['💨 Rafales PI 15min (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
     }
 
     // Contrôle des couches
