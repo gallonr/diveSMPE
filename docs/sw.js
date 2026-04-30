@@ -6,7 +6,7 @@
 
 // ── Configuration ─────────────────────────────────────────────
 const DEBUG   = false;          // Passer à true pour les logs en développement
-const VERSION = 'v10';
+const VERSION = 'v11';
 
 const CACHE_STATIC  = `smpe-static-${VERSION}`;
 const CACHE_DYNAMIC = `smpe-dynamic-${VERSION}`;
@@ -18,31 +18,36 @@ const CACHE_DYNAMIC_MAX_ENTRIES = 300;  // Limite du cache des tuiles
 const log  = (...args) => DEBUG && console.log('[SW]', ...args);
 const warn = (...args) => console.warn('[SW]', ...args);
 
+// Base URL du scope (ex: https://gallonr.github.io/diveSMPE/)
+// Résolu dynamiquement pour fonctionner en sous-répertoire GitHub Pages ou à la racine.
+const BASE = self.registration.scope;
+
 // ── Assets à mettre en cache à l'installation ─────────────────
 const ASSETS_STATIQUES = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/css/style.css',
-  '/js/config.js',
-  '/js/marees.js',
-  '/js/mareesite.js',
-  '/js/bathy.js',
-  '/js/carte.js',
-  '/js/sites.js',
-  '/js/navigation.js',
-  '/js/meteo.js',
-  '/js/auth.js',
-  '/js/app.js',
-  '/data/sites.geojson',
-  '/data/marees.json',
-  '/data/bathy_sites.json',
-  '/libs/leaflet/leaflet.css',
-  '/libs/leaflet/leaflet.js',
-  '/libs/turf/turf.min.js',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/logo-smpe.png',
+  BASE,
+  BASE + 'index.html',
+  BASE + 'manifest.json',
+  BASE + 'css/style.css',
+  BASE + 'js/config.js',
+  BASE + 'js/secrets.js',
+  BASE + 'js/marees.js',
+  BASE + 'js/mareesite.js',
+  BASE + 'js/bathy.js',
+  BASE + 'js/carte.js',
+  BASE + 'js/sites.js',
+  BASE + 'js/navigation.js',
+  BASE + 'js/meteo.js',
+  BASE + 'js/auth.js',
+  BASE + 'js/app.js',
+  BASE + 'data/sites.geojson',
+  BASE + 'data/marees.json',
+  BASE + 'data/bathy_sites.json',
+  BASE + 'libs/leaflet/leaflet.css',
+  BASE + 'libs/leaflet/leaflet.js',
+  BASE + 'libs/turf/turf.min.js',
+  BASE + 'icons/icon-192.png',
+  BASE + 'icons/icon-512.png',
+  BASE + 'icons/logo-smpe.png',
 ];
 
 // ── Installation : mise en cache des assets statiques ─────────
