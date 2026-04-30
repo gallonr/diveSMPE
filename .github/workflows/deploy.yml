@@ -44,16 +44,22 @@ jobs:
           PA="${{ secrets.METEOFRANCE_TOKEN_PAAROME }}"
           PI="${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}"
           LEGACY="${{ secrets.METEOFRANCE_TOKEN }}"
-          # Fallback sur le token legacy si les tokens spécifiques ne sont pas définis
-          [ -z "$PA" ] && PA="$LEGACY"
-          [ -z "$PI" ] && PI="$LEGACY"
-          {
-            echo "// secrets.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            [ -n "$PA" ] && echo "CONFIG.METEO_FRANCE.tokenPaArome = '${PA}';"
-            [ -n "$PI" ] && echo "CONFIG.METEO_FRANCE.tokenAromePi = '${PI}';"
-          } > docs/js/secrets.js
-          echo "✅ tokenPaArome injecté: $([ -n "$PA" ] && echo oui || echo non)"
-          echo "✅ tokenAromePi injecté: $([ -n "$PI" ] && echo oui || echo non)"
+          # Fallback sur le token legacy (parameter expansion — pas de [ ] && pour éviter set -e)
+          PA="${PA:-$LEGACY}"
+          PI="${PI:-$LEGACY}"
+          # Écriture ligne par ligne (évite tout problème avec les {  } + set -e)
+          echo "// secrets.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > docs/js/secrets.js
+          if [ -n "$PA" ]; then
+            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${PA}';" >> docs/js/secrets.js
+          fi
+          if [ -n "$PI" ]; then
+            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${PI}';" >> docs/js/secrets.js
+          fi
+          # Vérification : nombre de lignes et en-tête (sans exposer les valeurs)
+          echo "secrets.js — $(wc -l < docs/js/secrets.js) ligne(s)"
+          head -1 docs/js/secrets.js
+          echo "✅ tokenPaArome injecté: $(if [ -n "$PA" ]; then echo oui; else echo non; fi)"
+          echo "✅ tokenAromePi injecté: $(if [ -n "$PI" ]; then echo oui; else echo non; fi)"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
