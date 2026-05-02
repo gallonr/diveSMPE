@@ -29,17 +29,16 @@ jobs:
         uses: actions/configure-pages@v4
 
       # Injection de la clé OpenWeatherMap depuis les GitHub Secrets
-      # → Settings → Secrets and variables → Actions → New repository secret
-      #   OWM_API_KEY : clé gratuite https://openweathermap.org/api
+      # → Settings → Secrets and variables → Actions → Secret : OWM
       - name: Injecter la clé OpenWeatherMap
         run: |
-          OWM="${{ secrets.OWM_API_KEY }}"
+          OWM="${{ secrets.OWM }}"
           echo "// tokens.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > docs/js/tokens.js
           if [ -n "$OWM" ]; then
             echo "CONFIG.OWM.apiKey = '${OWM}';" >> docs/js/tokens.js
-            echo "✅ OWM_API_KEY injectée"
+            echo "✅ OWM injectée"
           else
-            echo "⚠️  OWM_API_KEY non défini — overlays météo désactivés"
+            echo "⚠️  Secret OWM non défini — overlays météo désactivés"
           fi
           git add -f docs/js/tokens.js
 
