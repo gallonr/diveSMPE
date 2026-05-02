@@ -25,11 +25,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure git identity
-        run: |
-          git config --global user.email "actions@github.com"
-          git config --global user.name "GitHub Actions"
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
@@ -37,34 +32,32 @@ jobs:
       # → Settings → Secrets and variables → Actions → New repository secret
       #   METEOFRANCE_TOKEN_PAAROME : token API PAAROME (analyse, conditions actuelles)
       #   METEOFRANCE_TOKEN_AROMEPI : token API AROME-PI (nowcasting 0–6h, pas 15 min)
-      # tokens.js n'est pas tracké dans git — créé from scratch ici, jamais de stub déployé.
-      # (fichier public GitHub Pages) — acceptable pour usage associatif (visible DevTools de toute façon).
-      - name: Injecter les tokens Météo-France
+      # docs/ est copié dans /tmp/pages/ (hors dépôt git) avant injection,
+      # car upload-pages-artifact n'embarque que les fichiers du git index.
+      - name: Préparer et injecter les tokens Météo-France
         run: |
+          cp -r docs/ /tmp/pages/
           PA="${{ secrets.METEOFRANCE_TOKEN_PAAROME }}"
           PI="${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}"
           LEGACY="${{ secrets.METEOFRANCE_TOKEN }}"
-          # Fallback sur le token legacy (parameter expansion — pas de [ ] && pour éviter set -e)
           PA="${PA:-$LEGACY}"
           PI="${PI:-$LEGACY}"
-          # Écriture ligne par ligne (évite tout problème avec les {  } + set -e)
-          echo "// tokens.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > docs/js/tokens.js
+          echo "// tokens.js — généré par GitHub Actions le $(date -u +%Y-%m-%dT%H:%M:%SZ)" > /tmp/pages/js/tokens.js
           if [ -n "$PA" ]; then
-            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${PA}';" >> docs/js/tokens.js
+            echo "CONFIG.METEO_FRANCE.tokenPaArome = '${PA}';" >> /tmp/pages/js/tokens.js
           fi
           if [ -n "$PI" ]; then
-            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${PI}';" >> docs/js/tokens.js
+            echo "CONFIG.METEO_FRANCE.tokenAromePi = '${PI}';" >> /tmp/pages/js/tokens.js
           fi
-          # Vérification : nombre de lignes et en-tête (sans exposer les valeurs)
-          echo "tokens.js — $(wc -l < docs/js/tokens.js) ligne(s)"
-          head -1 docs/js/tokens.js
+          echo "tokens.js — $(wc -l < /tmp/pages/js/tokens.js) ligne(s)"
+          head -1 /tmp/pages/js/tokens.js
           echo "✅ tokenPaArome injecté: $(if [ -n "$PA" ]; then echo oui; else echo non; fi)"
           echo "✅ tokenAromePi injecté: $(if [ -n "$PI" ]; then echo oui; else echo non; fi)"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/
+          path: /tmp/pages/
 
       - name: Deploy to GitHub Pages
         id: deployment
