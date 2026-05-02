@@ -118,7 +118,11 @@ const Carte = (() => {
         attribution: cfg.attribution,
         opacity:     cfg.opacity,
         time:        timeStr,
-        tileSize:    512,
+        tileSize:    256,
+        // crossOrigin requis : l'API MF envoie Access-Control-Allow-Origin:*
+        // quand le token est en query param. Sans ce flag le navigateur applique
+        // OpaqueResponseBlocking sur les réponses d'erreur XML du serveur WMS.
+        crossOrigin: 'anonymous',
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
       // Les deux API MF (PAAROME + AROME-PI) n'exposent qu'EPSG:4326
