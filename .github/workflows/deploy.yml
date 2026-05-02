@@ -36,7 +36,7 @@ jobs:
       # car upload-pages-artifact n'embarque que les fichiers du git index.
       - name: Préparer et injecter les tokens Météo-France
         run: |
-          cp -r docs/ /tmp/pages/
+          mkdir /tmp/pages && cp -r docs/. /tmp/pages/
           PA="${{ secrets.METEOFRANCE_TOKEN_PAAROME }}"
           PI="${{ secrets.METEOFRANCE_TOKEN_AROMEPI }}"
           LEGACY="${{ secrets.METEOFRANCE_TOKEN }}"
