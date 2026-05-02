@@ -89,9 +89,9 @@ const Carte = (() => {
       const now = new Date();
       let timeStr;
       if (cfg.timeMode === 'analyse') {
-        // PAAROME : runs à 00/03/06/09…Z, délai ~3h → recule 3h puis arrondit à la borne 3h
-        const t = new Date(now.getTime() - 3 * 3600000);
-        t.setUTCHours(Math.floor(t.getUTCHours() / 3) * 3, 0, 0, 0);
+        // PAAROME : données horaires, délai publication ~1h → recule 1h et tronque aux minutes
+        const t = new Date(now.getTime() - 3600000);
+        t.setUTCMinutes(0, 0, 0);
         timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
       } else if (cfg.timeStep && cfg.timeStep < 60) {
         // AROME-PI : arrondi au pas de 15 min le plus récent
@@ -121,6 +121,9 @@ const Carte = (() => {
         tileSize:    512,
       };
       if (cfg.elevation) opts.elevation = cfg.elevation;
+      // Les deux API MF (PAAROME + AROME-PI) n'exposent qu'EPSG:4326
+      // dans leur GetCapabilities — CRS:EPSG:3857 retourne une erreur 400.
+      opts.crs = L.CRS.EPSG4326;
       return L.tileLayer.wms(url, opts);
     }
 

@@ -77,26 +77,28 @@ const CONFIG = {
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
       layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       '',
+      style:       'UV__HEIGHT__NO_SHADING',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> PAAROME',
       format:      'image/png',
       transparent: true,
       opacity:     0.65,
       timeMode:    'analyse',
+      crs:         'EPSG4326',
     },
 
     // AROME-PI — rafales 15 min, nowcasting 0–6h
     aromePiRafales: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_GUST_15MIN__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       'FF_RAF__HEIGHT__SHADING',
+      layer:       'WIND_SPEED_GUST_15MIN__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
+      style:       '',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME-PI',
       format:      'image/png',
       transparent: true,
       opacity:     0.55,
       timeStep:    15,
+      crs:         'EPSG4326',  // swagger : seul CRS accepté = EPSG:4326
     },
   },
 
