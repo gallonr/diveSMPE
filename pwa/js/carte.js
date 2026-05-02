@@ -74,32 +74,6 @@ const Carte = (() => {
       opacity:     CONFIG.TILES.litto3d.opacity,
     });
 
-    // ── Overlays météo — OpenWeatherMap ──────────────────────────
-    // Tuiles standard, CORS natif, pas de proxy nécessaire.
-    // Clé gratuite : https://openweathermap.org/api → renseigner dans tokens.js
-    const owmOverlays = {};
-    const owmKey = CONFIG.OWM?.apiKey;
-    if (owmKey) {
-      const owmWind = L.tileLayer(
-        CONFIG.TILES.owmWind.url.replace('{apikey}', owmKey),
-        { attribution: CONFIG.TILES.owmWind.attribution,
-          maxZoom:     CONFIG.TILES.owmWind.maxZoom,
-          opacity:     CONFIG.TILES.owmWind.opacity }
-      );
-      const owmPrecip = L.tileLayer(
-        CONFIG.TILES.owmPrecip.url.replace('{apikey}', owmKey),
-        { attribution: CONFIG.TILES.owmPrecip.attribution,
-          maxZoom:     CONFIG.TILES.owmPrecip.maxZoom,
-          opacity:     CONFIG.TILES.owmPrecip.opacity }
-      );
-      owmOverlays['💨 Vent (OWM)']        = owmWind;
-      owmOverlays['🌧️ Précip. (OWM)']   = owmPrecip;
-      console.log('[OWM] overlays vent + précipitations ajoutés');
-    } else {
-      console.info('[OWM] CONFIG.OWM.apiKey non configuré — overlays météo désactivés.');
-      console.info('[OWM] Clé gratuite sur https://openweathermap.org/api → renseigner dans tokens.js');
-    }
-
     // Contrôle des couches
     L.control.layers(
       {
@@ -108,13 +82,10 @@ const Carte = (() => {
         '🌊 ESRI Ocean':   esriOceanGroup,
         '🗾 OpenStreetMap': osm,
       },
-      Object.assign(
-        {
-          'OpenSeaMap ⚓':    openSeaMap,
-          '🏔️ Litto3D SHOM': litto3d,
-        },
-        owmOverlays
-      ),
+      {
+        'OpenSeaMap ⚓':    openSeaMap,
+        '🏔️ Litto3D SHOM': litto3d,
+      },
       { position: 'topright', collapsed: true }
     ).addTo(_map);
 
