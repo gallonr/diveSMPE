@@ -127,18 +127,39 @@ const Carte = (() => {
       // Les deux API MF (PAAROME + AROME-PI) n'exposent qu'EPSG:4326
       // dans leur GetCapabilities — CRS:EPSG:3857 retourne une erreur 400.
       opts.crs = L.CRS.EPSG4326;
-      return L.tileLayer.wms(url, opts);
+      const layer = L.tileLayer.wms(url, opts);
+
+      // ── Débogage : log de la première tuile + erreurs ──────────
+      layer.once('tileload', (e) => {
+        console.log('[MF] ✅ tuile chargée OK :', e.tile.src.substring(0, 200));
+      });
+      layer.on('tileerror', (e) => {
+        console.error('[MF] ❌ erreur tuile :', e.tile.src.substring(0, 300));
+        // Tenter une requête fetch pour lire le corps de l'erreur
+        fetch(e.tile.src).then(r => r.text()).then(t =>
+          console.warn('[MF] réponse serveur :', t.substring(0, 500))
+        ).catch(() => {});
+      });
+      console.log('[MF] URL base :', url.substring(0, 200));
+      console.log('[MF] TIME calculé :', timeStr);
+      return layer;
     }
 
-    if (cfg_mf && cfg_mf.tokenPaArome) {
+    if (cfg_mf && cfg_mf.tokenPaArome &&
+        !cfg_mf.tokenPaArome.includes('VOTRE_TOKEN')) {
       const tok = cfg_mf.tokenPaArome;
       console.log('[MF] tokenPaArome présent, ajout overlay PAAROME');
       mfOverlays['🔵 Vent actuel (PAAROME)'] = _mfWmsLayer(CONFIG.TILES.analyseVent, tok);
+    } else if (cfg_mf && cfg_mf.tokenPaArome) {
+      console.warn('[MF] tokenPaArome est encore le placeholder — remplissez pwa/js/tokens.js');
     }
-    if (cfg_mf && cfg_mf.tokenAromePi) {
+    if (cfg_mf && cfg_mf.tokenAromePi &&
+        !cfg_mf.tokenAromePi.includes('VOTRE_TOKEN')) {
       const tok = cfg_mf.tokenAromePi;
       console.log('[MF] tokenAromePi présent, ajout overlay AROME-PI');
       mfOverlays['💨 Rafales PI 15min (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
+    } else if (cfg_mf && cfg_mf.tokenAromePi) {
+      console.warn('[MF] tokenAromePi est encore le placeholder — remplissez pwa/js/tokens.js');
     }
 
     // Contrôle des couches
