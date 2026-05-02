@@ -74,92 +74,30 @@ const Carte = (() => {
       opacity:     CONFIG.TILES.litto3d.opacity,
     });
 
-    // ── Overlays WMS Météo-France ────────────────────────────────
-    // Tokens injectés par la pipeline GitHub Actions via docs/js/secrets.js.
-    // Sans token, les couches ne sont pas ajoutées.
-    const mfOverlays = {};
-    const cfg_mf = CONFIG.METEO_FRANCE;
-    console.log('[MF] tokenPaArome:', !!cfg_mf?.tokenPaArome, '/ tokenAromePi:', !!cfg_mf?.tokenAromePi);
-
-    // Fonction helper : construit une couche WMS MF.
-    // Le token est passé en query param (apikey=...).
-    // L'API MF retourne Access-Control-Allow-Origin:* uniquement quand le token
-    // est en query param — la méthode fetch()+header ne résout pas le CORS.
-    function _mfWmsLayer(cfg, token) {
-      const now = new Date();
-      let timeStr;
-      if (cfg.timeMode === 'analyse') {
-        // PAAROME : données horaires, délai publication ~1h → recule 1h et tronque aux minutes
-        const t = new Date(now.getTime() - 3600000);
-        t.setUTCMinutes(0, 0, 0);
-        timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
-      } else if (cfg.timeStep && cfg.timeStep < 60) {
-        // AROME-PI : arrondi au pas de 15 min le plus récent
-        const totalMin = now.getUTCHours() * 60 + now.getUTCMinutes();
-        const roundedMin = Math.floor(totalMin / cfg.timeStep) * cfg.timeStep;
-        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(),
-                                    Math.floor(roundedMin / 60), roundedMin % 60));
-        timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
-      } else {
-        // AROME : run toutes les 3h, marge de publication -2h
-        const runH = Math.max(Math.floor((now.getUTCHours() - 2) / 3) * 3, 0);
-        const t = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), runH));
-        timeStr = t.toISOString().replace(/\.\d{3}Z$/, 'Z');
-      }
-
-      const url = cfg.wmsUrl + '?apikey=' + encodeURIComponent(token);
-      const opts = {
-        service:     'WMS',
-        version:     '1.3.0',
-        layers:      cfg.layer,
-        styles:      cfg.style || '',
-        format:      cfg.format,
-        transparent: cfg.transparent,
-        attribution: cfg.attribution,
-        opacity:     cfg.opacity,
-        time:        timeStr,
-        tileSize:    256,
-        // NE PAS mettre crossOrigin:'anonymous' : l'API MF ne renvoie pas
-        // Access-Control-Allow-Origin sur ses réponses 200, ce qui ferait
-        // bloquer toutes les tuiles par le navigateur.
-      };
-      if (cfg.elevation) opts.elevation = cfg.elevation;
-      // Les deux API MF (PAAROME + AROME-PI) n'exposent qu'EPSG:4326
-      // dans leur GetCapabilities — CRS:EPSG:3857 retourne une erreur 400.
-      opts.crs = L.CRS.EPSG4326;
-      const layer = L.tileLayer.wms(url, opts);
-
-      // ── Débogage : log de la première tuile + erreurs ──────────
-      layer.once('tileload', (e) => {
-        console.log('[MF] ✅ tuile chargée OK :', e.tile.src.substring(0, 200));
-      });
-      layer.on('tileerror', (e) => {
-        console.error('[MF] ❌ erreur tuile :', e.tile.src.substring(0, 300));
-        // Tenter une requête fetch pour lire le corps de l'erreur
-        fetch(e.tile.src).then(r => r.text()).then(t =>
-          console.warn('[MF] réponse serveur :', t.substring(0, 500))
-        ).catch(() => {});
-      });
-      console.log('[MF] URL base :', url.substring(0, 200));
-      console.log('[MF] TIME calculé :', timeStr);
-      return layer;
-    }
-
-    if (cfg_mf && cfg_mf.tokenPaArome &&
-        !cfg_mf.tokenPaArome.includes('VOTRE_TOKEN')) {
-      const tok = cfg_mf.tokenPaArome;
-      console.log('[MF] tokenPaArome présent, ajout overlay PAAROME');
-      mfOverlays['🔵 Vent actuel (PAAROME)'] = _mfWmsLayer(CONFIG.TILES.analyseVent, tok);
-    } else if (cfg_mf && cfg_mf.tokenPaArome) {
-      console.warn('[MF] tokenPaArome est encore le placeholder — remplissez pwa/js/tokens.js');
-    }
-    if (cfg_mf && cfg_mf.tokenAromePi &&
-        !cfg_mf.tokenAromePi.includes('VOTRE_TOKEN')) {
-      const tok = cfg_mf.tokenAromePi;
-      console.log('[MF] tokenAromePi présent, ajout overlay AROME-PI');
-      mfOverlays['💨 Rafales PI 15min (0–6h)'] = _mfWmsLayer(CONFIG.TILES.aromePiRafales, tok);
-    } else if (cfg_mf && cfg_mf.tokenAromePi) {
-      console.warn('[MF] tokenAromePi est encore le placeholder — remplissez pwa/js/tokens.js');
+    // ── Overlays météo — OpenWeatherMap ──────────────────────────
+    // Tuiles standard, CORS natif, pas de proxy nécessaire.
+    // Clé gratuite : https://openweathermap.org/api → renseigner dans tokens.js
+    const owmOverlays = {};
+    const owmKey = CONFIG.OWM?.apiKey;
+    if (owmKey) {
+      const owmWind = L.tileLayer(
+        CONFIG.TILES.owmWind.url.replace('{apikey}', owmKey),
+        { attribution: CONFIG.TILES.owmWind.attribution,
+          maxZoom:     CONFIG.TILES.owmWind.maxZoom,
+          opacity:     CONFIG.TILES.owmWind.opacity }
+      );
+      const owmPrecip = L.tileLayer(
+        CONFIG.TILES.owmPrecip.url.replace('{apikey}', owmKey),
+        { attribution: CONFIG.TILES.owmPrecip.attribution,
+          maxZoom:     CONFIG.TILES.owmPrecip.maxZoom,
+          opacity:     CONFIG.TILES.owmPrecip.opacity }
+      );
+      owmOverlays['💨 Vent (OWM)']        = owmWind;
+      owmOverlays['🌧️ Précip. (OWM)']   = owmPrecip;
+      console.log('[OWM] overlays vent + précipitations ajoutés');
+    } else {
+      console.info('[OWM] CONFIG.OWM.apiKey non configuré — overlays météo désactivés.');
+      console.info('[OWM] Clé gratuite sur https://openweathermap.org/api → renseigner dans tokens.js');
     }
 
     // Contrôle des couches
@@ -175,7 +113,7 @@ const Carte = (() => {
           'OpenSeaMap ⚓':    openSeaMap,
           '🏔️ Litto3D SHOM': litto3d,
         },
-        mfOverlays   // vide si pas de token, sinon : Vent, Rafales, Houle MF
+        owmOverlays
       ),
       { position: 'topright', collapsed: true }
     ).addTo(_map);

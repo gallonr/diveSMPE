@@ -68,37 +68,21 @@ const CONFIG = {
       opacity:     0.7,
     },
 
-    // ── Overlays WMS Météo-France ───────────────────────────────
-    // Token requis : CONFIG.METEO_FRANCE.token (injecté via secrets.js)
-    // L'API WMS retourne des images PNG d'un champ 2D → overlay Leaflet.
-    // ⚠️  Visible dans les DevTools (réseau) — acceptable pour usage associatif.
-
-    // PAAROME — analyse conditions actuelles (assimilation, délai ~3h)
-    analyseVent: {
-      wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       '',   // laisser vide : le serveur applique son style par défaut
-      elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> PAAROME',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.65,
-      timeMode:    'analyse',
-      crs:         'EPSG4326',
+    // ── Overlays tuiles météo — OpenWeatherMap ─────────────────
+    // Clé gratuite : https://openweathermap.org/api (plan Free, 1000 req/jour)
+    // Fonctionne directement dans Leaflet, pas de proxy nécessaire.
+    // La clé est injectée via tokens.js (non versionné).
+    owmWind: {
+      url:         'https://tile.openweathermap.org/map/wind_new/{z}/{x}/{y}.png?appid={apikey}',
+      attribution: '© <a href="https://openweathermap.org">OpenWeatherMap</a>',
+      maxZoom: 18,
+      opacity: 0.7,
     },
-
-    // AROME-PI — rafales 15 min, nowcasting 0–6h
-    aromePiRafales: {
-      wmsUrl:      'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
-      layer:       'WIND_SPEED_GUST_15MIN__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
-      style:       '',
-      elevation:   '10',
-      attribution: '© <a href="https://meteofrance.fr">Météo-France</a> AROME-PI',
-      format:      'image/png',
-      transparent: true,
-      opacity:     0.55,
-      timeStep:    15,
-      crs:         'EPSG4326',  // swagger : seul CRS accepté = EPSG:4326
+    owmPrecip: {
+      url:         'https://tile.openweathermap.org/map/precipitation_new/{z}/{x}/{y}.png?appid={apikey}',
+      attribution: '© <a href="https://openweathermap.org">OpenWeatherMap</a>',
+      maxZoom: 18,
+      opacity: 0.6,
     },
   },
 
@@ -150,10 +134,20 @@ const CONFIG = {
   // Tokens gratuits : https://portail-api.meteofrance.fr/
   // Chaque API du portail peut avoir son propre token d'abonnement.
   METEO_FRANCE: {
-    tokenAromePi: null,   // token API AROME-PI (nowcasting 0–6h, pas 15 min)
-    tokenPaArome: null,   // token API PAAROME = Analyse AROME (données d'analyse 0–1h)
+    // Plus utilisé pour les overlays carte (remplacé par OpenWeatherMap).
+    // Conservé pour d'éventuels appels futurs aux données chiffrées via proxy.
+    tokenAromePi: null,
+    tokenPaArome: null,
+    proxyUrl:     null,
     baseUrl: 'https://public-api.meteofrance.fr/public',
     timeout: 7000,
+  },
+
+  // ── OpenWeatherMap ─────────────────────────────────────────
+  // Clé gratuite : https://openweathermap.org/api
+  // Injectée via tokens.js (non versionné, non commité).
+  OWM: {
+    apiKey: null,   // renseigné dans tokens.js
   },
 
   // ── Types de sites → couleur + badge ──────────────────────
