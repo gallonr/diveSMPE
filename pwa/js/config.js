@@ -76,7 +76,7 @@ const CONFIG = {
     // PAAROME — analyse conditions actuelles (assimilation, délai ~3h)
     analyseVent: {
       wmsUrl:      'https://public-api.meteofrance.fr/public/arome/1.0/wms/MF-NWP-HIGHRES-PAAROME-001-FRANCE-WMS/GetMap',
-      layer:       'WIND__SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
+      layer:       'WIND_SPECIFIC_HEIGHT_LEVEL_ABOVE_GROUND',
       style:       '',
       elevation:   '10',
       attribution: '© <a href="https://meteofrance.fr">Météo-France</a> PAAROME',
