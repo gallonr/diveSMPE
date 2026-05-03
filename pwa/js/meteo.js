@@ -279,7 +279,7 @@ const Meteo = (() => {
       ${ventPrevisionHtml}
 
       <p style="text-align:center;font-size:11px;color:#636e72;margin-top:8px;">
-        🇫🇷 AROME PI (actuel) · AROME HD (prévisions) · Marine — Open-Meteo.com
+        🇫🇷 Météo-France AROME France HD via Open-Meteo.com — actualisé toutes les 30 min
       </p>
     `;
   }

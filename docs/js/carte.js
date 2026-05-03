@@ -12,6 +12,7 @@ const Carte = (() => {
   let _overlayBathy = null;       // L.imageOverlay MNT actif
   let _overlayOpacity = 0.65;     // opacité par défaut
   let _etatsMaree = new Map();    // siteID → { statut, label } (mis à jour par Sites)
+  let _leafletAdapter = null;     // Adaptateur Open-Meteo Weather Map Layer
 
   // ── Init carte ───────────────────────────────────────────────
 
@@ -65,6 +66,8 @@ const Carte = (() => {
       opacity: CONFIG.TILES.openSeaMap.opacity,
     }).addTo(_map);
 
+
+
     // Overlay WMS Litto3D SHOM Bretagne 2018-2021
     const litto3d = L.tileLayer.wms(CONFIG.TILES.litto3d.url, {
       layers:      CONFIG.TILES.litto3d.layer,
@@ -73,6 +76,9 @@ const Carte = (() => {
       attribution: CONFIG.TILES.litto3d.attribution,
       opacity:     CONFIG.TILES.litto3d.opacity,
     });
+
+    // ── Couches météo Open-Meteo Weather Map Layer ───────────
+    const couchesMeteo = _creerCouchesMeteo();
 
     // Contrôle des couches
     L.control.layers(
@@ -83,8 +89,12 @@ const Carte = (() => {
         '🗾 OpenStreetMap': osm,
       },
       {
-        'OpenSeaMap ⚓':    openSeaMap,
-        '🏔️ Litto3D SHOM': litto3d,
+        'OpenSeaMap ⚓':         openSeaMap,
+        '🏔️ Litto3D SHOM':      litto3d,
+        '🌡 Temp. air (AROME)': couchesMeteo.temperature,
+        '💨 Vent (AROME)':      couchesMeteo.vent,
+        '🏹 Flèches vent':      couchesMeteo.ventArrows,
+        '🌧 Précipitations':    couchesMeteo.precipitation,
       },
       { position: 'topright', collapsed: true }
     ).addTo(_map);
@@ -92,10 +102,150 @@ const Carte = (() => {
     // OpenSeaMap toujours au-dessus des autres overlays
     _map.on('overlayadd', () => openSeaMap.bringToFront());
 
+    // Mise à jour des bounds pour le rendu des tuiles météo
+    function _updateOmBounds() {
+      if (typeof OMWeatherMapLayer === 'undefined') return;
+      const b = _map.getBounds();
+      OMWeatherMapLayer.updateCurrentBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    }
+    _map.on('moveend', _updateOmBounds);
+    _updateOmBounds();
+
     // Attribution compacte
     _map.attributionControl.setPrefix('');
 
+    // Contrôle vent Open-Meteo (aucune clé requise)
+    _ajouterControleVent();
+
     return _map;
+  }
+
+  // ── Couches météo Open-Meteo Weather Map Layer ──────────────
+
+  /**
+   * Crée et retourne les couches météo raster et vecteur via
+   * l'adaptateur Leaflet de @openmeteo/weather-map-layer.
+   *
+   * Modèle utilisé : meteofrance_arome_france_hd (1 km, 0-42 h)
+   * Fallback automatique vers dwd_icon si AROME non disponible.
+   *
+   * Variables disponibles sur map-tiles.open-meteo.com :
+   *   temperature_2m, wind_u_component_10m, precipitation, cloud_cover…
+   *
+   * Doc : https://github.com/open-meteo/weather-map-layer
+   */
+  function _creerCouchesMeteo() {
+    // Couches vides (fallback si la lib n'est pas chargée)
+    const dummy = L.layerGroup();
+
+    if (typeof OMWeatherMapLayer === 'undefined') {
+      console.warn('OMWeatherMapLayer non disponible — couches météo désactivées');
+      return { temperature: dummy, vent: dummy, ventArrows: dummy, precipitation: dummy };
+    }
+
+    // Initialisation de l'adaptateur Leaflet (une seule fois)
+    if (!_leafletAdapter) {
+      _leafletAdapter = OMWeatherMapLayer.addLeafletProtocolSupport(L);
+      _leafletAdapter.addProtocol('om', OMWeatherMapLayer.omProtocol);
+    }
+
+    const BASE_URL = 'https://map-tiles.open-meteo.com/data_spatial';
+    // Modèle AROME HD (Météo-France, 1 km) — heure courante arrondie à l'heure
+    const MODEL   = 'meteofrance_arome_france_hd';
+    const TS      = 'time_step=current_time_1H';
+
+    function omUrl(variable, extra = '') {
+      return `om://${BASE_URL}/${MODEL}/latest.json?${TS}&variable=${variable}${extra}`;
+    }
+
+    // 🌡 Température 2 m
+    const temperature = _leafletAdapter.createTileLayer(
+      omUrl('temperature_2m'),
+      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    // 💨 Vent 10 m — composante U (vitesse colorée)
+    const vent = _leafletAdapter.createTileLayer(
+      omUrl('wind_u_component_10m'),
+      { opacity: 0.65, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    // 🏹 Flèches de vent (couche vecteur PBF)
+    const ventArrows = _leafletAdapter.createVectorTileLayer(
+      omUrl('wind_u_component_10m', '&arrows=true'),
+      {
+        style(properties) {
+          const v = parseFloat(properties.value) || 0;
+          const alpha = v > 10 ? 0.7 : v > 5 ? 0.5 : 0.3;
+          return { strokeStyle: `rgba(20, 60, 120, ${alpha})`, lineWidth: 1.5, lineCap: 'round' };
+        }
+      }
+    );
+
+    // 🌧 Précipitations
+    const precipitation = _leafletAdapter.createTileLayer(
+      omUrl('precipitation'),
+      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    return { temperature, vent, ventArrows, precipitation };
+  }
+
+  // ── Contrôle vent Open-Meteo ─────────────────────────────────
+
+  function _directionVentCarte(deg) {
+    const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+    return dirs[Math.round(deg / 22.5) % 16];
+  }
+
+  function _ajouterControleVent() {
+    const WindControl = L.Control.extend({
+      options: { position: 'bottomleft' },
+
+      onAdd() {
+        const div = L.DomUtil.create('div', 'leaflet-vent-control');
+        div.innerHTML = '<span class="vent-loading">🌬 …</span>';
+        L.DomEvent.disableClickPropagation(div);
+        this._div = div;
+        this._charger();
+        // Actualisation toutes les 15 min
+        this._timer = setInterval(() => this._charger(), 15 * 60 * 1000);
+        return div;
+      },
+
+      onRemove() {
+        clearInterval(this._timer);
+      },
+
+      async _charger() {
+        const lat = CONFIG.METEO.lat;
+        const lon = CONFIG.METEO.lon;
+        try {
+          const url = new URL('https://api.open-meteo.com/v1/forecast');
+          url.searchParams.set('latitude',  lat);
+          url.searchParams.set('longitude', lon);
+          url.searchParams.set('current', 'wind_speed_10m,wind_direction_10m,wind_gusts_10m');
+          url.searchParams.set('timezone', 'Europe/Paris');
+          const res  = await fetch(url.toString());
+          const data = await res.json();
+          const c    = data.current;
+          const dir  = _directionVentCarte(c.wind_direction_10m);
+          const deg  = c.wind_direction_10m;
+          const arrow = `<span style="display:inline-block;transform:rotate(${deg}deg);font-style:normal;">↑</span>`;
+          this._div.innerHTML = `
+            <div class="vent-widget">
+              <span class="vent-icon">🌬</span>
+              <span class="vent-val">${Math.round(c.wind_speed_10m)} km/h</span>
+              <span class="vent-dir">${arrow} ${dir}</span>
+              <span class="vent-rafale">⚡ ${Math.round(c.wind_gusts_10m)} km/h</span>
+            </div>`;
+        } catch (_) {
+          this._div.innerHTML = '<span class="vent-loading">🌬 —</span>';
+        }
+      },
+    });
+
+    new WindControl().addTo(_map);
   }
 
   // ── Marqueurs sites ──────────────────────────────────────────
