@@ -193,8 +193,7 @@ const Carte = (() => {
 
     onAdd(map) {
       this._map    = map;
-      // Utiliser le pane overlayPane pour rester dans la pile Leaflet
-      this._canvas = L.DomUtil.create('canvas', 'leaflet-zoom-hide');
+      this._canvas = L.DomUtil.create('canvas', ''); // pas de leaflet-zoom-hide
       this._pane   = map.getPane('overlayPane');
       this._pane.appendChild(this._canvas);
       this._canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
@@ -202,18 +201,32 @@ const Carte = (() => {
 
       this._onMove    = () => this._repositionCanvas();
       this._onMoveEnd = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
+      this._onZoomStart = () => {
+        // Masquer manuellement pendant l'animation de zoom
+        this._canvas.style.display = 'none';
+      };
+      this._onZoomEnd = () => {
+        this._canvas.style.display = '';
+        this._resize();
+        clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400);
+      };
+      this._onResize = () => { this._resize(); this._fetch(); };
 
-      map.on('move',              this._onMove,    this);
-      map.on('moveend zoomend',   this._onMoveEnd, this);
-      map.on('resize',            this._onResize,  this);
+      map.on('move',      this._onMove,      this);
+      map.on('moveend',   this._onMoveEnd,   this);
+      map.on('zoomstart', this._onZoomStart, this);
+      map.on('zoomend',   this._onZoomEnd,   this);
+      map.on('resize',    this._onResize,    this);
       this._fetch();
     },
 
     onRemove(map) {
       this._pane.removeChild(this._canvas);
-      map.off('move',            this._onMove,    this);
-      map.off('moveend zoomend', this._onMoveEnd, this);
-      map.off('resize',          this._onResize,  this);
+      map.off('move',      this._onMove,      this);
+      map.off('moveend',   this._onMoveEnd,   this);
+      map.off('zoomstart', this._onZoomStart, this);
+      map.off('zoomend',   this._onZoomEnd,   this);
+      map.off('resize',    this._onResize,    this);
       clearTimeout(this._t);
     },
 
