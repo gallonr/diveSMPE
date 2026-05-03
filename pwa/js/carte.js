@@ -203,9 +203,9 @@ const Carte = (() => {
 
       this._setSize();
 
-      this._cbMoveEnd  = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
-      this._cbZoomEnd  = () => { clearTimeout(this._t); this._setSize(); this._t = setTimeout(() => this._fetch(), 400); };
-      this._cbResize   = () => { this._setSize(); clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
+      this._cbMoveEnd  = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 1200); };
+      this._cbZoomEnd  = () => { clearTimeout(this._t); this._setSize(); this._t = setTimeout(() => this._fetch(), 1200); };
+      this._cbResize   = () => { this._setSize(); clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 1200); };
 
       map.on('moveend',  this._cbMoveEnd,  this);
       map.on('zoomend',  this._cbZoomEnd,  this);
@@ -232,7 +232,13 @@ const Carte = (() => {
     async _fetch() {
       const map  = this._map;
       const size = map.getSize();
-      const sp   = 60;
+      const sp   = 80; // espacement plus grand = moins de points = moins de requêtes API
+
+      // Cache 15 min par centre+zoom pour économiser les appels API
+      const center = map.getCenter();
+      const cacheKey = `${center.lat.toFixed(2)}_${center.lng.toFixed(2)}_${map.getZoom()}`;
+      if (this._cacheKey === cacheKey && this._pts) { this._draw(); return; }
+      this._cacheKey = cacheKey;
       const cols = Math.floor(size.x / sp);
       const rows = Math.floor(size.y / sp);
       const offX = (size.x - cols * sp) / 2 + sp / 2;
@@ -264,6 +270,7 @@ const Carte = (() => {
         const res  = await fetch(url.toString());
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
+        if (json.error) throw new Error(json.reason || 'API error');
         const arr  = Array.isArray(json) ? json : [json];
         this._pts = arr.map((d, i) => ({
           x: pts[i].x, y: pts[i].y,
