@@ -267,21 +267,24 @@ const Carte = (() => {
       if (!pts.length) return;
 
       try {
-        const url = new URL('https://api.open-meteo.com/v1/meteofrance');
+        const url = new URL('https://api.open-meteo.com/v1/forecast');
         url.searchParams.set('latitude',      lats.join(','));
         url.searchParams.set('longitude',     lons.join(','));
-        url.searchParams.set('models',        'meteofrance_arome_france_hd');
         url.searchParams.set('current',       'wind_speed_10m,wind_direction_10m');
+        url.searchParams.set('wind_speed_unit', 'kmh');
         url.searchParams.set('timezone',      'Europe/Paris');
         url.searchParams.set('forecast_days', '1');
+        // best_match : sélection auto du meilleur modèle (AROME sur FR, ICON ailleurs)
+        // → couverture mondiale, pas de trou sur les zones maritimes
         const res  = await fetch(url.toString());
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         const arr  = Array.isArray(json) ? json : [json];
         this._pts = arr.map((d, i) => ({
           x: pts[i].x, y: pts[i].y,
           kmh: d.current?.wind_speed_10m,
           dir: d.current?.wind_direction_10m,
-        }));
+        })).filter(p => p.kmh != null && p.dir != null);
         this._draw();
       } catch (e) {
         console.warn('WindBarbLayer fetch error:', e);
