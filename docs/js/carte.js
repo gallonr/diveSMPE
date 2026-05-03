@@ -192,57 +192,41 @@ const Carte = (() => {
     options: { spacing: 60 },
 
     onAdd(map) {
-      this._map    = map;
-      this._canvas = L.DomUtil.create('canvas', ''); // pas de leaflet-zoom-hide
-      this._pane   = map.getPane('overlayPane');
-      this._pane.appendChild(this._canvas);
-      this._canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
-      this._resize();
+      this._map = map;
 
-      this._onMove    = () => this._repositionCanvas();
-      this._onMoveEnd = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
-      this._onZoomStart = () => {
-        // Masquer manuellement pendant l'animation de zoom
-        this._canvas.style.display = 'none';
-      };
-      this._onZoomEnd = () => {
-        this._canvas.style.display = '';
-        this._resize();
-        clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400);
-      };
-      this._onResize = () => { this._resize(); this._fetch(); };
+      // Canvas attaché au container de la carte, pas dans l'overlayPane
+      // (l'overlayPane est transformé par Leaflet pendant les zooms)
+      this._canvas = document.createElement('canvas');
+      this._canvas.style.cssText =
+        'position:absolute;top:0;left:0;pointer-events:none;z-index:400;';
+      map.getContainer().appendChild(this._canvas);
 
-      map.on('move',      this._onMove,      this);
-      map.on('moveend',   this._onMoveEnd,   this);
-      map.on('zoomstart', this._onZoomStart, this);
-      map.on('zoomend',   this._onZoomEnd,   this);
-      map.on('resize',    this._onResize,    this);
+      this._setSize();
+
+      this._cbMoveEnd  = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
+      this._cbZoomEnd  = () => { clearTimeout(this._t); this._setSize(); this._t = setTimeout(() => this._fetch(), 400); };
+      this._cbResize   = () => { this._setSize(); clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
+
+      map.on('moveend',  this._cbMoveEnd,  this);
+      map.on('zoomend',  this._cbZoomEnd,  this);
+      map.on('resize',   this._cbResize,   this);
+
       this._fetch();
     },
 
     onRemove(map) {
-      this._pane.removeChild(this._canvas);
-      map.off('move',      this._onMove,      this);
-      map.off('moveend',   this._onMoveEnd,   this);
-      map.off('zoomstart', this._onZoomStart, this);
-      map.off('zoomend',   this._onZoomEnd,   this);
-      map.off('resize',    this._onResize,    this);
+      map.getContainer().removeChild(this._canvas);
+      map.off('moveend', this._cbMoveEnd, this);
+      map.off('zoomend', this._cbZoomEnd, this);
+      map.off('resize',  this._cbResize,  this);
       clearTimeout(this._t);
+      this._pts = null;
     },
 
-    _resize() {
+    _setSize() {
       const s = this._map.getSize();
       this._canvas.width  = s.x;
       this._canvas.height = s.y;
-      this._repositionCanvas();
-    },
-
-    _onResize() { this._resize(); this._fetch(); },
-
-    // Aligne le canvas sur le coin haut-gauche de la carte
-    _repositionCanvas() {
-      const topLeft = this._map.containerPointToLayerPoint([0, 0]);
-      L.DomUtil.setPosition(this._canvas, topLeft);
     },
 
     async _fetch() {
