@@ -55,23 +55,10 @@ const Meteo = (() => {
     return dirs[Math.round(deg / 22.5) % 16];
   }
 
-  // ── Requête Open-Meteo ───────────────────────────────────────
+  // ── Requêtes Open-Meteo ──────────────────────────────────────
 
-  async function _fetchMeteo(lat, lon) {
-    const url = new URL('https://api.open-meteo.com/v1/forecast');
-    url.searchParams.set('latitude',  lat);
-    url.searchParams.set('longitude', lon);
-    url.searchParams.set('current',
-      'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility'
-    );
-    url.searchParams.set('hourly',
-      'wave_height,wave_period,wave_direction,swell_wave_height'
-    );
-    url.searchParams.set('hourly_units', 'true');
-    url.searchParams.set('timezone', 'Europe/Paris');
-    url.searchParams.set('forecast_days', '2');
-
-    const ctrl = new AbortController();
+  async function _fetchJson(url) {
+    const ctrl  = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), CONFIG.METEO.timeout);
     try {
       const res = await fetch(url.toString(), { signal: ctrl.signal });
@@ -81,6 +68,53 @@ const Meteo = (() => {
       clearTimeout(timer);
       throw e;
     }
+  }
+
+  /**
+   * Météo atmosphérique — Météo-France AROME France HD (2.5 km, sans clé)
+   * Variables : température, code météo, vent 10 m, rafales, visibilité
+   */
+  async function _fetchArome(lat, lon) {
+    const url = new URL('https://api.open-meteo.com/v1/forecast');
+    url.searchParams.set('latitude',  lat);
+    url.searchParams.set('longitude', lon);
+    url.searchParams.set('models',    'meteofrance_arome_france_hd');
+    url.searchParams.set('current',
+      'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility'
+    );
+    url.searchParams.set('hourly',
+      'wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,weather_code,visibility'
+    );
+    url.searchParams.set('timezone',      'Europe/Paris');
+    url.searchParams.set('forecast_days', '2');
+    return _fetchJson(url);
+  }
+
+  /**
+   * Houle — API Marine Open-Meteo (modèle MFWAM/ERA5, sans clé)
+   * Variables : hauteur vagues, période, direction, swell
+   */
+  async function _fetchMarine(lat, lon) {
+    const url = new URL('https://marine-api.open-meteo.com/v1/marine');
+    url.searchParams.set('latitude',  lat);
+    url.searchParams.set('longitude', lon);
+    url.searchParams.set('hourly',
+      'wave_height,wave_period,wave_direction,swell_wave_height'
+    );
+    url.searchParams.set('timezone',      'Europe/Paris');
+    url.searchParams.set('forecast_days', '2');
+    return _fetchJson(url);
+  }
+
+  /** Agrège les deux sources en un seul objet {current, hourly, _marine} */
+  async function _fetchMeteo(lat, lon) {
+    const [arome, marine] = await Promise.allSettled([
+      _fetchArome(lat, lon),
+      _fetchMarine(lat, lon),
+    ]);
+    const data = arome.status === 'fulfilled' ? arome.value : {};
+    data._marine = marine.status === 'fulfilled' ? marine.value : null;
+    return data;
   }
 
   // ── Affichage modal météo ────────────────────────────────────
@@ -132,14 +166,64 @@ const Meteo = (() => {
     const rafale = c.wind_gusts_10m ? ` (rafales ${Math.round(c.wind_gusts_10m)} km/h)` : '';
     const visi = c.visibility ? `${Math.round(c.visibility / 1000)} km` : '—';
 
-    // Extraire houle de l'heure actuelle
+    // Extraire houle de l'heure actuelle (API Marine)
     let houleH = '—', houlePer = '—', houleSwell = '—';
-    if (data.hourly) {
+    const marine = data._marine;
+    if (marine && marine.hourly) {
       const now = new Date();
-      const h = now.getHours();
-      if (data.hourly.wave_height)       houleH     = `${data.hourly.wave_height[h]?.toFixed(1) || '—'} m`;
-      if (data.hourly.wave_period)       houlePer   = `${data.hourly.wave_period[h] || '—'} s`;
-      if (data.hourly.swell_wave_height) houleSwell = `${data.hourly.swell_wave_height[h]?.toFixed(1) || '—'} m`;
+      const nowStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:00`;
+      const mTimes  = marine.hourly.time || [];
+      const mIdx    = Math.max(0, mTimes.findIndex(t => t === nowStr));
+      if (marine.hourly.wave_height)       houleH     = `${marine.hourly.wave_height[mIdx]?.toFixed(1) ?? '—'} m`;
+      if (marine.hourly.wave_period)       houlePer   = `${marine.hourly.wave_period[mIdx] ?? '—'} s`;
+      if (marine.hourly.swell_wave_height) houleSwell = `${marine.hourly.swell_wave_height[mIdx]?.toFixed(1) ?? '—'} m`;
+    }
+
+    // Prévisions horaires du vent (24 prochaines heures)
+    let ventPrevisionHtml = '';
+    if (data.hourly && data.hourly.wind_speed_10m) {
+      const now = new Date();
+      // Trouver l'index de l'heure actuelle dans les données horaires
+      const times = data.hourly.time || [];
+      const nowStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:00`;
+      let startIdx = times.findIndex(t => t === nowStr);
+      if (startIdx < 0) startIdx = 0;
+      const rows = [];
+      for (let i = startIdx; i < Math.min(startIdx + 24, times.length); i++) {
+        const t = times[i];
+        const heure = t ? t.substring(11, 16) : '—';
+        const vitesse = data.hourly.wind_speed_10m[i] != null ? Math.round(data.hourly.wind_speed_10m[i]) : '—';
+        const dir = data.hourly.wind_direction_10m[i] != null ? _directionVent(data.hourly.wind_direction_10m[i]) : '—';
+        const deg = data.hourly.wind_direction_10m[i] != null ? data.hourly.wind_direction_10m[i] : null;
+        const rafale = data.hourly.wind_gusts_10m[i] != null ? Math.round(data.hourly.wind_gusts_10m[i]) : '—';
+        const arrow = deg != null ? `<span style="display:inline-block;transform:rotate(${deg}deg);">↑</span>` : '';
+        rows.push(`<tr>
+          <td>${heure}</td>
+          <td>${vitesse} km/h</td>
+          <td>${arrow} ${dir}</td>
+          <td>${rafale} km/h</td>
+        </tr>`);
+      }
+      ventPrevisionHtml = `
+        <div class="meteo-prevision-vent">
+          <h4 style="color:var(--blanc);margin:12px 0 6px;font-size:13px;">🌬 Prévisions vent 10 m (24 h)</h4>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;color:var(--gris-texte);">
+              <thead>
+                <tr style="color:var(--bleu-clair);border-bottom:1px solid #2d3e4e;">
+                  <th style="text-align:left;padding:3px 6px;">Heure</th>
+                  <th style="text-align:right;padding:3px 6px;">Vitesse</th>
+                  <th style="text-align:center;padding:3px 6px;">Direction</th>
+                  <th style="text-align:right;padding:3px 6px;">Rafales</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
     }
 
     el.innerHTML = `
@@ -179,8 +263,10 @@ const Meteo = (() => {
         <div class="meteo-val">${visi}</div>
       </div>
 
+      ${ventPrevisionHtml}
+
       <p style="text-align:center;font-size:11px;color:#636e72;margin-top:8px;">
-        Source : Open-Meteo.com — actualisé toutes les 30 min
+        🇫🇷 Météo-France AROME France HD via Open-Meteo.com — actualisé toutes les 30 min
       </p>
     `;
   }
