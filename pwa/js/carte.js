@@ -89,10 +89,10 @@ const Carte = (() => {
         '🗾 OpenStreetMap': osm,
       },
       {
-        'OpenSeaMap ⚓':         openSeaMap,
+        '⚓ OpenSeaMap':         openSeaMap,
         '🏔️ Litto3D SHOM':      litto3d,
-        '🌡 Temp. air (AROME)': couchesMeteo.temperature,
-        '🌬 Vent + barbules':   couchesMeteo.ventBarbules,
+        '🌡 Temp.': couchesMeteo.temperature,
+        '🌬 Vent':   couchesMeteo.ventBarbules,
         '🌧 Précipitations':    couchesMeteo.precipitation,
       },
       { position: 'topright', collapsed: true }
