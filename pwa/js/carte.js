@@ -12,6 +12,7 @@ const Carte = (() => {
   let _overlayBathy = null;       // L.imageOverlay MNT actif
   let _overlayOpacity = 0.65;     // opacité par défaut
   let _etatsMaree = new Map();    // siteID → { statut, label } (mis à jour par Sites)
+  let _leafletAdapter = null;     // Adaptateur Open-Meteo Weather Map Layer
 
   // ── Init carte ───────────────────────────────────────────────
 
@@ -76,6 +77,9 @@ const Carte = (() => {
       opacity:     CONFIG.TILES.litto3d.opacity,
     });
 
+    // ── Couches météo Open-Meteo Weather Map Layer ───────────
+    const couchesMeteo = _creerCouchesMeteo();
+
     // Contrôle des couches
     L.control.layers(
       {
@@ -85,14 +89,27 @@ const Carte = (() => {
         '🗾 OpenStreetMap': osm,
       },
       {
-        'OpenSeaMap ⚓':    openSeaMap,
-        '🏔️ Litto3D SHOM': litto3d,
+        'OpenSeaMap ⚓':         openSeaMap,
+        '🏔️ Litto3D SHOM':      litto3d,
+        '🌡 Temp. air (AROME)': couchesMeteo.temperature,
+        '💨 Vent (AROME)':      couchesMeteo.vent,
+        '🏹 Flèches vent':      couchesMeteo.ventArrows,
+        '🌧 Précipitations':    couchesMeteo.precipitation,
       },
       { position: 'topright', collapsed: true }
     ).addTo(_map);
 
     // OpenSeaMap toujours au-dessus des autres overlays
     _map.on('overlayadd', () => openSeaMap.bringToFront());
+
+    // Mise à jour des bounds pour le rendu des tuiles météo
+    function _updateOmBounds() {
+      if (typeof OMWeatherMapLayer === 'undefined') return;
+      const b = _map.getBounds();
+      OMWeatherMapLayer.updateCurrentBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+    }
+    _map.on('moveend', _updateOmBounds);
+    _updateOmBounds();
 
     // Attribution compacte
     _map.attributionControl.setPrefix('');
@@ -101,6 +118,77 @@ const Carte = (() => {
     _ajouterControleVent();
 
     return _map;
+  }
+
+  // ── Couches météo Open-Meteo Weather Map Layer ──────────────
+
+  /**
+   * Crée et retourne les couches météo raster et vecteur via
+   * l'adaptateur Leaflet de @openmeteo/weather-map-layer.
+   *
+   * Modèle utilisé : meteofrance_arome_france_hd (1 km, 0-42 h)
+   * Fallback automatique vers dwd_icon si AROME non disponible.
+   *
+   * Variables disponibles sur map-tiles.open-meteo.com :
+   *   temperature_2m, wind_u_component_10m, precipitation, cloud_cover…
+   *
+   * Doc : https://github.com/open-meteo/weather-map-layer
+   */
+  function _creerCouchesMeteo() {
+    // Couches vides (fallback si la lib n'est pas chargée)
+    const dummy = L.layerGroup();
+
+    if (typeof OMWeatherMapLayer === 'undefined') {
+      console.warn('OMWeatherMapLayer non disponible — couches météo désactivées');
+      return { temperature: dummy, vent: dummy, ventArrows: dummy, precipitation: dummy };
+    }
+
+    // Initialisation de l'adaptateur Leaflet (une seule fois)
+    if (!_leafletAdapter) {
+      _leafletAdapter = OMWeatherMapLayer.addLeafletProtocolSupport(L);
+      _leafletAdapter.addProtocol('om', OMWeatherMapLayer.omProtocol);
+    }
+
+    const BASE_URL = 'https://map-tiles.open-meteo.com/data_spatial';
+    // Modèle AROME HD (Météo-France, 1 km) — heure courante arrondie à l'heure
+    const MODEL   = 'meteofrance_arome_france_hd';
+    const TS      = 'time_step=current_time_1H';
+
+    function omUrl(variable, extra = '') {
+      return `om://${BASE_URL}/${MODEL}/latest.json?${TS}&variable=${variable}${extra}`;
+    }
+
+    // 🌡 Température 2 m
+    const temperature = _leafletAdapter.createTileLayer(
+      omUrl('temperature_2m'),
+      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    // 💨 Vent 10 m — composante U (vitesse colorée)
+    const vent = _leafletAdapter.createTileLayer(
+      omUrl('wind_u_component_10m'),
+      { opacity: 0.65, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    // 🏹 Flèches de vent (couche vecteur PBF)
+    const ventArrows = _leafletAdapter.createVectorTileLayer(
+      omUrl('wind_u_component_10m', '&arrows=true'),
+      {
+        style(properties) {
+          const v = parseFloat(properties.value) || 0;
+          const alpha = v > 10 ? 0.7 : v > 5 ? 0.5 : 0.3;
+          return { strokeStyle: `rgba(20, 60, 120, ${alpha})`, lineWidth: 1.5, lineCap: 'round' };
+        }
+      }
+    );
+
+    // 🌧 Précipitations
+    const precipitation = _leafletAdapter.createTileLayer(
+      omUrl('precipitation'),
+      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    return { temperature, vent, ventArrows, precipitation };
   }
 
   // ── Contrôle vent Open-Meteo ─────────────────────────────────
@@ -129,14 +217,13 @@ const Carte = (() => {
         clearInterval(this._timer);
       },
 
-        async _charger() {
+      async _charger() {
         const lat = CONFIG.METEO.lat;
         const lon = CONFIG.METEO.lon;
         try {
-          const url = new URL('https://api.open-meteo.com/v1/meteofrance');
+          const url = new URL('https://api.open-meteo.com/v1/forecast');
           url.searchParams.set('latitude',  lat);
           url.searchParams.set('longitude', lon);
-          url.searchParams.set('models',    'meteofrance_arome_france');
           url.searchParams.set('current', 'wind_speed_10m,wind_direction_10m,wind_gusts_10m');
           url.searchParams.set('timezone', 'Europe/Paris');
           const res  = await fetch(url.toString());
