@@ -129,13 +129,14 @@ const Carte = (() => {
         clearInterval(this._timer);
       },
 
-      async _charger() {
+        async _charger() {
         const lat = CONFIG.METEO.lat;
         const lon = CONFIG.METEO.lon;
         try {
-          const url = new URL('https://api.open-meteo.com/v1/forecast');
+          const url = new URL('https://api.open-meteo.com/v1/meteofrance');
           url.searchParams.set('latitude',  lat);
           url.searchParams.set('longitude', lon);
+          url.searchParams.set('models',    'meteofrance_arome_france');
           url.searchParams.set('current', 'wind_speed_10m,wind_direction_10m,wind_gusts_10m');
           url.searchParams.set('timezone', 'Europe/Paris');
           const res  = await fetch(url.toString());
