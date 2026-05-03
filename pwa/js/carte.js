@@ -229,25 +229,10 @@ const Carte = (() => {
       this._canvas.height = s.y;
     },
 
-    // Espacement adapté au niveau de zoom :
-    // zoom faible → beaucoup d'espace entre les barbules (vue synoptique)
-    // zoom fort   → espacement réduit (vue locale détaillée)
-    _spacing() {
-      const z = this._map.getZoom();
-      if (z <= 6)  return 120;
-      if (z <= 7)  return 100;
-      if (z <= 8)  return 85;
-      if (z <= 9)  return 72;
-      if (z <= 10) return 62;
-      if (z <= 11) return 55;
-      if (z <= 12) return 50;
-      return 45;
-    },
-
     async _fetch() {
       const map  = this._map;
       const size = map.getSize();
-      const sp   = this._spacing();
+      const sp   = 60;
       const cols = Math.floor(size.x / sp);
       const rows = Math.floor(size.y / sp);
       const offX = (size.x - cols * sp) / 2 + sp / 2;
