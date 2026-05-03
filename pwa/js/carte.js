@@ -92,8 +92,7 @@ const Carte = (() => {
         'OpenSeaMap ⚓':         openSeaMap,
         '🏔️ Litto3D SHOM':      litto3d,
         '🌡 Temp. air (AROME)': couchesMeteo.temperature,
-        '💨 Vent (AROME)':      couchesMeteo.vent,
-        '🏹 Flèches vent':      couchesMeteo.ventArrows,
+        '💨 Vent + flèches':    couchesMeteo.ventComplet,
         '🌧 Précipitations':    couchesMeteo.precipitation,
       },
       { position: 'topright', collapsed: true }
@@ -140,7 +139,7 @@ const Carte = (() => {
 
     if (typeof OMWeatherMapLayer === 'undefined') {
       console.warn('OMWeatherMapLayer non disponible — couches météo désactivées');
-      return { temperature: dummy, vent: dummy, ventArrows: dummy, precipitation: dummy };
+      return { temperature: dummy, ventComplet: dummy, precipitation: dummy };
     }
 
     // Initialisation de l'adaptateur Leaflet (une seule fois)
@@ -171,16 +170,29 @@ const Carte = (() => {
     );
 
     // 🏹 Flèches de vent (couche vecteur PBF)
+    // La lib récupère automatiquement la composante V pour calculer la direction.
+    // Le style encode simultanément vitesse (épaisseur + opacité) et direction (orientation).
     const ventArrows = _leafletAdapter.createVectorTileLayer(
       omUrl('wind_u_component_10m', '&arrows=true'),
       {
         style(properties) {
           const v = parseFloat(properties.value) || 0;
-          const alpha = v > 10 ? 0.7 : v > 5 ? 0.5 : 0.3;
-          return { strokeStyle: `rgba(20, 60, 120, ${alpha})`, lineWidth: 1.5, lineCap: 'round' };
+          // Vitesse → épaisseur : 1 px (< 5 km/h) … 4 px (> 50 km/h)
+          const lineWidth = Math.min(4, Math.max(1, v / 12));
+          // Vitesse → opacité : faible vent discret, fort vent bien visible
+          const alpha = Math.min(0.9, Math.max(0.2, v / 50));
+          return {
+            strokeStyle: `rgba(10, 40, 100, ${alpha.toFixed(2)})`,
+            lineWidth,
+            lineCap: 'round',
+            lineJoin: 'round',
+          };
         }
       }
     );
+
+    // Groupe combiné : raster vitesse + flèches direction
+    const ventComplet = L.layerGroup([vent, ventArrows]);
 
     // 🌧 Précipitations
     const precipitation = _leafletAdapter.createTileLayer(
@@ -188,7 +200,7 @@ const Carte = (() => {
       { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
     );
 
-    return { temperature, vent, ventArrows, precipitation };
+    return { temperature, ventComplet, precipitation };
   }
 
   // ── Contrôle vent Open-Meteo ─────────────────────────────────
