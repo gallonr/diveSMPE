@@ -92,7 +92,7 @@ const Carte = (() => {
         'OpenSeaMap ⚓':         openSeaMap,
         '🏔️ Litto3D SHOM':      litto3d,
         '🌡 Temp. air (AROME)': couchesMeteo.temperature,
-        '💨 Vent + flèches':    couchesMeteo.ventComplet,
+        '🌬 Vent + barbules':   couchesMeteo.ventBarbules,
         '🌧 Précipitations':    couchesMeteo.precipitation,
       },
       { position: 'topright', collapsed: true }
@@ -126,35 +126,27 @@ const Carte = (() => {
    * l'adaptateur Leaflet de @openmeteo/weather-map-layer.
    *
    * Modèle utilisé : meteofrance_arome_france_hd (1 km, 0-42 h)
-   * Fallback automatique vers dwd_icon si AROME non disponible.
-   *
-   * Variables disponibles sur map-tiles.open-meteo.com :
-   *   temperature_2m, wind_u_component_10m, precipitation, cloud_cover…
-   *
+   * Variables disponibles : temperature_2m, wind_u_component_10m, precipitation…
    * Doc : https://github.com/open-meteo/weather-map-layer
    */
   function _creerCouchesMeteo() {
-    // Couches vides (fallback si la lib n'est pas chargée)
     const dummy = L.layerGroup();
 
     if (typeof OMWeatherMapLayer === 'undefined') {
       console.warn('OMWeatherMapLayer non disponible — couches météo désactivées');
-      return { temperature: dummy, ventComplet: dummy, precipitation: dummy };
+      return { temperature: dummy, ventBarbules: dummy, precipitation: dummy };
     }
 
-    // Initialisation de l'adaptateur Leaflet (une seule fois)
     if (!_leafletAdapter) {
       _leafletAdapter = OMWeatherMapLayer.addLeafletProtocolSupport(L);
       _leafletAdapter.addProtocol('om', OMWeatherMapLayer.omProtocol);
     }
 
     const BASE_URL = 'https://map-tiles.open-meteo.com/data_spatial';
-    // Modèle AROME HD (Météo-France, 1 km) — heure courante arrondie à l'heure
-    const MODEL   = 'meteofrance_arome_france_hd';
-    const TS      = 'time_step=current_time_1H';
-
-    function omUrl(variable, extra = '') {
-      return `om://${BASE_URL}/${MODEL}/latest.json?${TS}&variable=${variable}${extra}`;
+    const MODEL    = 'meteofrance_arome_france_hd';
+    const TS       = 'time_step=current_time_1H';
+    function omUrl(variable) {
+      return `om://${BASE_URL}/${MODEL}/latest.json?${TS}&variable=${variable}`;
     }
 
     // 🌡 Température 2 m
@@ -163,36 +155,12 @@ const Carte = (() => {
       { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
     );
 
-    // 💨 Vent 10 m — composante U (vitesse colorée)
-    const vent = _leafletAdapter.createTileLayer(
+    // 💨 Vent : fond coloré (vitesse) + barbules météo (vitesse + direction)
+    const ventRaster = _leafletAdapter.createTileLayer(
       omUrl('wind_u_component_10m'),
-      { opacity: 0.65, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+      { opacity: 0.50, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
     );
-
-    // 🏹 Flèches de vent (couche vecteur PBF)
-    // La lib récupère automatiquement la composante V pour calculer la direction.
-    // Le style encode simultanément vitesse (épaisseur + opacité) et direction (orientation).
-    const ventArrows = _leafletAdapter.createVectorTileLayer(
-      omUrl('wind_u_component_10m', '&arrows=true'),
-      {
-        style(properties) {
-          const v = parseFloat(properties.value) || 0;
-          // Vitesse → épaisseur : 1 px (< 5 km/h) … 4 px (> 50 km/h)
-          const lineWidth = Math.min(4, Math.max(1, v / 12));
-          // Vitesse → opacité : faible vent discret, fort vent bien visible
-          const alpha = Math.min(0.9, Math.max(0.2, v / 50));
-          return {
-            strokeStyle: `rgba(10, 40, 100, ${alpha.toFixed(2)})`,
-            lineWidth,
-            lineCap: 'round',
-            lineJoin: 'round',
-          };
-        }
-      }
-    );
-
-    // Groupe combiné : raster vitesse + flèches direction
-    const ventComplet = L.layerGroup([vent, ventArrows]);
+    const ventBarbules = L.layerGroup([ventRaster, new _WindBarbLayer({ spacing: 55 })]);
 
     // 🌧 Précipitations
     const precipitation = _leafletAdapter.createTileLayer(
@@ -200,7 +168,166 @@ const Carte = (() => {
       { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
     );
 
-    return { temperature, ventComplet, precipitation };
+    return { temperature, ventBarbules, precipitation };
+  }
+
+  // ── Barbules de vent (couche canvas custom) ──────────────────
+
+  /**
+   * L.Layer qui dessine des barbules météorologiques standard sur un canvas.
+   * Fetche vitesse + direction 10 m via l'API Open-Meteo pour une grille
+   * de points couvrant la vue courante (requête multi-points, batch unique).
+   *
+   * Convention barbules (hémisphère Nord) :
+   *   - Hampe orientée vers l'origine du vent (FROM direction)
+   *   - Fanion plein  = 50 nœuds
+   *   - Trait long    = 10 nœuds
+   *   - Demi-trait    =  5 nœuds
+   *   - Cercle seul   = calme (< 2 nœuds)
+   */
+  const _WindBarbLayer = L.Layer.extend({
+    options: { spacing: 55 }, // px entre deux barbules
+
+    onAdd(map) {
+      this._map = map;
+      const sz = map.getSize();
+      this._canvas = document.createElement('canvas');
+      this._canvas.width  = sz.x;
+      this._canvas.height = sz.y;
+      this._canvas.style.cssText =
+        'position:absolute;top:0;left:0;pointer-events:none;z-index:650;';
+      map.getContainer().appendChild(this._canvas);
+
+      this._onEnd = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 350); };
+      map.on('moveend zoomend', this._onEnd, this);
+      map.on('resize', () => {
+        const s = map.getSize();
+        this._canvas.width  = s.x;
+        this._canvas.height = s.y;
+        this._onEnd();
+      }, this);
+      this._fetch();
+    },
+
+    onRemove(map) {
+      map.getContainer().removeChild(this._canvas);
+      map.off('moveend zoomend', this._onEnd, this);
+      clearTimeout(this._t);
+    },
+
+    async _fetch() {
+      const map  = this._map;
+      const size = map.getSize();
+      const sp   = this.options.spacing;
+      const cols = Math.round(size.x / sp);
+      const rows = Math.round(size.y / sp);
+      const pts = [], lats = [], lons = [];
+      for (let r = 0; r <= rows; r++) {
+        for (let c = 0; c <= cols; c++) {
+          const px = ((size.x - sp * cols) / 2) + c * sp;
+          const py = ((size.y - sp * rows) / 2) + r * sp;
+          const ll = map.containerPointToLatLng([px, py]);
+          pts.push({ x: px, y: py });
+          lats.push(+ll.lat.toFixed(3));
+          lons.push(+ll.lng.toFixed(3));
+        }
+      }
+      try {
+        const url = new URL('https://api.open-meteo.com/v1/meteofrance');
+        url.searchParams.set('latitude',      lats.join(','));
+        url.searchParams.set('longitude',     lons.join(','));
+        url.searchParams.set('models',        'meteofrance_arome_france_hd');
+        url.searchParams.set('current',       'wind_speed_10m,wind_direction_10m');
+        url.searchParams.set('timezone',      'Europe/Paris');
+        url.searchParams.set('forecast_days', '1');
+        const res  = await fetch(url.toString());
+        const json = await res.json();
+        const arr  = Array.isArray(json) ? json : [json];
+        this._pts = arr.map((d, i) => ({
+          x: pts[i].x, y: pts[i].y,
+          kmh: d.current?.wind_speed_10m,
+          dir: d.current?.wind_direction_10m,
+        }));
+        this._draw();
+      } catch (e) {
+        console.warn('Barbules vent:', e);
+      }
+    },
+
+    _draw() {
+      const ctx = this._canvas.getContext('2d');
+      ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
+      if (!this._pts) return;
+      for (const p of this._pts) {
+        if (p.kmh != null && p.dir != null) _drawBarb(ctx, p.x, p.y, p.kmh, p.dir);
+      }
+    },
+  });
+
+  /**
+   * Dessine une barbule météo sur un canvas 2D.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {number} x, y   — centre en px
+   * @param {number} kmh    — vitesse vent (km/h)
+   * @param {number} dirDeg — direction FROM (convention météo, 0=Nord)
+   */
+  function _drawBarb(ctx, x, y, kmh, dirDeg) {
+    const kn    = kmh / 1.852;
+    const COL   = 'rgba(10,30,80,0.88)';
+    const SHAFT = 20; // demi-hampe (px)
+    const BLEN  = 9;  // longueur d'une barbule complète
+    const BSTEP = 4;  // espacement entre barbules
+
+    ctx.save();
+    ctx.translate(x, y);
+    // Rotation : axe local −y pointe vers l'ORIGINE du vent (FROM)
+    ctx.rotate(dirDeg * Math.PI / 180);
+    ctx.strokeStyle = COL;
+    ctx.fillStyle   = COL;
+    ctx.lineWidth   = 1.5;
+    ctx.lineCap     = 'round';
+
+    if (kn < 2) {
+      // Calme : cercle vide
+      ctx.beginPath(); ctx.arc(0, 0, 4, 0, 2 * Math.PI); ctx.stroke();
+      ctx.restore(); return;
+    }
+
+    // Hampe : du côté sous le vent (+y) vers l'amont (−y)
+    ctx.beginPath(); ctx.moveTo(0, SHAFT); ctx.lineTo(0, -SHAFT); ctx.stroke();
+
+    // Barbules dessinées depuis l'extrémité amont (−SHAFT), vers +x (droite)
+    let rem = Math.round(kn);
+    let yb  = -SHAFT;
+
+    // Fanions 50 nœuds (triangles pleins)
+    while (rem >= 50) {
+      ctx.beginPath();
+      ctx.moveTo(0, yb);
+      ctx.lineTo(BLEN, yb + BSTEP);
+      ctx.lineTo(0,    yb + BSTEP * 2);
+      ctx.closePath(); ctx.fill();
+      yb += BSTEP * 2; rem -= 50;
+    }
+    // Barbules 10 nœuds (trait long)
+    while (rem >= 10) {
+      ctx.beginPath();
+      ctx.moveTo(0, yb);
+      ctx.lineTo(BLEN, yb + BSTEP * 0.5);
+      ctx.stroke();
+      yb += BSTEP; rem -= 10;
+    }
+    // Demi-barbule 5 nœuds
+    if (rem >= 5) {
+      ctx.beginPath();
+      ctx.moveTo(0, yb);
+      ctx.lineTo(BLEN * 0.5, yb + BSTEP * 0.25);
+      ctx.stroke();
+    }
+
+    // Point central
+    ctx.beginPath(); ctx.arc(0, 0, 2, 0, 2 * Math.PI); ctx.fill();
+    ctx.restore();
   }
 
   // ── Contrôle vent Open-Meteo ─────────────────────────────────
