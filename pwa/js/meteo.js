@@ -1,23 +1,14 @@
 /**
- * meteo.js — Météo marine via Open-Meteo (Phase 10)
+ * meteo.js — Météo marine via Open-Meteo (Phase 11)
  *
- * Source données chiffrées : Open-Meteo (gratuit, sans clé, JSON)
- *   → https://open-meteo.com/
+ * Modèles Météo-France via Open-Meteo (gratuit, sans clé, JSON) :
+ *   → AROME PI  : meteofrance_arome_france      — 1.3 km, nowcasting 0-42h
+ *                 Utilisé pour les conditions actuelles (current)
+ *   → AROME HD  : meteofrance_arome_france_hd   — 1 km, prévisions 0-42h
+ *                 Utilisé pour les prévisions horaires 24h
+ *   → API Marine: marine-api.open-meteo.com     — houle (MFWAM/ERA5)
  *
- * ── Note sur l'API Météo-France (AROME / MFWAM) ──────────────────────────
- * L'API "Ciblée Modèles" de Météo-France est de type WCS/WMS OGC INSPIRE.
- * Elle retourne soit :
- *   - WCS : fichiers binaires GRIB2 → nécessitent eccodes (Python/C),
- *            non décodables nativement dans un navigateur.
- *   - WMS : images PNG d'un champ 2D → utilisables comme overlay Leaflet.
- *
- * L'intégration des données chiffrées MF (AROME/MFWAM) n'est donc possible
- * que via un backend proxy (hors scope GitHub Pages).
- *
- * En revanche, les overlays cartographiques WMS (champ de vent, houle)
- * peuvent être ajoutés directement sur la carte Leaflet via carte.js.
- * Doc API : https://confluence-meteofrance.atlassian.net/wiki/x/AYCVKg
- * ─────────────────────────────────────────────────────────────────────────
+ * Doc Open-Meteo MF : https://open-meteo.com/en/docs/meteofrance-api
  */
 
 const Meteo = (() => {
@@ -71,17 +62,32 @@ const Meteo = (() => {
   }
 
   /**
-   * Météo atmosphérique — Météo-France AROME France HD (2.5 km, sans clé)
-   * Variables : température, code météo, vent 10 m, rafales, visibilité
+   * Conditions actuelles — AROME PI (meteofrance_arome_france, 1.3 km)
+   * Résolution maximale, mise à jour toutes les heures, portée 0-42h.
+   * Idéal pour le nowcasting : température, vent, rafales, visibilité.
    */
-  async function _fetchArome(lat, lon) {
-    const url = new URL('https://api.open-meteo.com/v1/forecast');
+  async function _fetchAromePi(lat, lon) {
+    const url = new URL('https://api.open-meteo.com/v1/meteofrance');
     url.searchParams.set('latitude',  lat);
     url.searchParams.set('longitude', lon);
-    url.searchParams.set('models',    'meteofrance_arome_france_hd');
+    url.searchParams.set('models',    'meteofrance_arome_france');
     url.searchParams.set('current',
       'temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,visibility'
     );
+    url.searchParams.set('timezone',      'Europe/Paris');
+    url.searchParams.set('forecast_days', '1');
+    return _fetchJson(url);
+  }
+
+  /**
+   * Prévisions horaires 24h — AROME HD (meteofrance_arome_france_hd, 1 km)
+   * Meilleure résolution spatiale pour les prévisions vent détaillées.
+   */
+  async function _fetchAromeHd(lat, lon) {
+    const url = new URL('https://api.open-meteo.com/v1/meteofrance');
+    url.searchParams.set('latitude',  lat);
+    url.searchParams.set('longitude', lon);
+    url.searchParams.set('models',    'meteofrance_arome_france_hd');
     url.searchParams.set('hourly',
       'wind_speed_10m,wind_direction_10m,wind_gusts_10m,temperature_2m,weather_code,visibility'
     );
@@ -106,13 +112,20 @@ const Meteo = (() => {
     return _fetchJson(url);
   }
 
-  /** Agrège les deux sources en un seul objet {current, hourly, _marine} */
+  /** Agrège les trois sources en un seul objet {current, hourly, _marine} */
   async function _fetchMeteo(lat, lon) {
-    const [arome, marine] = await Promise.allSettled([
-      _fetchArome(lat, lon),
+    const [pi, hd, marine] = await Promise.allSettled([
+      _fetchAromePi(lat, lon),
+      _fetchAromeHd(lat, lon),
       _fetchMarine(lat, lon),
     ]);
-    const data = arome.status === 'fulfilled' ? arome.value : {};
+    // current → AROME PI (nowcasting), fallback AROME HD
+    const data = pi.status === 'fulfilled' ? pi.value : {};
+    // hourly → AROME HD (prévisions)
+    if (hd.status === 'fulfilled') {
+      data.hourly      = hd.value.hourly;
+      data.hourly_units = hd.value.hourly_units;
+    }
     data._marine = marine.status === 'fulfilled' ? marine.value : null;
     return data;
   }
@@ -266,7 +279,7 @@ const Meteo = (() => {
       ${ventPrevisionHtml}
 
       <p style="text-align:center;font-size:11px;color:#636e72;margin-top:8px;">
-        🇫🇷 Météo-France AROME France HD via Open-Meteo.com — actualisé toutes les 30 min
+        🇫🇷 AROME PI (actuel) · AROME HD (prévisions) · Marine — Open-Meteo.com
       </p>
     `;
   }
