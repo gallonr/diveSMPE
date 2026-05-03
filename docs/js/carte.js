@@ -119,119 +119,141 @@ const Carte = (() => {
     return _map;
   }
 
-  // ── Couches météo Open-Meteo Weather Map Layer ──────────────
-
-  /**
-   * Crée et retourne les couches météo raster et vecteur via
-   * l'adaptateur Leaflet de @openmeteo/weather-map-layer.
-   *
-   * Modèle utilisé : meteofrance_arome_france_hd (1 km, 0-42 h)
-   * Variables disponibles : temperature_2m, wind_u_component_10m, precipitation…
-   * Doc : https://github.com/open-meteo/weather-map-layer
-   */
-  function _creerCouchesMeteo() {
-    const dummy = L.layerGroup();
-
-    if (typeof OMWeatherMapLayer === 'undefined') {
-      console.warn('OMWeatherMapLayer non disponible — couches météo désactivées');
-      return { temperature: dummy, ventBarbules: dummy, precipitation: dummy };
-    }
-
-    if (!_leafletAdapter) {
-      _leafletAdapter = OMWeatherMapLayer.addLeafletProtocolSupport(L);
-      _leafletAdapter.addProtocol('om', OMWeatherMapLayer.omProtocol);
-    }
-
-    const BASE_URL = 'https://map-tiles.open-meteo.com/data_spatial';
-    const MODEL    = 'meteofrance_arome_france_hd';
-    const TS       = 'time_step=current_time_1H';
-    function omUrl(variable) {
-      return `om://${BASE_URL}/${MODEL}/latest.json?${TS}&variable=${variable}`;
-    }
-
-    // 🌡 Température 2 m
-    const temperature = _leafletAdapter.createTileLayer(
-      omUrl('temperature_2m'),
-      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
-    );
-
-    // 💨 Vent : fond coloré (vitesse) + barbules météo (vitesse + direction)
-    const ventRaster = _leafletAdapter.createTileLayer(
-      omUrl('wind_u_component_10m'),
-      { opacity: 0.50, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
-    );
-    const ventBarbules = L.layerGroup([ventRaster, new _WindBarbLayer({ spacing: 55 })]);
-
-    // 🌧 Précipitations
-    const precipitation = _leafletAdapter.createTileLayer(
-      omUrl('precipitation'),
-      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
-    );
-
-    return { temperature, ventBarbules, precipitation };
-  }
-
   // ── Barbules de vent (couche canvas custom) ──────────────────
 
   /**
-   * L.Layer qui dessine des barbules météorologiques standard sur un canvas.
-   * Fetche vitesse + direction 10 m via l'API Open-Meteo pour une grille
-   * de points couvrant la vue courante (requête multi-points, batch unique).
-   *
-   * Convention barbules (hémisphère Nord) :
-   *   - Hampe orientée vers l'origine du vent (FROM direction)
-   *   - Fanion plein  = 50 nœuds
-   *   - Trait long    = 10 nœuds
-   *   - Demi-trait    =  5 nœuds
-   *   - Cercle seul   = calme (< 2 nœuds)
+   * Dessine une barbule météo sur un canvas 2D.
+   * Convention hémisphère Nord :
+   *   Hampe FROM (vers l'origine), barbules à droite de la hampe.
+   *   Fanion plein = 50 kn, trait long = 10 kn, demi-trait = 5 kn.
+   */
+  function _drawBarb(ctx, x, y, kmh, dirDeg) {
+    const kn    = kmh / 1.852;
+    const SHAFT = 22; // longueur hampe (px)
+    const BLEN  = 10; // longueur barbule longue
+    const BSTEP = 5;  // espacement entre barbules
+
+    ctx.save();
+    ctx.translate(x, y);
+    // L'axe +y pointe vers l'ORIGINE du vent (FROM direction)
+    ctx.rotate((dirDeg + 180) * Math.PI / 180);
+    ctx.strokeStyle = 'rgba(10,30,100,0.9)';
+    ctx.fillStyle   = 'rgba(10,30,100,0.9)';
+    ctx.lineWidth   = 1.6;
+    ctx.lineCap     = 'round';
+    ctx.lineJoin    = 'round';
+
+    if (kn < 2) {
+      ctx.beginPath(); ctx.arc(0, 0, 5, 0, 2 * Math.PI); ctx.stroke();
+      ctx.restore(); return;
+    }
+
+    // Hampe : du centre (0,0) vers le bas (+y = amont)
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, SHAFT); ctx.stroke();
+
+    // Barbules partent de l'extrémité amont, vers le haut
+    let rem = Math.round(kn);
+    let yb  = SHAFT;
+
+    // Fanions 50 kn (triangle plein)
+    while (rem >= 50) {
+      ctx.beginPath();
+      ctx.moveTo(0, yb);
+      ctx.lineTo(BLEN, yb - BSTEP);
+      ctx.lineTo(0,    yb - BSTEP * 2);
+      ctx.closePath(); ctx.fill();
+      yb -= BSTEP * 2 + 1; rem -= 50;
+    }
+    // Traits 10 kn
+    while (rem >= 10) {
+      ctx.beginPath();
+      ctx.moveTo(0, yb); ctx.lineTo(BLEN, yb - BSTEP * 0.6);
+      ctx.stroke();
+      yb -= BSTEP; rem -= 10;
+    }
+    // Demi-trait 5 kn
+    if (rem >= 5) {
+      ctx.beginPath();
+      ctx.moveTo(0, yb); ctx.lineTo(BLEN * 0.5, yb - BSTEP * 0.3);
+      ctx.stroke();
+    }
+
+    // Point central (nœud de la hampe)
+    ctx.beginPath(); ctx.arc(0, 0, 2, 0, 2 * Math.PI); ctx.fill();
+    ctx.restore();
+  }
+
+  /**
+   * L.Layer affichant une grille de barbules météo sur un canvas Leaflet.
+   * Requête batch Open-Meteo (AROME HD) à chaque déplacement/zoom.
+   * spacing : distance en px entre deux barbules.
    */
   const _WindBarbLayer = L.Layer.extend({
-    options: { spacing: 55 }, // px entre deux barbules
+    options: { spacing: 60 },
 
     onAdd(map) {
-      this._map = map;
-      const sz = map.getSize();
-      this._canvas = document.createElement('canvas');
-      this._canvas.width  = sz.x;
-      this._canvas.height = sz.y;
-      this._canvas.style.cssText =
-        'position:absolute;top:0;left:0;pointer-events:none;z-index:650;';
-      map.getContainer().appendChild(this._canvas);
+      this._map    = map;
+      // Utiliser le pane overlayPane pour rester dans la pile Leaflet
+      this._canvas = L.DomUtil.create('canvas', 'leaflet-zoom-hide');
+      this._pane   = map.getPane('overlayPane');
+      this._pane.appendChild(this._canvas);
+      this._canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;';
+      this._resize();
 
-      this._onEnd = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 350); };
-      map.on('moveend zoomend', this._onEnd, this);
-      map.on('resize', () => {
-        const s = map.getSize();
-        this._canvas.width  = s.x;
-        this._canvas.height = s.y;
-        this._onEnd();
-      }, this);
+      this._onMove    = () => this._repositionCanvas();
+      this._onMoveEnd = () => { clearTimeout(this._t); this._t = setTimeout(() => this._fetch(), 400); };
+
+      map.on('move',              this._onMove,    this);
+      map.on('moveend zoomend',   this._onMoveEnd, this);
+      map.on('resize',            this._onResize,  this);
       this._fetch();
     },
 
     onRemove(map) {
-      map.getContainer().removeChild(this._canvas);
-      map.off('moveend zoomend', this._onEnd, this);
+      this._pane.removeChild(this._canvas);
+      map.off('move',            this._onMove,    this);
+      map.off('moveend zoomend', this._onMoveEnd, this);
+      map.off('resize',          this._onResize,  this);
       clearTimeout(this._t);
+    },
+
+    _resize() {
+      const s = this._map.getSize();
+      this._canvas.width  = s.x;
+      this._canvas.height = s.y;
+      this._repositionCanvas();
+    },
+
+    _onResize() { this._resize(); this._fetch(); },
+
+    // Aligne le canvas sur le coin haut-gauche de la carte
+    _repositionCanvas() {
+      const topLeft = this._map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(this._canvas, topLeft);
     },
 
     async _fetch() {
       const map  = this._map;
       const size = map.getSize();
       const sp   = this.options.spacing;
-      const cols = Math.round(size.x / sp);
-      const rows = Math.round(size.y / sp);
+      const cols = Math.floor(size.x / sp);
+      const rows = Math.floor(size.y / sp);
+      const offX = (size.x - cols * sp) / 2 + sp / 2;
+      const offY = (size.y - rows * sp) / 2 + sp / 2;
+
       const pts = [], lats = [], lons = [];
-      for (let r = 0; r <= rows; r++) {
-        for (let c = 0; c <= cols; c++) {
-          const px = ((size.x - sp * cols) / 2) + c * sp;
-          const py = ((size.y - sp * rows) / 2) + r * sp;
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const px = offX + c * sp;
+          const py = offY + r * sp;
           const ll = map.containerPointToLatLng([px, py]);
           pts.push({ x: px, y: py });
           lats.push(+ll.lat.toFixed(3));
           lons.push(+ll.lng.toFixed(3));
         }
       }
+      if (!pts.length) return;
+
       try {
         const url = new URL('https://api.open-meteo.com/v1/meteofrance');
         url.searchParams.set('latitude',      lats.join(','));
@@ -250,7 +272,7 @@ const Carte = (() => {
         }));
         this._draw();
       } catch (e) {
-        console.warn('Barbules vent:', e);
+        console.warn('WindBarbLayer fetch error:', e);
       }
     },
 
@@ -264,70 +286,44 @@ const Carte = (() => {
     },
   });
 
-  /**
-   * Dessine une barbule météo sur un canvas 2D.
-   * @param {CanvasRenderingContext2D} ctx
-   * @param {number} x, y   — centre en px
-   * @param {number} kmh    — vitesse vent (km/h)
-   * @param {number} dirDeg — direction FROM (convention météo, 0=Nord)
-   */
-  function _drawBarb(ctx, x, y, kmh, dirDeg) {
-    const kn    = kmh / 1.852;
-    const COL   = 'rgba(10,30,80,0.88)';
-    const SHAFT = 20; // demi-hampe (px)
-    const BLEN  = 9;  // longueur d'une barbule complète
-    const BSTEP = 4;  // espacement entre barbules
+  // ── Couches météo Open-Meteo Weather Map Layer ──────────────
 
-    ctx.save();
-    ctx.translate(x, y);
-    // Rotation : axe local −y pointe vers l'ORIGINE du vent (FROM)
-    ctx.rotate(dirDeg * Math.PI / 180);
-    ctx.strokeStyle = COL;
-    ctx.fillStyle   = COL;
-    ctx.lineWidth   = 1.5;
-    ctx.lineCap     = 'round';
+  function _creerCouchesMeteo() {
+    const dummy = L.layerGroup();
 
-    if (kn < 2) {
-      // Calme : cercle vide
-      ctx.beginPath(); ctx.arc(0, 0, 4, 0, 2 * Math.PI); ctx.stroke();
-      ctx.restore(); return;
+    if (typeof OMWeatherMapLayer === 'undefined') {
+      console.warn('OMWeatherMapLayer non disponible — couches météo désactivées');
+      return { temperature: dummy, ventBarbules: dummy, precipitation: dummy };
     }
 
-    // Hampe : du côté sous le vent (+y) vers l'amont (−y)
-    ctx.beginPath(); ctx.moveTo(0, SHAFT); ctx.lineTo(0, -SHAFT); ctx.stroke();
-
-    // Barbules dessinées depuis l'extrémité amont (−SHAFT), vers +x (droite)
-    let rem = Math.round(kn);
-    let yb  = -SHAFT;
-
-    // Fanions 50 nœuds (triangles pleins)
-    while (rem >= 50) {
-      ctx.beginPath();
-      ctx.moveTo(0, yb);
-      ctx.lineTo(BLEN, yb + BSTEP);
-      ctx.lineTo(0,    yb + BSTEP * 2);
-      ctx.closePath(); ctx.fill();
-      yb += BSTEP * 2; rem -= 50;
-    }
-    // Barbules 10 nœuds (trait long)
-    while (rem >= 10) {
-      ctx.beginPath();
-      ctx.moveTo(0, yb);
-      ctx.lineTo(BLEN, yb + BSTEP * 0.5);
-      ctx.stroke();
-      yb += BSTEP; rem -= 10;
-    }
-    // Demi-barbule 5 nœuds
-    if (rem >= 5) {
-      ctx.beginPath();
-      ctx.moveTo(0, yb);
-      ctx.lineTo(BLEN * 0.5, yb + BSTEP * 0.25);
-      ctx.stroke();
+    if (!_leafletAdapter) {
+      _leafletAdapter = OMWeatherMapLayer.addLeafletProtocolSupport(L);
+      _leafletAdapter.addProtocol('om', OMWeatherMapLayer.omProtocol);
     }
 
-    // Point central
-    ctx.beginPath(); ctx.arc(0, 0, 2, 0, 2 * Math.PI); ctx.fill();
-    ctx.restore();
+    const BASE_URL = 'https://map-tiles.open-meteo.com/data_spatial';
+    const MODEL    = 'meteofrance_arome_france_hd';
+    const TS       = 'time_step=current_time_1H';
+    function omUrl(v) {
+      return `om://${BASE_URL}/${MODEL}/latest.json?${TS}&variable=${v}`;
+    }
+
+    // 🌡 Température 2 m
+    const temperature = _leafletAdapter.createTileLayer(
+      omUrl('temperature_2m'),
+      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    // 🌬 Barbules de vent (canvas custom — sans raster)
+    const ventBarbules = new _WindBarbLayer({ spacing: 60 });
+
+    // 🌧 Précipitations
+    const precipitation = _leafletAdapter.createTileLayer(
+      omUrl('precipitation'),
+      { opacity: 0.70, attribution: '© <a href="https://open-meteo.com">Open-Meteo</a> · MF AROME HD' }
+    );
+
+    return { temperature, ventBarbules, precipitation };
   }
 
   // ── Contrôle vent Open-Meteo ─────────────────────────────────
