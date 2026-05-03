@@ -1568,4 +1568,28 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
   color: var(--emeraude-deep);
 }
 
+/* ── Contrôle vent Open-Meteo sur la carte ──────────────────── */
+.leaflet-vent-control {
+  background: rgba(12, 62, 68, 0.88);
+  border: 1px solid var(--emeraude);
+  border-radius: var(--radius);
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--blanc);
+  backdrop-filter: blur(4px);
+  pointer-events: none;
+  user-select: none;
+}
 
+.vent-widget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.vent-icon  { font-size: 16px; }
+.vent-val   { font-weight: 700; color: var(--emeraude-light); }
+.vent-dir   { color: var(--gris-texte); }
+.vent-rafale{ color: var(--orange-light); font-size: 11px; }
+.vent-loading { color: var(--gris-texte); }

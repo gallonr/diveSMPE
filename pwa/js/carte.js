@@ -65,6 +65,8 @@ const Carte = (() => {
       opacity: CONFIG.TILES.openSeaMap.opacity,
     }).addTo(_map);
 
+
+
     // Overlay WMS Litto3D SHOM Bretagne 2018-2021
     const litto3d = L.tileLayer.wms(CONFIG.TILES.litto3d.url, {
       layers:      CONFIG.TILES.litto3d.layer,
@@ -95,7 +97,67 @@ const Carte = (() => {
     // Attribution compacte
     _map.attributionControl.setPrefix('');
 
+    // Contrôle vent Open-Meteo (aucune clé requise)
+    _ajouterControleVent();
+
     return _map;
+  }
+
+  // ── Contrôle vent Open-Meteo ─────────────────────────────────
+
+  function _directionVentCarte(deg) {
+    const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSO','SO','OSO','O','ONO','NO','NNO'];
+    return dirs[Math.round(deg / 22.5) % 16];
+  }
+
+  function _ajouterControleVent() {
+    const WindControl = L.Control.extend({
+      options: { position: 'bottomleft' },
+
+      onAdd() {
+        const div = L.DomUtil.create('div', 'leaflet-vent-control');
+        div.innerHTML = '<span class="vent-loading">🌬 …</span>';
+        L.DomEvent.disableClickPropagation(div);
+        this._div = div;
+        this._charger();
+        // Actualisation toutes les 15 min
+        this._timer = setInterval(() => this._charger(), 15 * 60 * 1000);
+        return div;
+      },
+
+      onRemove() {
+        clearInterval(this._timer);
+      },
+
+      async _charger() {
+        const lat = CONFIG.METEO.lat;
+        const lon = CONFIG.METEO.lon;
+        try {
+          const url = new URL('https://api.open-meteo.com/v1/forecast');
+          url.searchParams.set('latitude',  lat);
+          url.searchParams.set('longitude', lon);
+          url.searchParams.set('current', 'wind_speed_10m,wind_direction_10m,wind_gusts_10m');
+          url.searchParams.set('timezone', 'Europe/Paris');
+          const res  = await fetch(url.toString());
+          const data = await res.json();
+          const c    = data.current;
+          const dir  = _directionVentCarte(c.wind_direction_10m);
+          const deg  = c.wind_direction_10m;
+          const arrow = `<span style="display:inline-block;transform:rotate(${deg}deg);font-style:normal;">↑</span>`;
+          this._div.innerHTML = `
+            <div class="vent-widget">
+              <span class="vent-icon">🌬</span>
+              <span class="vent-val">${Math.round(c.wind_speed_10m)} km/h</span>
+              <span class="vent-dir">${arrow} ${dir}</span>
+              <span class="vent-rafale">⚡ ${Math.round(c.wind_gusts_10m)} km/h</span>
+            </div>`;
+        } catch (_) {
+          this._div.innerHTML = '<span class="vent-loading">🌬 —</span>';
+        }
+      },
+    });
+
+    new WindControl().addTo(_map);
   }
 
   // ── Marqueurs sites ──────────────────────────────────────────
