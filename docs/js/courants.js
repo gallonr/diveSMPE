@@ -153,7 +153,7 @@ const Courants = (() => {
                 : vitesse < 150 ? '#ffa301'   // 0.75–1.5 kn : orange
                 : '#e74c3c';                  // > 1.5 kn : rouge
 
-    const len = Math.min(vitesse * scale, 40); // longueur plafonnée à 40 px
+    const len = Math.min(vitesse * scale, 100); // longueur plafonnée à 100 px
     // Direction TO (u=Est positif → droite, v=Nord positif → haut donc -y)
     const angle = Math.atan2(-v, u);  // angle en coords canvas (y inversé)
 
@@ -163,7 +163,7 @@ const Courants = (() => {
     ctx.save();
     ctx.strokeStyle = color;
     ctx.fillStyle   = color;
-    ctx.lineWidth   = 2;
+    ctx.lineWidth   = 3;
     ctx.lineCap     = 'round';
     ctx.globalAlpha = 0.85;
 
@@ -174,7 +174,7 @@ const Courants = (() => {
     ctx.stroke();
 
     // Tête de flèche
-    const hLen = Math.max(6, len * 0.28);
+    const hLen = Math.max(10, len * 0.35);
     const hAng = 0.45; // angle demi-ouverture (rad)
     ctx.beginPath();
     ctx.moveTo(tipX, tipY);
@@ -263,7 +263,7 @@ const Courants = (() => {
       const omegas  = _grid.meta.constituants.map(c => _grid.meta.omega_deg_h[c]);
       const zoom    = map.getZoom();
       // Echelle flèche : ajustée au zoom (plus le zoom est grand, plus les flèches sont longues)
-      const scale   = Math.max(0.18, zoom / 70);
+      const scale   = Math.max(0.5, zoom / 24);
 
       for (const pt of _grid.points) {
         const px = map.latLngToLayerPoint([pt.lat, pt.lon]);
