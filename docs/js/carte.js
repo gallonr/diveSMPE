@@ -81,9 +81,13 @@ const Carte = (() => {
     const couchesMeteo = _creerCouchesMeteo();
 
     // ── Couche courants de marée ──────────────────────────────
-    const coucheCourants = (typeof Courants !== 'undefined')
+    const courantsDisponibles = (typeof Courants !== 'undefined') && Courants.isDisponible();
+    const coucheCourants = courantsDisponibles
       ? Courants.creerCouche()
-      : L.layerGroup();
+      : L.layerGroup();   // couche vide si données non générées
+    const labelCourants = courantsDisponibles
+      ? '🌊 Courants marée'
+      : '🌊 Courants marée ⚠️';
 
     // Contrôle des couches
     L.control.layers(
@@ -96,7 +100,7 @@ const Carte = (() => {
       {
         '⚓ OpenSeaMap':         openSeaMap,
         '🏔️ Litto3D SHOM':      litto3d,
-        '� Courants marée':    coucheCourants,
+        [labelCourants]:         coucheCourants,
         '�🌡 Temp.': couchesMeteo.temperature,
         '🌬 Vent':   couchesMeteo.ventBarbules,
         '🌧 Précipitations':    couchesMeteo.precipitation,
@@ -107,13 +111,30 @@ const Carte = (() => {
     // Ajouter le contrôle temporel courants quand la couche est activée
     let _courantsCtrl = null;
     _map.on('overlayadd', e => {
-      if (e.name === '🌊 Courants marée' && typeof Courants !== 'undefined') {
-        if (!_courantsCtrl) _courantsCtrl = Courants.ajouterControle(_map);
+      if (e.name === labelCourants) {
+        if (courantsDisponibles) {
+          if (!_courantsCtrl) _courantsCtrl = Courants.ajouterControle(_map);
+        } else {
+          // Données non générées : afficher un popup d'information
+          L.popup({ maxWidth: 320 })
+            .setLatLng(_map.getCenter())
+            .setContent(`
+              <div style="font-family:Signika,sans-serif;font-size:13px;line-height:1.5">
+                <strong>🌊 Courants de marée</strong><br>
+                Les données n'ont pas encore été générées.<br><br>
+                <strong>Pour les activer :</strong><br>
+                <code style="font-size:11px">python r/05_courants_fes.py</code><br><br>
+                <em style="font-size:11px">Nécessite les fichiers FES2022<br>
+                eastward_velocity/ et northward_velocity/<br>
+                dans le dossier <code>fes2022/</code></em>
+              </div>`)
+            .openOn(_map);
+        }
       }
       openSeaMap.bringToFront();
     });
     _map.on('overlayremove', e => {
-      if (e.name === '🌊 Courants marée' && _courantsCtrl) {
+      if (e.name === labelCourants && _courantsCtrl) {
         _map.removeControl(_courantsCtrl);
         _courantsCtrl = null;
       }

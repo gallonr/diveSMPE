@@ -57,8 +57,9 @@ DOCS_DIR = ROOT / 'docs' / 'data'
 # Bounding-box de la grille (baie de Saint-Malo + approches)
 BBOX = dict(lat_min=48.30, lat_max=48.95, lon_min=-2.60, lon_max=-1.40)
 
-# Résolution FES2022 (1/30°) — on utilise 1/16° pour limiter la taille du JSON
-GRID_RES = 1.0 / 16.0   # ~7 km : compromis taille/précision
+# Résolution FES2022 native (1/30°) ≈ 3.7 km — meilleure résolution locale
+# Note : augmenter à 1/16° réduit la taille du JSON mais perd les effets de méso-échelle
+GRID_RES = 1.0 / 30.0   # résolution native FES2022
 
 # Période de référence pour l'ajustement harmonique (35 jours, pas de 30 min)
 REF_START = datetime(2026, 1, 1, 0, 0, 0, tzinfo=timezone.utc)

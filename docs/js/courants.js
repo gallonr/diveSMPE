@@ -370,6 +370,9 @@ const Courants = (() => {
             <span class="courants-scale-item" style="color:#ffa301">● 1 kn</span>
             <span class="courants-scale-item" style="color:#e74c3c">● &gt;1.5 kn</span>
           </div>
+          <div class="courants-precision">
+            ⚠️ FES2022 ~3.7 km — effets locaux (chenaux, caps) non résolus
+          </div>
         `;
         L.DomEvent.disableClickPropagation(div);
         L.DomEvent.disableScrollPropagation(div);
@@ -475,6 +478,9 @@ const Courants = (() => {
         </div>
         <div class="courant-detail">
           U=${r.u.toFixed(1)} cm/s · V=${r.v.toFixed(1)} cm/s
+        </div>
+        <div class="courant-precision">
+          ⚠️ FES2022 ≈3.7 km — les effets locaux (chenaux, caps, récifs) peuvent différer significativement
         </div>
       </div>`;
   }
