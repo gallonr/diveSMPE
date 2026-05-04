@@ -21,17 +21,17 @@ const App = (() => {
     // Horloge locale
     _startClock();
 
-    // 1. Carte Leaflet
-    Carte.init();
-
-    // 2. Marées (bandeau immédiat)
+    // 1. Marées (bandeau immédiat — nécessaire avant la carte pour les états marée)
     await Marees.init();
 
-    // 3. Bathymétrie LiDAR (chargement silencieux)
+    // 2. Bathymétrie LiDAR (chargement silencieux)
     await Bathy.init();
 
-    // 4. Courants de marée FES2022 (chargement silencieux, dégradation gracieuse)
+    // 3. Courants FES2022 — doit précéder Carte.init() pour que isDisponible() soit juste
     if (typeof Courants !== 'undefined') await Courants.init();
+
+    // 4. Carte Leaflet (utilise Courants.isDisponible() pour le contrôle des couches)
+    Carte.init();
 
     // 5. Sites (chargement GeoJSON + affichage carte)
     const geojson = await Sites.init(_onSiteSelectionne);

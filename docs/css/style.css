@@ -1678,6 +1678,13 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
 .courants-scale-item {
   white-space: nowrap;
 }
+.courants-precision {
+  margin-top: 5px;
+  font-size: 10px;
+  color: var(--orange-light);
+  opacity: 0.80;
+  line-height: 1.3;
+}
 
 /* Bloc courant dans la fiche site */
 .courant-bloc {
@@ -1725,4 +1732,11 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
   font-size: 10px;
   color: var(--gris-texte);
   margin-top: 3px;
+}
+.courant-precision {
+  font-size: 10px;
+  color: var(--orange-light);
+  opacity: 0.75;
+  margin-top: 4px;
+  line-height: 1.3;
 }
