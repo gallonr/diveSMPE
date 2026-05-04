@@ -200,14 +200,14 @@ const Courants = (() => {
     onAdd(map) {
       this._map = map;
       this._canvas = document.createElement('canvas');
-      this._canvas.style.cssText =
-        'position:absolute;top:0;left:0;pointer-events:none;z-index:390;';
-      map.getContainer().appendChild(this._canvas);
-      this._setSize();
+      this._canvas.style.cssText = 'position:absolute;pointer-events:none;';
+      // Utilise le pane overlay Leaflet standard (z-index correct, suivi des pans)
+      map.getPanes().overlayPane.appendChild(this._canvas);
+      this._reset();
 
-      this._onMove  = () => { this._schedDraw(200); };
-      this._onZoom  = () => { this._setSize(); this._schedDraw(200); };
-      this._onResize = () => { this._setSize(); this._schedDraw(200); };
+      this._onMove   = () => { this._reset(); this._schedDraw(50); };
+      this._onZoom   = () => { this._reset(); this._schedDraw(50); };
+      this._onResize = () => { this._reset(); this._schedDraw(50); };
 
       map.on('moveend',  this._onMove,   this);
       map.on('zoomend',  this._onZoom,   this);
@@ -217,18 +217,26 @@ const Courants = (() => {
     },
 
     onRemove(map) {
-      map.getContainer().removeChild(this._canvas);
+      map.getPanes().overlayPane.removeChild(this._canvas);
       map.off('moveend',  this._onMove,   this);
       map.off('zoomend',  this._onZoom,   this);
       map.off('resize',   this._onResize, this);
       clearTimeout(this._drawTimer);
     },
 
-    _setSize() {
-      const s = this._map.getSize();
-      this._canvas.width  = s.x;
-      this._canvas.height = s.y;
+    /** Redimensionne le canvas et le positionne dans le pane overlay */
+    _reset() {
+      const map  = this._map;
+      const size = map.getSize();
+      this._canvas.width  = size.x;
+      this._canvas.height = size.y;
+      // Décalage du pane overlay par rapport au coin top-left du container
+      const topLeft = map.containerPointToLayerPoint([0, 0]);
+      L.DomUtil.setPosition(this._canvas, topLeft);
     },
+
+    // _setSize gardé pour compatibilité (alias)
+    _setSize() { this._reset(); },
 
     _schedDraw(delay) {
       clearTimeout(this._drawTimer);
@@ -258,7 +266,7 @@ const Courants = (() => {
       const scale   = Math.max(0.18, zoom / 70);
 
       for (const pt of _grid.points) {
-        const px = map.latLngToContainerPoint([pt.lat, pt.lon]);
+        const px = map.latLngToLayerPoint([pt.lat, pt.lon]);
         // Sauter les points hors de l'écran (+marge)
         const margin = 60;
         if (px.x < -margin || px.x > this._canvas.width  + margin) continue;
