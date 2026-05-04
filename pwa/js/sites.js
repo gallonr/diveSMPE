@@ -182,6 +182,9 @@ const Sites = (() => {
     // Bloc marée interprété
     _majBlocMareeF(p);
 
+    // Bloc courants de marée
+    _majBlocCourantsF(p);
+
     // Profondeurs dynamiques (LiDAR + marée)
     _afficherProfondeurs(p);
 
@@ -258,6 +261,21 @@ const Sites = (() => {
     }
     const entree = (typeof Marees !== 'undefined' && Marees.getAujourd) ? Marees.getAujourd() : null;
     el.innerHTML = MaréeSite.rendreBloc(props, entree);
+  }
+
+  function _majBlocCourantsF(props) {
+    const el = document.getElementById('f-courants-bloc');
+    if (!el) return;
+    if (typeof Courants === 'undefined' || !Courants.isDisponible()) {
+      el.innerHTML = '';
+      el.classList.add('hidden');
+      return;
+    }
+    const lat = props.latitude  ?? props.lat;
+    const lon = props.longitude ?? props.lon;
+    if (lat == null || lon == null) return;
+    el.classList.remove('hidden');
+    el.innerHTML = Courants.renderBlocFiche(lat, lon);
   }
 
   function _afficherProfondeurs(props) {
