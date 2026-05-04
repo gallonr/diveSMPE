@@ -80,6 +80,11 @@ const Carte = (() => {
     // ── Couches météo Open-Meteo Weather Map Layer ───────────
     const couchesMeteo = _creerCouchesMeteo();
 
+    // ── Couche courants de marée ──────────────────────────────
+    const coucheCourants = (typeof Courants !== 'undefined')
+      ? Courants.creerCouche()
+      : L.layerGroup();
+
     // Contrôle des couches
     L.control.layers(
       {
@@ -91,15 +96,30 @@ const Carte = (() => {
       {
         '⚓ OpenSeaMap':         openSeaMap,
         '🏔️ Litto3D SHOM':      litto3d,
-        '🌡 Temp.': couchesMeteo.temperature,
+        '� Courants marée':    coucheCourants,
+        '�🌡 Temp.': couchesMeteo.temperature,
         '🌬 Vent':   couchesMeteo.ventBarbules,
         '🌧 Précipitations':    couchesMeteo.precipitation,
       },
       { position: 'topright', collapsed: true }
     ).addTo(_map);
 
-    // OpenSeaMap toujours au-dessus des autres overlays
-    _map.on('overlayadd', () => openSeaMap.bringToFront());
+    // Ajouter le contrôle temporel courants quand la couche est activée
+    let _courantsCtrl = null;
+    _map.on('overlayadd', e => {
+      if (e.name === '🌊 Courants marée' && typeof Courants !== 'undefined') {
+        if (!_courantsCtrl) _courantsCtrl = Courants.ajouterControle(_map);
+      }
+      openSeaMap.bringToFront();
+    });
+    _map.on('overlayremove', e => {
+      if (e.name === '🌊 Courants marée' && _courantsCtrl) {
+        _map.removeControl(_courantsCtrl);
+        _courantsCtrl = null;
+      }
+    });
+
+    // (l'événement overlayadd gère déjà bringToFront ci-dessus)
 
     // Mise à jour des bounds pour le rendu des tuiles météo
     function _updateOmBounds() {

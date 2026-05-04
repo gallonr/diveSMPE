@@ -1593,3 +1593,136 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
 .vent-dir   { color: var(--gris-texte); }
 .vent-rafale{ color: var(--orange-light); font-size: 11px; }
 .vent-loading { color: var(--gris-texte); }
+
+/* ── Couche courants de marée ──────────────────────────────── */
+
+/* Contrôle carte (bottomright) */
+.courants-control {
+  background: rgba(6, 30, 28, 0.92);
+  border: 1px solid var(--emeraude-mid);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--blanc);
+  font-family: var(--font-body);
+  font-size: 12px;
+  max-width: 220px;
+  backdrop-filter: blur(4px);
+  box-shadow: var(--shadow);
+}
+
+.courants-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.courants-title {
+  font-family: var(--font-title);
+  font-size: 13px;
+  color: var(--emeraude-light);
+  flex: 1;
+}
+
+.courants-btn {
+  background: none;
+  border: 1px solid var(--emeraude-mid);
+  border-radius: 4px;
+  color: var(--gris-texte);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  line-height: 1.2;
+  transition: var(--transition);
+}
+.courants-btn:hover          { border-color: var(--emeraude-light); color: var(--blanc); }
+.courants-btn.courants-btn-active {
+  background: var(--emeraude-mid);
+  border-color: var(--emeraude-light);
+  color: var(--blanc);
+}
+
+.courants-time-row   { margin-bottom: 4px; }
+.courants-time-label {
+  font-size: 11px;
+  color: var(--emeraude-light);
+  white-space: nowrap;
+}
+
+.courants-picker-row {
+  margin-bottom: 6px;
+}
+.courants-datetime {
+  background: rgba(20, 50, 48, 0.9);
+  border: 1px solid var(--emeraude-mid);
+  border-radius: 4px;
+  color: var(--blanc);
+  font-family: var(--font-body);
+  font-size: 11px;
+  padding: 3px 6px;
+  width: 100%;
+  cursor: pointer;
+}
+.courants-datetime:focus {
+  outline: none;
+  border-color: var(--emeraude-light);
+}
+
+.courants-scale {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  font-size: 10px;
+  opacity: 0.85;
+}
+.courants-scale-item {
+  white-space: nowrap;
+}
+
+/* Bloc courant dans la fiche site */
+.courant-bloc {
+  background: rgba(20, 55, 50, 0.7);
+  border: 1px solid var(--emeraude-mid);
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.courant-bloc.courant-indispo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.6;
+  font-size: 11px;
+}
+.courant-icon { font-size: 18px; }
+.courant-msg  { color: var(--gris-texte); line-height: 1.4; }
+.courant-msg code { font-size: 10px; color: var(--emeraude-pale); }
+
+.courant-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.courant-fleche {
+  font-size: 20px;
+  display: inline-block;
+  font-style: normal;
+  line-height: 1;
+  transition: transform 0.3s;
+}
+.courant-vitesse {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+}
+.courant-dir   { color: var(--gris-texte); font-size: 12px; }
+.courant-heure { color: var(--gris-texte); font-size: 11px; margin-left: auto; }
+.courant-detail {
+  font-size: 10px;
+  color: var(--gris-texte);
+  margin-top: 3px;
+}

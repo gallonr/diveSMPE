@@ -14,6 +14,7 @@ cp pwa/js/auth.js      docs/js/auth.js
 cp pwa/js/bathy.js     docs/js/bathy.js
 cp pwa/js/carte.js     docs/js/carte.js
 cp pwa/js/config.js    docs/js/config.js
+cp pwa/js/courants.js  docs/js/courants.js
 cp pwa/js/marees.js    docs/js/marees.js
 cp pwa/js/mareesite.js docs/js/mareesite.js
 cp pwa/js/meteo.js     docs/js/meteo.js

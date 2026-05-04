@@ -30,22 +30,25 @@ const App = (() => {
     // 3. Bathymétrie LiDAR (chargement silencieux)
     await Bathy.init();
 
-    // 4. Sites (chargement GeoJSON + affichage carte)
+    // 4. Courants de marée FES2022 (chargement silencieux, dégradation gracieuse)
+    if (typeof Courants !== 'undefined') await Courants.init();
+
+    // 5. Sites (chargement GeoJSON + affichage carte)
     const geojson = await Sites.init(_onSiteSelectionne);
     if (geojson) {
       Carte.afficherSites(geojson, _onSiteSelectionne);
     }
 
-    // 5. GPS en arrière-plan (si autorisé)
+    // 6. GPS en arrière-plan (si autorisé)
     if (CONFIG.NAV.watchGPS) Navigation.demarrerGPS();
 
-    // 6. Init onglets fiche
+    // 7. Init onglets fiche
     Sites.initOnglets();
 
-    // 7. Init module Prévision
+    // 8. Init module Prévision
     Prevision.init();
 
-    // 8. Init module Port (widget carte + créneaux bateaux)
+    // 9. Init module Port (widget carte + créneaux bateaux)
     Port.init();
 
     // 9. Événements UI
