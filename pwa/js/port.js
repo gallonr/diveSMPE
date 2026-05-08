@@ -185,9 +185,10 @@ const Port = (() => {
     const fenetres     = getFenetresJour(entree);
 
     let html = `
-      <div class="prev-port-header">
+      <div class="prev-port-header" onclick="this.closest('.prev-port').classList.toggle('prev-port-ouvert')" style="cursor:pointer">
         <span class="prev-port-titre">⚓ Port</span>
         <span class="prev-port-seuil">Seuil ${CONFIG.PORT.seuilZH} m ZH</span>
+        <span class="prev-port-toggle-icon">▶</span>
       </div>
       <div class="prev-port-rows">
     `;

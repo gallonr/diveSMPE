@@ -1213,6 +1213,19 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 .prev-port:empty { display: none; }
 
+/* Réduit par défaut — les rows sont cachées */
+.prev-port .prev-port-rows { display: none; }
+.prev-port.prev-port-ouvert .prev-port-rows { display: flex; }
+.prev-port-toggle-icon {
+  margin-left: auto;
+  font-size: 0.75rem;
+  opacity: 0.6;
+  transition: transform 0.2s;
+}
+.prev-port.prev-port-ouvert .prev-port-toggle-icon {
+  transform: rotate(90deg);
+}
+
 .prev-port-header {
   display: flex;
   align-items: center;
