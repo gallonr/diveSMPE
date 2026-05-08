@@ -1447,6 +1447,62 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
   text-transform: capitalize;
 }
 
+/* Filtre profondeur dans la prévision */
+.prev-prof-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(0,180,216,0.07);
+  border-top: 1px solid rgba(0,180,216,0.15);
+  border-bottom: 1px solid rgba(0,180,216,0.15);
+}
+.prev-prof-filter.hidden { display: none; }
+.prev-prof-filter-label {
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  white-space: nowrap;
+}
+.prev-prof-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+.prev-prof-btn {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,180,216,0.35);
+  background: transparent;
+  color: var(--gris-texte);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.prev-prof-btn.active,
+.prev-prof-btn:hover {
+  background: var(--bleu-clair);
+  color: #fff;
+  border-color: var(--bleu-clair);
+}
+
+/* Infos profondeur dans les cartes de prévision */
+.prev-site-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  align-items: center;
+}
+.prev-prof-zh {
+  font-size: 0.73rem;
+  color: rgba(255,255,255,0.45);
+}
+.prev-prof-reelle {
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #00d4f0;
+  background: rgba(0,180,216,0.13);
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+
 /* Groupes repliés */
 .prev-liste-cachee { display: none; }
 
