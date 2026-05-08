@@ -336,6 +336,18 @@
       <!-- Bloc Port : état des bateaux pour la date/heure choisie -->
       <div id="prev-port" class="prev-port"></div>
 
+      <!-- Filtre profondeur maximale calculée -->
+      <div id="prev-prof-filter" class="prev-prof-filter hidden">
+        <span class="prev-prof-filter-label">🎯 Prof. max réelle :</span>
+        <div class="prev-prof-btns">
+          <button class="prev-prof-btn active" data-prof="all">Toutes</button>
+          <button class="prev-prof-btn" data-prof="6">≤ 6 m</button>
+          <button class="prev-prof-btn" data-prof="10">≤ 10 m</button>
+          <button class="prev-prof-btn" data-prof="20">≤ 20 m</button>
+          <button class="prev-prof-btn" data-prof="20+">+20 m</button>
+        </div>
+      </div>
+
       <!-- Liste des sites -->
       <div id="prev-sites" class="prev-sites">
         <p class="prev-empty">Choisissez une date et une heure pour voir les sites plongeables.</p>

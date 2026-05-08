@@ -10,6 +10,9 @@
 
 const Prevision = (() => {
 
+  let _hauteurCourante = null; // hauteur de marée calculée pour la date/heure choisie
+  let _filtreProf = 'all';     // filtre profondeur : 'all' | 6 | 10 | 20 | '20+'
+
   // ── Helpers ──────────────────────────────────────────────────
 
   /** Pad "7" → "07" */
@@ -169,9 +172,10 @@ const Prevision = (() => {
     const timeStr = document.getElementById('prev-time').value;
     if (!dateStr || !timeStr) return;
 
-    const targetDate = _buildDate(dateStr, timeStr);
-    const entree     = Marees.getEntreePourDate(targetDate);
-    const hauteur    = entree ? Marees.getHauteurAt(targetDate) : null;
+    const targetDate     = _buildDate(dateStr, timeStr);
+    const entree         = Marees.getEntreePourDate(targetDate);
+    const hauteur        = entree ? Marees.getHauteurAt(targetDate) : null;
+    _hauteurCourante     = hauteur;
 
     // Afficher hauteur + courbe
     const hEl = document.getElementById('prev-hauteur');
@@ -206,17 +210,35 @@ const Prevision = (() => {
     if (!conteneur) return;
 
     if (!geojson || !entree) {
+      document.getElementById('prev-prof-filter')?.classList.add('hidden');
       conteneur.innerHTML = hauteur === null
         ? '<p class="prev-empty">Aucune donnée de marée disponible pour cette date.<br>Les prévisions couvrent la plage de marees.json.</p>'
         : '<p class="prev-empty">Sites non disponibles.</p>';
       return;
     }
 
+    // Afficher le filtre profondeur si des données sont disponibles
+    const filterBar = document.getElementById('prev-prof-filter');
+    if (filterBar) filterBar.classList.remove('hidden');
+
     // Calculer l'état de chaque site pour la date/heure choisie
-    const resultats = geojson.features.map(feat => {
+    let resultats = geojson.features.map(feat => {
       const etat = MaréeSite.calculerEtat(feat.properties, entree, targetDate);
-      return { props: feat.properties, etat };
+      const profMaxZH = feat.properties.profMax;
+      const profMaxReelle = (profMaxZH !== null && profMaxZH !== undefined && hauteur !== null)
+        ? Math.round((profMaxZH + hauteur) * 10) / 10
+        : null;
+      return { props: feat.properties, etat, profMaxReelle };
     });
+
+    // Appliquer filtre profondeur
+    if (_filtreProf !== 'all') {
+      resultats = resultats.filter(r => {
+        if (r.profMaxReelle === null) return true; // pas de données → on garde
+        if (_filtreProf === '20+') return r.profMaxReelle > 20;
+        return r.profMaxReelle <= Number(_filtreProf);
+      });
+    }
 
     // Trier : vert → orange → rouge → gris
     const ordre = { vert: 0, orange: 1, rouge: 2, gris: 3 };
@@ -262,6 +284,13 @@ const Prevision = (() => {
     const etat = r.etat;
     const nom  = p.siteNom || p.siteID;
     const type = p.typeSite || '';
+    const profZH = (p.profMin !== null && p.profMin !== undefined && p.profMax !== null && p.profMax !== undefined)
+      ? `${p.profMin}–${p.profMax} m ZH`
+      : null;
+    let profReelleHtml = '';
+    if (r.profMaxReelle !== null) {
+      profReelleHtml = `<span class="prev-prof-reelle" title="Prof. max ZH + hauteur marée">⬇ ${r.profMaxReelle} m réels</span>`;
+    }
     return `
       <div class="prev-site-card prev-card-${etat.statut}" onclick="Sites.selectionner('${p.siteID}'); Prevision.fermer()">
         <div class="prev-site-header">
@@ -269,7 +298,11 @@ const Prevision = (() => {
           <span class="maree-badge-liste maree-badge-${etat.statut}">${etat.label}</span>
         </div>
         <div class="prev-site-detail">${etat.detail}</div>
-        ${type ? `<div class="prev-site-type">${type}</div>` : ''}
+        <div class="prev-site-meta">
+          ${profZH ? `<span class="prev-prof-zh">📏 ${profZH}</span>` : ''}
+          ${profReelleHtml}
+          ${type ? `<span class="prev-site-type">${type}</span>` : ''}
+        </div>
       </div>
     `;
   }
@@ -338,6 +371,16 @@ const Prevision = (() => {
     // Recalcul automatique sur changement de date/heure
     document.getElementById('prev-date')?.addEventListener('change', _calculer);
     document.getElementById('prev-time')?.addEventListener('change', _calculer);
+
+    // Filtre profondeur
+    document.getElementById('prev-prof-filter')?.addEventListener('click', e => {
+      const btn = e.target.closest('.prev-prof-btn');
+      if (!btn) return;
+      document.querySelectorAll('.prev-prof-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      _filtreProf = btn.dataset.prof;
+      _calculer();
+    });
   }
 
   return { init, ouvrir, fermer, _toggleRouge, _toggleGris };
