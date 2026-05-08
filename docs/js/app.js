@@ -149,6 +149,13 @@ const App = (() => {
       Navigation.arreter();
     });
 
+    // ── Toggle widgets (HUD + port + vent)
+    document.getElementById('btn-widgets-toggle')?.addEventListener('click', () => {
+      const btn = document.getElementById('btn-widgets-toggle');
+      const masques = document.body.classList.toggle('widgets-masques');
+      btn?.classList.toggle('widgets-masques', masques);
+    });
+
     // ── Recherche sites
     document.getElementById('search-sites')?.addEventListener('input', e => {
       _termeRecherche = e.target.value.trim();

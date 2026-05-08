@@ -1380,6 +1380,71 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
   bottom: 175px;
 }
 
+/* Contrôles Leaflet bottom-left remontent au-dessus du HUD quand navigation active */
+body:has(#nav-hud:not(.hidden)) .leaflet-bottom.leaflet-left {
+  margin-bottom: 170px;
+}
+
+/* ── Bouton toggle widgets (onglet gauche) ──────────────────── */
+.btn-widgets-toggle {
+  position: fixed;
+  left: 0;
+  bottom: 40%;
+  z-index: 820;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(3, 31, 27, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(58, 175, 168, 0.4);
+  border-left: none;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--emeraude-light);
+  cursor: pointer;
+  padding: 10px 7px;
+  font-size: 18px;
+  box-shadow: var(--shadow);
+  transition: background var(--transition), border-color var(--transition);
+  line-height: 1;
+}
+.btn-widgets-toggle:hover {
+  background: rgba(58, 175, 168, 0.18);
+  border-color: var(--emeraude-light);
+}
+.btn-widgets-toggle.widgets-masques {
+  color: var(--gris-texte);
+  border-color: rgba(58, 175, 168, 0.18);
+}
+.btn-widgets-toggle.widgets-masques .widgets-toggle-icon {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.widgets-toggle-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  font-family: var(--font-title);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  color: var(--gris-texte);
+  margin-top: 2px;
+}
+
+/* Masquage des 3 widgets quand toggle actif */
+body.widgets-masques #nav-hud,
+body.widgets-masques #port-widget,
+body.widgets-masques .leaflet-bottom.leaflet-left {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+#nav-hud, #port-widget, .leaflet-bottom.leaflet-left {
+  transition: opacity 0.25s ease;
+}
+
 /* ── Liste des sites résultats ────────────────────────────── */
 .prev-sites {
   flex: 1;
