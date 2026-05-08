@@ -6,7 +6,7 @@
 
 // ── Configuration ─────────────────────────────────────────────
 const DEBUG   = false;          // Passer à true pour les logs en développement
-const VERSION = 'v14';
+const VERSION = 'v16';
 
 const CACHE_STATIC  = `smpe-static-${VERSION}`;
 const CACHE_DYNAMIC = `smpe-dynamic-${VERSION}`;
@@ -36,11 +36,16 @@ const ASSETS_STATIQUES = [
   BASE + 'js/sites.js',
   BASE + 'js/navigation.js',
   BASE + 'js/meteo.js',
+  BASE + 'js/courants.js',
+  BASE + 'js/port.js',
+  BASE + 'js/prevision.js',
+  BASE + 'js/tokens.js',
   BASE + 'js/auth.js',
   BASE + 'js/app.js',
   BASE + 'data/sites.geojson',
   BASE + 'data/marees.json',
   BASE + 'data/bathy_sites.json',
+  BASE + 'data/courants_grid.json',
   BASE + 'libs/leaflet/leaflet.css',
   BASE + 'libs/leaflet/leaflet.js',
   BASE + 'libs/turf/turf.min.js',
