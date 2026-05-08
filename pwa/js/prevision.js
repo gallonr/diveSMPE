@@ -228,7 +228,16 @@ const Prevision = (() => {
       const profMaxReelle = (profMaxZH !== null && profMaxZH !== undefined && hauteur !== null)
         ? Math.round((profMaxZH + hauteur) * 10) / 10
         : null;
-      return { props: feat.properties, etat, profMaxReelle };
+      // Courant au point du site
+      let courant = null;
+      if (typeof Courants !== 'undefined' && Courants.getVitesseSite) {
+        const lat = feat.properties.latitude ?? (feat.geometry?.coordinates?.[1]);
+        const lon = feat.properties.longitude ?? (feat.geometry?.coordinates?.[0]);
+        if (lat != null && lon != null) {
+          courant = Courants.getVitesseSite(lat, lon, targetDate);
+        }
+      }
+      return { props: feat.properties, etat, profMaxReelle, courant };
     });
 
     // Appliquer filtre profondeur
@@ -279,6 +288,28 @@ const Prevision = (() => {
     conteneur.innerHTML = html;
   }
 
+  /** Convertit un angle en degrés en flèche directionnelle Unicode */
+  function _dirArrow(deg) {
+    const arrows = ['↑','↗','→','↘','↓','↙','←','↖'];
+    return arrows[Math.round(deg / 45) % 8];
+  }
+
+  /** Formate la vitesse de courant (cm/s → nœuds) avec badge coloré */
+  function _courantBadge(courant) {
+    if (!courant) return '';
+    const vitNds = courant.vitesse / 51.44;
+    const vitNdsStr = vitNds.toFixed(2);
+    const dirTo = Math.round(courant.dirTo);
+    const arrow = _dirArrow(dirTo);
+    const cls = vitNds < 0.5 ? 'courant-faible'
+              : vitNds < 1.0 ? 'courant-moyen'
+              : vitNds < 1.5 ? 'courant-fort'
+              : 'courant-tres-fort';
+    return `<span class="prev-courant-badge ${cls}" title="Courant : ${vitNdsStr} nœuds — direction ${dirTo}° (vers)">
+      ${arrow} ${vitNdsStr} nds · ${dirTo}°
+    </span>`;
+  }
+
   function _renderSiteCard(r) {
     const p    = r.props;
     const etat = r.etat;
@@ -291,6 +322,7 @@ const Prevision = (() => {
     if (r.profMaxReelle !== null) {
       profReelleHtml = `<span class="prev-prof-reelle" title="Prof. max ZH + hauteur marée">⬇ ${r.profMaxReelle} m réels</span>`;
     }
+    const courantHtml = _courantBadge(r.courant);
     return `
       <div class="prev-site-card prev-card-${etat.statut}" onclick="Sites.selectionner('${p.siteID}'); Prevision.fermer()">
         <div class="prev-site-header">
@@ -301,6 +333,7 @@ const Prevision = (() => {
         <div class="prev-site-meta">
           ${profZH ? `<span class="prev-prof-zh">📏 ${profZH}</span>` : ''}
           ${profReelleHtml}
+          ${courantHtml}
           ${type ? `<span class="prev-site-type">${type}</span>` : ''}
         </div>
       </div>
