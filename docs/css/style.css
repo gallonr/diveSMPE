@@ -1110,7 +1110,8 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden;   /* le scroll est géré par .prev-sites */
+  padding: 0;         /* surcharge le padding générique de .modal-content */
 }
 
 /* ── Contrôles date/heure ─────────────────────────────────── */
@@ -1505,6 +1506,74 @@ body:has(#nav-hud:not(.hidden)) .port-widget {
 
 /* Groupes repliés */
 .prev-liste-cachee { display: none; }
+
+/* ── Mobile : modal prévision plein écran ─────────────────── */
+@media (max-width: 480px) {
+  .modal-content-prevision {
+    max-height: 100dvh;
+    height: 100dvh;
+    border-radius: 0;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Canvas de marée plus compact */
+  .canvas-prev {
+    height: 70px !important;
+  }
+
+  /* Contrôles date/heure : plus serrés */
+  .prev-controls {
+    padding: 8px 10px;
+    gap: 7px;
+  }
+  .prev-input {
+    padding: 5px 8px;
+    font-size: 0.87rem;
+  }
+  .btn-prev-calc {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  /* Bloc marée : padding réduit */
+  .prev-maree-bloc {
+    padding: 6px 10px 0;
+  }
+  .prev-haut-val {
+    font-size: 1.3rem;
+  }
+
+  /* Port : padding réduit */
+  .prev-port {
+    margin: 5px 8px 5px;
+  }
+  .prev-port-header {
+    padding: 7px 10px 6px;
+  }
+  .prev-port-row {
+    padding: 7px 10px;
+  }
+
+  /* Filtre profondeur : compact */
+  .prev-prof-filter {
+    padding: 6px 10px;
+    gap: 5px;
+  }
+
+  /* Liste des sites : padding réduit, plus d'espace */
+  .prev-sites {
+    padding: 8px 8px 12px;
+  }
+  .prev-site-card {
+    padding: 8px 10px;
+    margin-bottom: 5px;
+  }
+  .prev-site-nom {
+    font-size: 0.9rem;
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════
    ÉCRAN DE LOGIN
