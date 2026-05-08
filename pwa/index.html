@@ -423,9 +423,42 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('✅ Service Worker enregistré', reg.scope))
+          .then(reg => {
+            console.log('✅ Service Worker enregistré', reg.scope);
+
+            // Détecte un SW en attente au moment de l'enregistrement
+            if (reg.waiting) {
+              _activateSW(reg.waiting);
+              return;
+            }
+
+            // Détecte un nouveau SW qui s'installe après coup
+            reg.addEventListener('updatefound', () => {
+              const newWorker = reg.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  _activateSW(newWorker);
+                }
+              });
+            });
+          })
           .catch(err => console.warn('⚠️ Service Worker non enregistré', err));
+
+        // Recharge la page dès qu'un nouveau SW prend le contrôle
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
       });
+    }
+
+    function _activateSW(worker) {
+      // Envoie SKIP_WAITING pour passer le SW en attente directement actif
+      worker.postMessage('SKIP_WAITING');
     }
   </script>
 
