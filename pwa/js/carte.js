@@ -114,6 +114,7 @@ const Carte = (() => {
       if (e.name === labelCourants) {
         if (courantsDisponibles) {
           if (!_courantsCtrl) _courantsCtrl = Courants.ajouterControle(_map);
+          document.body.classList.add('courants-actifs');
         } else {
           // Données non générées : afficher un popup d'information
           L.popup({ maxWidth: 320 })
@@ -137,6 +138,7 @@ const Carte = (() => {
       if (e.name === labelCourants && _courantsCtrl) {
         _map.removeControl(_courantsCtrl);
         _courantsCtrl = null;
+        document.body.classList.remove('courants-actifs');
       }
     });
 
