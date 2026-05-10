@@ -2014,6 +2014,44 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   line-height: 1.6;
 }
 
+/* ── Barre de progression bi-journée ─────────────────────────── */
+
+.bi-progress-wrap {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.bi-progress-label {
+  font-family: var(--font-title);
+  font-size: 13px;
+  color: var(--texte-clair);
+}
+
+.bi-progress-bar-outer {
+  width: 100%;
+  max-width: 340px;
+  height: 10px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.bi-progress-bar-inner {
+  height: 100%;
+  background: var(--bleu-ciel);
+  border-radius: 5px;
+  transition: width 0.15s ease;
+}
+
+.bi-progress-pct {
+  font-family: var(--font-title);
+  font-size: 11px;
+  color: var(--bleu-ciel);
+}
+
 .bi-note {
   font-size: 10px;
   color: var(--gris-texte);
