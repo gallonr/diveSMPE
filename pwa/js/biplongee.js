@@ -493,22 +493,85 @@ const BiPlongee = (() => {
       // Tri par durée totale croissante (finir le plus tôt)
       resultats.sort((a, b) => a.finP2_min - b.finP2_min);
 
-      const MAX_DISPLAY = 30;
-      let html = '';
-      if (resultats.length > 0) {
-        html += `<div class="bi-section-title">✅ ${resultats.length} combinaison(s) compatibles${resultats.length > MAX_DISPLAY ? ` — ${MAX_DISPLAY} premières affichées` : ''}</div>`;
-        html += resultats.slice(0, MAX_DISPLAY).map(_rendrePaire).join('');
-      } else {
-        html = `<p class="bi-empty">Aucune combinaison compatible pour ce départ.<br>💡 Essayez un autre horaire ou une autre date.</p>`;
-      }
-      html += `<p class="bi-note">📌 Les deux plongées sont en fenêtre d'étale · surface ≤ 3h · profil non inversé</p>`;
+      // Stocker pour la recherche (accessible via _filtrer)
+      _dernierResultats = resultats;
+      _dernierContainer = containerId;
 
-      container.innerHTML = html;
-      container.scrollTop = 0;
+      _afficherResultats(resultats, container);
     };
 
     // Démarrer le premier lot après un tick (laisse le navigateur afficher la barre)
     setTimeout(_runBatch, 0);
+  }
+
+  // ── Résultats en mémoire (pour la recherche) ──────────────────
+  let _dernierResultats = [];
+  let _dernierContainer = 'prev-bi-resultats';
+
+  /**
+   * Injecte le HTML des résultats + barre de recherche dans le conteneur.
+   * Appelé après le calcul et après chaque frappe dans le champ de recherche.
+   */
+  function _afficherResultats(resultats, container, filtre = '') {
+    const MAX_DISPLAY = 30;
+    const q = filtre.trim().toLowerCase();
+    const filtres = q
+      ? resultats.filter(r =>
+          r.siteA.siteNom.toLowerCase().includes(q) ||
+          r.siteB.siteNom.toLowerCase().includes(q))
+      : resultats;
+
+    const total   = resultats.length;
+    const visible = filtres.length;
+    const slice   = filtres.slice(0, MAX_DISPLAY);
+
+    let html = '';
+
+    // Barre de recherche (persistante)
+    html += `
+      <div class="bi-search-bar">
+        <input
+          type="search"
+          id="bi-search-input"
+          class="bi-search-input"
+          placeholder="🔍 Filtrer par nom de site…"
+          value="${filtre.replace(/"/g, '&quot;')}"
+          oninput="BiPlongee._filtrer(this.value)"
+          autocomplete="off"
+        />
+        <span class="bi-search-count">${q ? `${visible} / ${total}` : total} combinaison(s)</span>
+      </div>
+    `;
+
+    if (slice.length > 0) {
+      if (visible > MAX_DISPLAY) {
+        html += `<p class="bi-search-hint">${MAX_DISPLAY} premières affichées sur ${visible}</p>`;
+      }
+      html += slice.map(_rendrePaire).join('');
+    } else {
+      html += `<p class="bi-empty">${q ? `Aucun site ne correspond à « ${filtre} »` : 'Aucune combinaison compatible.<br>💡 Essayez un autre horaire ou une autre date.'}</p>`;
+    }
+
+    html += `<p class="bi-note">📌 Les deux plongées sont en fenêtre d'étale · surface ≤ 3h · profil non inversé</p>`;
+
+    container.innerHTML = html;
+
+    // Redonner le focus au champ de recherche si un filtre est actif
+    if (q) {
+      const inp = container.querySelector('#bi-search-input');
+      if (inp) { inp.focus(); inp.setSelectionRange(q.length, q.length); }
+    } else {
+      container.scrollTop = 0;
+    }
+  }
+
+  /**
+   * Appelé depuis le champ de recherche (oninput).
+   */
+  function _filtrer(valeur) {
+    const container = document.getElementById(_dernierContainer);
+    if (!container || !_dernierResultats.length) return;
+    _afficherResultats(_dernierResultats, container, valeur);
   }
 
   // ── Initialisation ────────────────────────────────────────────
@@ -517,6 +580,6 @@ const BiPlongee = (() => {
     // Tout est piloté depuis Prevision.js via afficher()
   }
 
-  return { init, calculerPaires, afficher, _ouvrirSite };
+  return { init, calculerPaires, afficher, _ouvrirSite, _filtrer };
 
 })();
