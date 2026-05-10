@@ -2047,6 +2047,50 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   color: var(--bleu-ciel);
 }
 
+/* ── Recherche bi-journée ─────────────────────────────────────── */
+
+.bi-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 10px;
+  position: sticky;
+  top: 0;
+  background: var(--fond-modal, #0d1f2a);
+  z-index: 2;
+}
+
+.bi-search-input {
+  flex: 1;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(58,175,168,0.3);
+  border-radius: 6px;
+  color: var(--texte-clair);
+  font-size: 13px;
+  padding: 6px 10px;
+  outline: none;
+}
+.bi-search-input:focus {
+  border-color: var(--bleu-ciel);
+  background: rgba(255,255,255,0.10);
+}
+.bi-search-input::placeholder { color: var(--gris-texte); }
+
+.bi-search-count {
+  font-family: var(--font-title);
+  font-size: 11px;
+  color: var(--gris-texte);
+  white-space: nowrap;
+}
+
+.bi-search-hint {
+  font-size: 11px;
+  color: var(--gris-texte);
+  text-align: center;
+  padding: 2px 0 6px;
+  font-style: italic;
+}
+
 /* ── Titres de section ────────────────────────────────────────── */
 
 .bi-section-title {
