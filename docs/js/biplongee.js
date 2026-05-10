@@ -81,10 +81,14 @@ const BiPlongee = (() => {
   /**
    * Vérifie si l'intervalle [startMin, endMin] est entièrement couvert
    * par au moins une fenêtre de plongeabilité.
+   * @param {number} margeFinMin  marge de sécurité avant la fin de la fenêtre (min)
    */
-  function _couvreIntervalle(startMin, endMin, fenetres) {
-    return fenetres.some(f => startMin >= f.debutMin && endMin <= f.finMin);
+  function _couvreIntervalle(startMin, endMin, fenetres, margeFinMin = 0) {
+    return fenetres.some(f => startMin >= f.debutMin && endMin <= f.finMin - margeFinMin);
   }
+
+  /** Marge de sécurité avant la fin de l'étale pour la 2e plongée */
+  const MARGE_FIN_P2 = 45; // minutes
 
   // ── Profondeur réelle (LiDAR + marée) ────────────────────────
 
@@ -161,7 +165,7 @@ const BiPlongee = (() => {
         const fenetresB = _getFenetres(pB, entreeMaree, dateStr);
 
         const p1EnFenetre = _couvreIntervalle(arriveeA_min, finP1_min, fenetresA);
-        const p2EnFenetre = _couvreIntervalle(arriveeB_min, finP2_min, fenetresB);
+        const p2EnFenetre = _couvreIntervalle(arriveeB_min, finP2_min, fenetresB, MARGE_FIN_P2);
 
         // ── Vérification profil (anti-inversion) ──────────────
 
@@ -423,7 +427,7 @@ const BiPlongee = (() => {
 
           if (profilOk) {
             const p1EnFenetre = _couvreIntervalle(cA.arriveeA, cA.finP1, cA.fenetres);
-            const p2EnFenetre = _couvreIntervalle(arriveeB, finP2, cB.fenetres);
+            const p2EnFenetre = _couvreIntervalle(arriveeB, finP2, cB.fenetres, MARGE_FIN_P2);
             // Exclure si l'un des deux sites est hors fenêtre d'étale
             if (!p1EnFenetre || !p2EnFenetre) continue;
 
