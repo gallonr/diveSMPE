@@ -88,7 +88,7 @@ const BiPlongee = (() => {
   }
 
   /** Marge de sécurité avant la fin de l'étale pour la 2e plongée */
-  const MARGE_FIN_P2 = 45; // minutes
+  const MARGE_FIN_P2 = 5; // minutes
 
   // ── Profondeur réelle (LiDAR + marée) ────────────────────────
 
