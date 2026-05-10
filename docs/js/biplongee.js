@@ -305,6 +305,9 @@ const BiPlongee = (() => {
           </div>
           <div class="bi-card-map-icon">🗺</div>
         </div>
+        <div class="bi-card-port ${r.retourPortOk ? 'bi-card-port-ok' : 'bi-card-port-bloque'}">
+          ⚓ Retour port ${_minToHHMM(r.retourMin)} ${r.retourPortOk ? '✅' : '🚫 bloqué (seuil)'}
+        </div>
       </div>
     `;
   }
@@ -363,6 +366,13 @@ const BiPlongee = (() => {
     const resultats = [];
     const latP = NAYE.lat;
     const lonP = NAYE.lon;
+
+    // ── Port : vérification du seuil pour Maclow ───────────────
+    const portFen    = (typeof Port !== 'undefined') ? Port.getFenetresJour(entreeMaree) : null;
+    const maclowBl   = portFen?.['Maclow']?.bloque ?? [];
+    /** Retourne true si le port est accessible (non bloqué) à l'instant tMin */
+    const _portOuvert = tMin => !maclowBl.some(pl => tMin >= pl.debut && tMin < pl.fin);
+    const sortiePortOk = _portOuvert(departMin);
 
     // ── Pré-calcul O(n) : données fixes par site ───────────────
     // Ces valeurs ne dépendent que du site A (indice i) et de l'heure de départ ;
@@ -454,6 +464,11 @@ const BiPlongee = (() => {
             // Exclure si l'un des deux sites est hors fenêtre d'étale
             if (!p1EnFenetre || !p2EnFenetre) continue;
 
+            // Port : transit retour B → Port après la fin de P2
+            const transitRetour = _transitMin(cB.lat, cB.lon, latP, lonP);
+            const retourMin     = finP2 + transitRetour;
+            const retourPortOk  = _portOuvert(retourMin);
+
             // distAB dérivée du transit (pas de 2e appel haversine)
             const distAB_nm = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
 
@@ -468,6 +483,8 @@ const BiPlongee = (() => {
               finP1_min:    Math.round(cA.finP1),
               arriveeB_min: Math.round(arriveeB),
               finP2_min:    Math.round(finP2),
+              retourMin:    Math.round(retourMin),
+              retourPortOk,
               profilNote, profilWarning,
               profA: cA.profA, profB,
               statut: 'vert',
@@ -496,6 +513,8 @@ const BiPlongee = (() => {
       // Stocker pour la recherche (accessible via _filtrer)
       _dernierResultats = resultats;
       _dernierContainer = containerId;
+      _dernieresSortiePortOk = sortiePortOk;
+      _dernierDepartMin = departMin;
 
       _afficherResultats(resultats, container);
     };
@@ -504,9 +523,11 @@ const BiPlongee = (() => {
     setTimeout(_runBatch, 0);
   }
 
-  // ── Résultats en mémoire (pour la recherche) ──────────────────
+  // ── Résultats en mémoire (pour la recherche et le filtrage) ──────────────────
   let _dernierResultats = [];
   let _dernierContainer = 'prev-bi-resultats';
+  let _dernieresSortiePortOk = null; // null = Port module non disponible
+  let _dernierDepartMin = 0;
 
   /**
    * Injecte le HTML des résultats + barre de recherche dans le conteneur.
@@ -542,6 +563,16 @@ const BiPlongee = (() => {
         <span class="bi-search-count">${q ? `${visible} / ${total}` : total} combinaison(s)</span>
       </div>
     `;
+
+    // Bannière port (sortie, identique pour toutes les cartes)
+    if (_dernieresSortiePortOk !== null) {
+      const cls  = _dernieresSortiePortOk ? 'bi-port-ok' : 'bi-port-bloque';
+      const icon = _dernieresSortiePortOk ? '✅' : '🚫';
+      const txt  = _dernieresSortiePortOk
+        ? 'Port accessible à la sortie'
+        : 'Port bloqué à l\'heure de sortie (seuil non atteint)';
+      html += `<div class="bi-port-banner ${cls}">⚓ Sortie ${_minToHHMM(_dernierDepartMin)} : ${icon} ${txt}</div>`;
+    }
 
     if (slice.length > 0) {
       if (visible > MAX_DISPLAY) {
