@@ -274,27 +274,50 @@ const BiPlongee = (() => {
   function _rendrePaire(r) {
     const profAStr = r.profA !== null ? `${Math.round(r.profA)} m` : '? m';
     const profBStr = r.profB !== null ? `${Math.round(r.profB)} m` : '? m';
-    const p1Fenetre = r.p1EnFenetre ? '' : ' bi-dive-ko';
-    const p2Fenetre = r.p2EnFenetre ? '' : ' bi-dive-ko';
     const borderColor = r.statut === 'vert' ? 'var(--vert-ok)' : 'var(--orange-light)';
+    const idA = r.siteA.siteID;
+    const idB = r.siteB.siteID;
+
+    // Infos surface inter-plongée
+    let surfaceNote;
+    if (r.transitAB_min >= SURFACE_MIN) {
+      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} (≥ 1h ✓)`;
+    } else {
+      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} + attente ${_formatDuree(SURFACE_MIN - r.transitAB_min)} = 1h`;
+    }
 
     return `
       <div class="bi-card" style="border-left-color:${borderColor}">
-        <div class="bi-card-dive${p1Fenetre}">
+        <div class="bi-card-dive bi-card-clickable" onclick="BiPlongee._ouvrirSite('${idA}')" title="Voir ${r.siteA.siteNom} sur la carte">
           <div class="bi-card-num">P1</div>
-          <div class="bi-card-site">${r.siteA.siteNom}</div>
-          <div class="bi-card-time">${_minToHHMM(r.arriveeA_min)} – ${_minToHHMM(r.finP1_min)}</div>
-          <div class="bi-card-prof">${profAStr}</div>
+          <div class="bi-card-info">
+            <div class="bi-card-site">${r.siteA.siteNom}</div>
+            <div class="bi-card-sub">${_minToHHMM(r.arriveeA_min)} – ${_minToHHMM(r.finP1_min)} · ${profAStr} · ${r.distPA_nm} Nm du port</div>
+          </div>
+          <div class="bi-card-map-icon">🗺</div>
         </div>
-        <div class="bi-card-sep">↓ surface ${_formatDuree(r.surfaceTotale_min)}</div>
-        <div class="bi-card-dive${p2Fenetre}">
+        <div class="bi-card-sep">⛵ ${surfaceNote} · ${r.distAB_nm} Nm</div>
+        <div class="bi-card-dive bi-card-clickable" onclick="BiPlongee._ouvrirSite('${idB}')" title="Voir ${r.siteB.siteNom} sur la carte">
           <div class="bi-card-num">P2</div>
-          <div class="bi-card-site">${r.siteB.siteNom}</div>
-          <div class="bi-card-time">${_minToHHMM(r.arriveeB_min)} – ${_minToHHMM(r.finP2_min)}</div>
-          <div class="bi-card-prof">${profBStr}</div>
+          <div class="bi-card-info">
+            <div class="bi-card-site">${r.siteB.siteNom}</div>
+            <div class="bi-card-sub">${_minToHHMM(r.arriveeB_min)} – ${_minToHHMM(r.finP2_min)} · ${profBStr}</div>
+          </div>
+          <div class="bi-card-map-icon">🗺</div>
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Sélectionne un site sur la carte et ferme la modal Prévision.
+   * Appelé depuis le HTML généré (onclick).
+   */
+  function _ouvrirSite(siteID) {
+    // Fermer la modal Prévision pour laisser la carte visible
+    if (typeof Prevision !== 'undefined') Prevision.fermer();
+    // Sélectionner le site (centre la carte + ouvre le panneau détail)
+    if (typeof Sites !== 'undefined') Sites.selectionner(siteID);
   }
 
   /**
@@ -494,6 +517,6 @@ const BiPlongee = (() => {
     // Tout est piloté depuis Prevision.js via afficher()
   }
 
-  return { init, calculerPaires, afficher };
+  return { init, calculerPaires, afficher, _ouvrirSite };
 
 })();

@@ -2082,10 +2082,21 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 
 .bi-card-dive {
   display: grid;
-  grid-template-columns: 28px 1fr auto auto;
+  grid-template-columns: 28px 1fr auto;
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
+}
+
+.bi-card-clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bi-card-clickable:hover {
+  background: rgba(58,175,168,0.10);
+}
+.bi-card-clickable:active {
+  background: rgba(58,175,168,0.20);
 }
 
 .bi-card-dive + .bi-card-dive {
@@ -2116,18 +2127,23 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   text-overflow: ellipsis;
 }
 
-.bi-card-time {
-  font-family: var(--font-title);
-  font-size: 12px;
-  color: var(--bleu-ciel);
-  white-space: nowrap;
+.bi-card-info {
+  min-width: 0; /* permet le text-overflow dans le grid */
 }
 
-.bi-card-prof {
-  font-family: var(--font-title);
-  font-size: 12px;
-  color: var(--gris-texte);
+.bi-card-sub {
+  font-size: 11px;
+  color: var(--bleu-ciel);
+  margin-top: 1px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bi-card-map-icon {
+  font-size: 16px;
+  opacity: 0.5;
+  flex-shrink: 0;
 }
 
 .bi-card-sep {
