@@ -1951,113 +1951,59 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   line-height: 1.3;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   MODAL BI-JOURNÉE
-══════════════════════════════════════════════════════════════ */
+/* ── Checkbox 2 tanks ────────────────────────────────────────── */
 
-.modal-content-biplongee {
-  max-width: 680px;
-  max-height: 92vh;
+.prev-2tanks-bar {
+  padding: 8px 16px 6px;
+  border-top: 1px solid rgba(255,255,255,0.07);
   display: flex;
-  flex-direction: column;
-}
-
-/* ── Contrôles ──────────────────────────────────────────────── */
-
-.bi-controls {
-  padding: 12px 16px 8px;
-  background: var(--card-bg);
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  flex-shrink: 0;
-}
-
-.bi-ctrl-info {
-  display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 10px;
 }
 
-.bi-port-badge,
-.bi-params-badge {
-  font-family: var(--font-title);
-  font-size: 11px;
-  padding: 3px 8px;
-  border-radius: 4px;
-  background: rgba(0,200,255,0.12);
-  color: var(--bleu-ciel);
-  border: 1px solid rgba(0,200,255,0.25);
-}
-
-.bi-ctrl-row {
+.prev-2tanks-label {
   display: flex;
-  align-items: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.bi-ctrl-group {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.bi-ctrl-label {
-  font-size: 10px;
-  color: var(--gris-texte);
-  font-family: var(--font-title);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.bi-input {
-  background: var(--fond-sombre);
-  color: var(--texte-clair);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 14px;
-  font-family: var(--font-body);
-  min-width: 120px;
-}
-
-.bi-input:focus {
-  outline: none;
-  border-color: var(--bleu-ciel);
-}
-
-.btn-bi-calc {
-  background: var(--bleu-ciel);
-  color: #000;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 18px;
-  font-family: var(--font-title);
-  font-size: 14px;
-  font-weight: 600;
+  align-items: center;
+  gap: 8px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--texte-clair);
+  user-select: none;
 }
 
-.btn-bi-calc:hover { opacity: 0.85; }
+.prev-2tanks-check {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--bleu-ciel);
+  cursor: pointer;
+}
 
-.bi-expl {
+.prev-2tanks-info {
   font-size: 10px;
-  color: var(--gris-texte);
-  margin: 8px 0 0;
-  line-height: 1.4;
+  color: var(--bleu-ciel);
+  background: rgba(0,200,255,0.1);
+  border: 1px solid rgba(0,200,255,0.2);
+  border-radius: 4px;
+  padding: 2px 8px;
 }
 
-/* ── Zone résultats ──────────────────────────────────────────── */
+/* ── Résultats bi-journée dans modal Prévision ───────────────── */
 
-.bi-resultats {
+.prev-bi-resultats {
   overflow-y: auto;
   flex: 1;
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PLANIFICATEUR BI-JOURNÉE (cartes de paires, partagé)
+══════════════════════════════════════════════════════════════ */
 
 .bi-loading,
 .bi-empty {

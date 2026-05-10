@@ -79,9 +79,6 @@
       <button id="btn-prevision" class="btn-icon" title="Prévision plongeabilité" aria-label="Prévision">
         &#x1F4C5;
       </button>
-      <button id="btn-biplongee" class="btn-icon" title="Planifier une bi-journée (Maclow)" aria-label="Bi-journée">
-        🤿🤿
-      </button>
       <button id="btn-marees" class="btn-icon" title="Marées" aria-label="Marées">
         🌊
       </button>
@@ -338,6 +335,17 @@
         <button id="btn-prev-calculer" class="btn-prev-calc">Calculer</button>
       </div>
 
+      <!-- Checkbox 2 tanks -->
+      <div class="prev-2tanks-bar">
+        <label class="prev-2tanks-label" for="prev-2tanks">
+          <input type="checkbox" id="prev-2tanks" class="prev-2tanks-check" />
+          🤿🤿 Bi-journée — Maclow (Cale du Naye · 15 kt · ×1,35 chenal)
+        </label>
+        <span id="prev-2tanks-info" class="prev-2tanks-info hidden">
+          L'heure ci-dessus = départ de la Cale du Naye
+        </span>
+      </div>
+
       <!-- Résumé hauteur de marée + mini-courbe -->
       <div class="prev-maree-bloc">
         <div id="prev-hauteur" class="prev-hauteur">…</div>
@@ -359,9 +367,14 @@
         </div>
       </div>
 
-      <!-- Liste des sites -->
+      <!-- Liste des sites (mode 1 plongée) -->
       <div id="prev-sites" class="prev-sites">
         <p class="prev-empty">Choisissez une date et une heure pour voir les sites plongeables.</p>
+      </div>
+
+      <!-- Résultats bi-journée (mode 2 tanks) -->
+      <div id="prev-bi-resultats" class="prev-bi-resultats hidden">
+        <p class="bi-empty">Choisissez une date et une heure de départ, puis cliquez sur <strong>Calculer</strong>.</p>
       </div>
     </div>
   </div>
@@ -393,47 +406,6 @@
       </div>
       <div id="meteo-contenu" class="meteo-contenu">
         <p class="loading">Chargement…</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════════════════════════════════════════════════════
-       MODAL BI-JOURNÉE (planificateur 2 plongées / jour)
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="modal-biplongee" class="modal hidden">
-    <div class="modal-content modal-content-biplongee">
-      <div class="modal-header">
-        <h2>🤿🤿 Planificateur bi-journée — Maclow</h2>
-        <button id="btn-close-biplongee" class="btn-icon">✕</button>
-      </div>
-
-      <!-- Paramètres de départ -->
-      <div class="bi-controls">
-        <div class="bi-ctrl-info">
-          <span class="bi-port-badge">⚓ Cale du Naye · Saint-Malo</span>
-          <span class="bi-params-badge">15 kt · 45 min/plongée · ×1.35 chenal</span>
-        </div>
-        <div class="bi-ctrl-row">
-          <div class="bi-ctrl-group">
-            <label class="bi-ctrl-label" for="bi-date">📅 Date</label>
-            <input type="date" id="bi-date" class="bi-input" />
-          </div>
-          <div class="bi-ctrl-group">
-            <label class="bi-ctrl-label" for="bi-time">🚤 Départ Naye</label>
-            <input type="time" id="bi-time" class="bi-input" step="900" />
-          </div>
-          <button id="btn-bi-calculer" class="btn-bi-calc">Calculer</button>
-        </div>
-        <p class="bi-expl">
-          Surface inter-plongée ≥ 60 min (transit inclus). Profils inversés exclus
-          (2<sup>e</sup> plongée &gt; 1<sup>re</sup> + 5 m si ≤ 20 m, 0 m si &gt; 20 m).
-          Distances à vol d'oiseau × 1,35.
-        </p>
-      </div>
-
-      <!-- Résultats -->
-      <div id="bi-resultats" class="bi-resultats">
-        <p class="bi-empty">Choisissez une date et une heure de départ, puis cliquez sur <strong>Calculer</strong>.</p>
       </div>
     </div>
   </div>
