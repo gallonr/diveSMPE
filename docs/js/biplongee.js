@@ -271,74 +271,26 @@ const BiPlongee = (() => {
   }
 
   function _rendrePaire(r) {
-    const p1Icon = r.p1EnFenetre ? '✅' : '🔴';
-    const p2Icon = r.p2EnFenetre ? '✅' : '🔴';
-
-    // Note surface inter-plongée
-    let surfaceNote;
-    if (r.transitAB_min >= SURFACE_MIN) {
-      surfaceNote = `${_formatDuree(r.surfaceTotale_min)} de transit (≥ 60 min ✓)`;
-    } else {
-      const attente = SURFACE_MIN - r.transitAB_min;
-      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} + attente ${_formatDuree(attente)} = 60 min`;
-    }
-
-    // Étiquette fenêtre de marée
-    const fenALabel = r.fenA ? r.fenA.etaleLabel : '—';
-    const fenBLabel = r.fenB ? r.fenB.etaleLabel : '—';
-
-    // Heure de fin estimée
-    const heureRetour = r.finP2_min + r.transitAB_min; // retour approximatif (A→B puis B≈port)
+    const profAStr = r.profA !== null ? `${Math.round(r.profA)} m` : '? m';
+    const profBStr = r.profB !== null ? `${Math.round(r.profB)} m` : '? m';
+    const p1Fenetre = r.p1EnFenetre ? '' : ' bi-dive-ko';
+    const p2Fenetre = r.p2EnFenetre ? '' : ' bi-dive-ko';
+    const borderColor = r.statut === 'vert' ? 'var(--vert-ok)' : 'var(--orange-light)';
 
     return `
-      <div class="bi-paire bi-paire-${r.statut}">
-        <div class="bi-paire-header">
-          <span class="bi-badge bi-badge-${r.statut}">
-            ${r.statut === 'vert' ? '✅ Compatible' : r.statut === 'orange' ? '⚠️ Partiel' : '🔴 Hors fenêtre'}
-          </span>
-          <span class="bi-paire-titre">${r.siteA.siteNom} → ${r.siteB.siteNom}</span>
+      <div class="bi-card" style="border-left-color:${borderColor}">
+        <div class="bi-card-dive${p1Fenetre}">
+          <div class="bi-card-num">P1</div>
+          <div class="bi-card-site">${r.siteA.siteNom}</div>
+          <div class="bi-card-time">${_minToHHMM(r.arriveeA_min)} – ${_minToHHMM(r.finP1_min)}</div>
+          <div class="bi-card-prof">${profAStr}</div>
         </div>
-
-        <div class="bi-timeline">
-
-          <div class="bi-tl-row bi-tl-transit">
-            <span class="bi-tl-icon">🚤</span>
-            <span class="bi-tl-label">Port → <strong>${r.siteA.siteNom}</strong></span>
-            <span class="bi-tl-val">${_formatDuree(r.transitPA_min)} · ${r.distPA_nm} Nm</span>
-          </div>
-
-          <div class="bi-tl-row bi-tl-dive ${r.p1EnFenetre ? 'bi-dive-ok' : 'bi-dive-ko'}">
-            <span class="bi-tl-icon">${p1Icon}</span>
-            <span class="bi-tl-label">Plongée 1</span>
-            <span class="bi-tl-val">${_minToHHMM(r.arriveeA_min)} – ${_minToHHMM(r.finP1_min)}</span>
-          </div>
-          ${r.p1EnFenetre ? `<div class="bi-tl-sub">${fenALabel}</div>` : `<div class="bi-tl-sub bi-sub-ko">Hors fenêtre de marée</div>`}
-
-          <div class="bi-tl-row bi-tl-surface">
-            <span class="bi-tl-icon">⛵</span>
-            <span class="bi-tl-label">Surface + Transit</span>
-            <span class="bi-tl-val">${surfaceNote}</span>
-          </div>
-
-          <div class="bi-tl-row bi-tl-dive ${r.p2EnFenetre ? 'bi-dive-ok' : 'bi-dive-ko'}">
-            <span class="bi-tl-icon">${p2Icon}</span>
-            <span class="bi-tl-label">Plongée 2</span>
-            <span class="bi-tl-val">${_minToHHMM(r.arriveeB_min)} – ${_minToHHMM(r.finP2_min)}</span>
-          </div>
-          ${r.p2EnFenetre ? `<div class="bi-tl-sub">${fenBLabel}</div>` : `<div class="bi-tl-sub bi-sub-ko">Hors fenêtre de marée</div>`}
-
-          <div class="bi-tl-row bi-tl-profil ${r.profilWarning ? 'bi-profil-warn' : ''}">
-            <span class="bi-tl-icon">🌊</span>
-            <span class="bi-tl-label">Profil</span>
-            <span class="bi-tl-val">${r.profilNote}</span>
-          </div>
-
-          <div class="bi-tl-row bi-tl-info">
-            <span class="bi-tl-icon">📏</span>
-            <span class="bi-tl-label">A → B</span>
-            <span class="bi-tl-val">${r.distAB_nm} Nm (vol d'oiseau × ${NAV_COEFF})</span>
-          </div>
-
+        <div class="bi-card-sep">↓ surface ${_formatDuree(r.surfaceTotale_min)}</div>
+        <div class="bi-card-dive${p2Fenetre}">
+          <div class="bi-card-num">P2</div>
+          <div class="bi-card-site">${r.siteB.siteNom}</div>
+          <div class="bi-card-time">${_minToHHMM(r.arriveeB_min)} – ${_minToHHMM(r.finP2_min)}</div>
+          <div class="bi-card-prof">${profBStr}</div>
         </div>
       </div>
     `;

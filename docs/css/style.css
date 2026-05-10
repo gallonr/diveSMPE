@@ -2016,150 +2016,125 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 
 .bi-progress-wrap {
   padding: 24px 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  text-align: center;
 }
 
 .bi-progress-label {
   font-family: var(--font-title);
   font-size: 13px;
   color: var(--texte-clair);
+  margin-bottom: 10px;
 }
 
 .bi-progress-bar-outer {
   width: 100%;
-  max-width: 340px;
-  height: 10px;
+  height: 8px;
   background: rgba(255,255,255,0.1);
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: hidden;
+  margin: 8px 0;
 }
 
 .bi-progress-bar-inner {
   height: 100%;
   background: var(--bleu-ciel);
-  border-radius: 5px;
+  border-radius: 4px;
   transition: width 0.15s ease;
 }
 
 .bi-progress-pct {
-  font-family: var(--font-title);
   font-size: 11px;
   color: var(--bleu-ciel);
 }
+
+/* ── Titres de section ────────────────────────────────────────── */
+
+.bi-section-title {
+  font-family: var(--font-title);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--vert-ok);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 10px 0 6px;
+}
+
+.bi-section-orange { color: var(--orange-light); }
 
 .bi-note {
   font-size: 10px;
   color: var(--gris-texte);
   text-align: center;
-  padding: 8px 0 4px;
+  padding: 10px 0 4px;
   border-top: 1px solid rgba(255,255,255,0.06);
-  line-height: 1.5;
 }
-
-.bi-section-title {
-  font-family: var(--font-title);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--vert-ok);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 6px 2px 2px;
-  flex-shrink: 0;
-}
-
-.bi-section-orange { color: var(--orange-light); }
 
 /* ── Cartes de paires ────────────────────────────────────────── */
 
-.bi-paire {
+.bi-card {
+  background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.09);
+  border-left: 3px solid var(--vert-ok);
+  margin-bottom: 8px;
   overflow: hidden;
-  background: var(--card-bg);
-  flex-shrink: 0;   /* empêche la compression par le conteneur flex parent */
-  margin-bottom: 10px;
 }
 
-.bi-paire-vert   { border-left: 3px solid var(--vert-ok); }
-.bi-paire-orange { border-left: 3px solid var(--orange-light); }
-.bi-paire-rouge  { border-left: 3px solid #e63946; }
-
-.bi-paire-header {
-  display: flex;
+.bi-card-dive {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
   align-items: center;
   gap: 8px;
-  padding: 9px 12px 7px;
-  background: rgba(255,255,255,0.04);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 12px;
 }
 
-.bi-badge {
+.bi-card-dive + .bi-card-dive {
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.bi-card-dive.bi-dive-ko {
+  opacity: 0.55;
+}
+
+.bi-card-num {
+  font-family: var(--font-title);
   font-size: 10px;
-  font-family: var(--font-title);
   font-weight: 700;
-  padding: 2px 7px;
+  color: var(--gris-texte);
+  background: rgba(255,255,255,0.07);
   border-radius: 4px;
-  white-space: nowrap;
+  text-align: center;
+  padding: 2px 4px;
 }
 
-.bi-badge-vert   { background: rgba(70,200,120,0.18); color: var(--vert-ok); }
-.bi-badge-orange { background: rgba(255,165,0,0.18);  color: var(--orange-light); }
-.bi-badge-rouge  { background: rgba(230,57,70,0.18);  color: #e63946; }
-
-.bi-paire-titre {
-  font-family: var(--font-title);
+.bi-card-site {
   font-size: 13px;
   font-weight: 600;
   color: var(--texte-clair);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ── Timeline ────────────────────────────────────────────────── */
-
-.bi-timeline {
-  padding: 8px 12px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
+.bi-card-time {
+  font-family: var(--font-title);
+  font-size: 12px;
+  color: var(--bleu-ciel);
+  white-space: nowrap;
 }
 
-.bi-tl-row {
-  display: grid;
-  grid-template-columns: 20px 1fr auto;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 0;
+.bi-card-prof {
+  font-family: var(--font-title);
+  font-size: 12px;
+  color: var(--gris-texte);
+  white-space: nowrap;
 }
 
-.bi-tl-icon  { font-size: 13px; text-align: center; }
-.bi-tl-label { font-size: 12px; color: var(--gris-texte); }
-.bi-tl-val   { font-size: 12px; color: var(--texte-clair); font-family: var(--font-title); white-space: nowrap; }
-
-.bi-tl-dive   .bi-tl-label,
-.bi-tl-dive   .bi-tl-val { font-weight: 600; }
-
-.bi-dive-ok .bi-tl-label { color: var(--vert-ok); }
-.bi-dive-ko .bi-tl-label { color: #e63946; }
-.bi-dive-ok .bi-tl-val   { color: var(--vert-ok); }
-.bi-dive-ko .bi-tl-val   { color: #e63946; }
-
-.bi-tl-surface .bi-tl-label { color: rgba(255,255,255,0.5); font-size: 11px; }
-.bi-tl-surface .bi-tl-val   { color: rgba(255,255,255,0.5); font-size: 11px; }
-
-.bi-tl-info .bi-tl-label,
-.bi-tl-info .bi-tl-val { color: var(--gris-texte); font-size: 10px; }
-
-.bi-tl-sub {
+.bi-card-sep {
   font-size: 10px;
   color: var(--gris-texte);
-  padding-left: 26px;
-  margin-top: -1px;
-  margin-bottom: 2px;
+  text-align: center;
+  padding: 2px 12px;
+  background: rgba(0,0,0,0.15);
 }
-
-.bi-sub-ko { color: #e63946; opacity: 0.8; }
-
-.bi-profil-warn .bi-tl-val { color: var(--orange-light); }
 
