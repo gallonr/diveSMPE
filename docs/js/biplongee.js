@@ -527,12 +527,12 @@ const BiPlongee = (() => {
 
       let html = '';
       if (verts.length > 0) {
-        html += `<div class="bi-section-title">✅ ${verts.length} combinaison(s) entièrement compatibles</div>`;
-        html += verts.map(_rendrePaire).join('');
+        html += `<div class="bi-section-title">✅ ${verts.length} combinaison(s) entièrement compatibles${verts.length > 20 ? ' — 20 premières affichées' : ''}</div>`;
+        html += verts.slice(0, 20).map(_rendrePaire).join('');
       }
       if (oranges.length > 0) {
-        const slice = oranges.slice(0, 15);
-        html += `<div class="bi-section-title bi-section-orange">⚠️ ${oranges.length} combinaison(s) partiellement compatibles${oranges.length > 15 ? ' (15 premières)' : ''}</div>`;
+        const slice = oranges.slice(0, 10);
+        html += `<div class="bi-section-title bi-section-orange">⚠️ ${oranges.length} combinaison(s) partiellement compatibles${oranges.length > 10 ? ' — 10 premières affichées' : ''}</div>`;
         html += slice.map(_rendrePaire).join('');
       }
       if (verts.length === 0 && oranges.length === 0) {
@@ -541,6 +541,7 @@ const BiPlongee = (() => {
       html += `<p class="bi-note">📌 Distances × ${NAV_COEFF} (tolérance chenal). Profil inversé exclu.</p>`;
 
       container.innerHTML = html;
+      container.scrollTop = 0;
     };
 
     // Démarrer le premier lot après un tick (laisse le navigateur afficher la barre)
