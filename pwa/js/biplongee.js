@@ -508,8 +508,14 @@ const BiPlongee = (() => {
       }
 
       // ── Rendu final ────────────────────────────────────────────
-      // Tri : par heure de premier départ possible, puis par fin P2
-      resultats.sort((a, b) => a.deptMin - b.deptMin || a.finP2_min - b.finP2_min);
+      // Tri : fenêtre de départ la plus étroite en premier (paires les plus contraintes = plus utiles),
+      //        puis par heure de premier départ possible
+      resultats.sort((a, b) => {
+        const dA = a.deptMax - a.deptMin;
+        const dB = b.deptMax - b.deptMin;
+        if (dA !== dB) return dA - dB;          // fenêtre la plus courte d'abord
+        return a.deptMin - b.deptMin;            // puis le plus tôt dans la journée
+      });
 
       _dernierResultats = resultats;
       _dernierContainer = containerId;
@@ -529,7 +535,7 @@ const BiPlongee = (() => {
    * Appelé après le calcul et après chaque frappe dans le champ de recherche.
    */
   function _afficherResultats(resultats, container, filtre = '') {
-    const MAX_DISPLAY = 30;
+    const MAX_DISPLAY = 50;
     const q = filtre.trim().toLowerCase();
     const filtres = q
       ? resultats.filter(r =>
