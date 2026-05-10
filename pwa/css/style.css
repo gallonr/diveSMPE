@@ -1996,9 +1996,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   overflow-y: auto;
   flex: 1;
   padding: 10px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: block;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -2082,6 +2080,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   overflow: hidden;
   background: var(--card-bg);
   flex-shrink: 0;   /* empêche la compression par le conteneur flex parent */
+  margin-bottom: 10px;
 }
 
 .bi-paire-vert   { border-left: 3px solid var(--vert-ok); }
