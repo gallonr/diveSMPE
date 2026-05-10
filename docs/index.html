@@ -79,13 +79,16 @@
       <button id="btn-prevision" class="btn-icon" title="Prévision plongeabilité" aria-label="Prévision">
         &#x1F4C5;
       </button>
+      <button id="btn-biplongee" class="btn-icon" title="Planifier une bi-journée (Maclow)" aria-label="Bi-journée">
+        🤿🤿
+      </button>
       <button id="btn-marees" class="btn-icon" title="Marées" aria-label="Marées">
         🌊
       </button>
       <button id="btn-meteo" class="btn-icon" title="Météo marine" aria-label="Météo">
         🌬
       </button>
-      <a href="guide-utilisateur.html" target="_blank" class="btn-icon" title="Documentation" aria-label="Documentation">
+      <a href="https://gallonr.github.io/diveSMPE/guide-utilisateur.html" target="_blank" class="btn-icon" title="Documentation" aria-label="Documentation">
         📖
       </a>
     </div>
@@ -395,6 +398,47 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
+       MODAL BI-JOURNÉE (planificateur 2 plongées / jour)
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-biplongee" class="modal hidden">
+    <div class="modal-content modal-content-biplongee">
+      <div class="modal-header">
+        <h2>🤿🤿 Planificateur bi-journée — Maclow</h2>
+        <button id="btn-close-biplongee" class="btn-icon">✕</button>
+      </div>
+
+      <!-- Paramètres de départ -->
+      <div class="bi-controls">
+        <div class="bi-ctrl-info">
+          <span class="bi-port-badge">⚓ Cale du Naye · Saint-Malo</span>
+          <span class="bi-params-badge">15 kt · 45 min/plongée · ×1.35 chenal</span>
+        </div>
+        <div class="bi-ctrl-row">
+          <div class="bi-ctrl-group">
+            <label class="bi-ctrl-label" for="bi-date">📅 Date</label>
+            <input type="date" id="bi-date" class="bi-input" />
+          </div>
+          <div class="bi-ctrl-group">
+            <label class="bi-ctrl-label" for="bi-time">🚤 Départ Naye</label>
+            <input type="time" id="bi-time" class="bi-input" step="900" />
+          </div>
+          <button id="btn-bi-calculer" class="btn-bi-calc">Calculer</button>
+        </div>
+        <p class="bi-expl">
+          Surface inter-plongée ≥ 60 min (transit inclus). Profils inversés exclus
+          (2<sup>e</sup> plongée &gt; 1<sup>re</sup> + 5 m si ≤ 20 m, 0 m si &gt; 20 m).
+          Distances à vol d'oiseau × 1,35.
+        </p>
+      </div>
+
+      <!-- Résultats -->
+      <div id="bi-resultats" class="bi-resultats">
+        <p class="bi-empty">Choisissez une date et une heure de départ, puis cliquez sur <strong>Calculer</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS
   ══════════════════════════════════════════════════════════════ -->
   <!-- Leaflet JS (local) -->
@@ -415,6 +459,7 @@
   <script src="js/prevision.js"></script>
   <script src="js/navigation.js"></script>
   <script src="js/meteo.js"></script>
+  <script src="js/biplongee.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 

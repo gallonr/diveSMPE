@@ -51,6 +51,9 @@ const App = (() => {
     // 9. Init module Port (widget carte + créneaux bateaux)
     Port.init();
 
+    // 10. Init module Bi-journée
+    BiPlongee.init();
+
     // 9. Événements UI
     _bindEvents();
 
@@ -111,7 +114,13 @@ const App = (() => {
       Navigation.centrerSurMoi();
     });
 
-    // ── Header : Marées
+    // ── Header : Bi-journée
+    document.getElementById('btn-biplongee')?.addEventListener('click', () => {
+      document.getElementById('modal-biplongee')?.classList.remove('hidden');
+    });
+    document.getElementById('btn-close-biplongee')?.addEventListener('click', () => {
+      document.getElementById('modal-biplongee')?.classList.add('hidden');
+    });
     document.getElementById('btn-marees')?.addEventListener('click', () => {
       Marees.ouvrirModal();
     });
