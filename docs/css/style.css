@@ -2069,6 +2069,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 6px 2px 2px;
+  flex-shrink: 0;
 }
 
 .bi-section-orange { color: var(--orange-light); }
@@ -2080,6 +2081,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   border: 1px solid rgba(255,255,255,0.09);
   overflow: hidden;
   background: var(--card-bg);
+  flex-shrink: 0;   /* empêche la compression par le conteneur flex parent */
 }
 
 .bi-paire-vert   { border-left: 3px solid var(--vert-ok); }
