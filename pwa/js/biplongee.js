@@ -354,20 +354,29 @@ const BiPlongee = (() => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    container.innerHTML = '<p class="bi-loading">⏳ Calcul des paires en cours…</p>';
+    // Diagnostic préalable (affiché instantanément avant le calcul)
+    const geojson     = Sites.getGeojson();
+    const entreeMaree = geojson
+      ? Marees.getEntreePourDate(new Date(dateStr + 'T12:00:00'))
+      : null;
 
-    // Calcul asynchrone pour ne pas bloquer l'UI
-    setTimeout(() => {
+    if (!geojson) {
+      container.innerHTML = `<p class="bi-empty">⚠️ Sites non chargés. Rechargez la page.</p>`;
+      return;
+    }
+    if (!entreeMaree) {
+      container.innerHTML = `<p class="bi-empty">⚠️ Pas de données de marée pour le <strong>${dateStr}</strong>.<br>Vérifiez que cette date est dans la plage de marees.json.</p>`;
+      return;
+    }
+
+    const n = geojson.features.length;
+    container.innerHTML = `<p class="bi-loading">⏳ Calcul de ${n}×${n-1} = ${n*(n-1)} paires…</p>`;
+
+    // Laisser le navigateur rendre le message avant le calcul synchrone
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const t0 = performance.now();
       const resultats = calculerPaires(dateStr, departMin);
-
-      if (resultats.length === 0) {
-        container.innerHTML = `
-          <p class="bi-empty">
-            Aucune donnée de marée disponible pour cette date,<br>
-            ou aucun site chargé.
-          </p>`;
-        return;
-      }
+      const ms = Math.round(performance.now() - t0);
 
       const verts   = resultats.filter(r => r.statut === 'vert');
       const oranges = resultats.filter(r => r.statut === 'orange');
@@ -381,7 +390,7 @@ const BiPlongee = (() => {
 
       if (oranges.length > 0) {
         const affichesOranges = oranges.slice(0, 15);
-        html += `<div class="bi-section-title bi-section-orange">⚠️ ${oranges.length} combinaison(s) partiellement compatibles (15 premières)</div>`;
+        html += `<div class="bi-section-title bi-section-orange">⚠️ ${oranges.length} combinaison(s) partiellement compatibles${oranges.length > 15 ? ' (15 premières)' : ''}</div>`;
         html += affichesOranges.map(_rendrePaire).join('');
       }
 
@@ -389,19 +398,19 @@ const BiPlongee = (() => {
         html = `
           <p class="bi-empty">
             Aucune combinaison compatible pour ce départ.<br>
-            💡 Essayez un autre horaire de départ ou une autre date.
+            💡 Essayez un autre horaire ou une autre date.
           </p>`;
       }
 
-      // Note sur la tolérance de navigation
       html += `
         <p class="bi-note">
-          📌 Distances calculées à vol d'oiseau × ${NAV_COEFF} (tolérance chenal).
-          Profil inversé exclu (2e plongée > 1re + 5 m si ≤ 20 m, + 0 m si > 20 m).
+          📌 Distances × ${NAV_COEFF} (tolérance chenal). Profil inversé exclu
+          (2e &gt; 1re + 5 m si ≤ 20 m, + 0 m si &gt; 20 m).
+          Calcul : ${ms} ms pour ${n*(n-1)} paires.
         </p>`;
 
       container.innerHTML = html;
-    }, 30);
+    }));
   }
 
   // ── Initialisation ────────────────────────────────────────────
