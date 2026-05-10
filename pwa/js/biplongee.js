@@ -101,7 +101,7 @@ const BiPlongee = (() => {
     const Mi = Math.round(midpointMin % 60);
     const dt = new Date(Y, M - 1, D, H, Mi, 0);
     const hMaree = Marees.getHauteurAt(dt) ?? 0;
-    return entry.profMax + hMaree;
+    return Number(entry.profMax) + hMaree;
   }
 
   // ── Algorithme principal ──────────────────────────────────────
