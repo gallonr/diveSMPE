@@ -423,13 +423,9 @@ const Prevision = (() => {
       });
     }
 
-    // Bouton calculer
+    // Bouton calculer (unique déclencheur)
     const btnCalc = document.getElementById('btn-prev-calculer');
     if (btnCalc) btnCalc.addEventListener('click', _calculer);
-
-    // Recalcul automatique sur changement de date/heure
-    document.getElementById('prev-date')?.addEventListener('change', _calculer);
-    document.getElementById('prev-time')?.addEventListener('change', _calculer);
 
     // Checkbox 2 tanks
     document.getElementById('prev-2tanks')?.addEventListener('change', e => {
