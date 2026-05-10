@@ -27,6 +27,7 @@ const BiPlongee = (() => {
   const NAV_COEFF      = 1.35;  // multiplicateur distance vol d'oiseau → chenal estimé
   const DIVE_DUREE_MIN = 45;    // minutes par plongée
   const SURFACE_MIN    = 60;    // intervalle surface minimum (min)
+  const SURFACE_MAX    = 180;   // intervalle surface maximum (min) — au-delà la paire est exclue
 
   // ── État interne ──────────────────────────────────────────────
 
@@ -149,6 +150,8 @@ const BiPlongee = (() => {
         // Transit Site A → Site B (surface + déplacement)
         const transitAB      = _transitMin(latA, lonA, latB, lonB);
         const surfaceTotale  = Math.max(SURFACE_MIN, transitAB);
+        // Exclure si l'intervalle surface dépasse 3h (trop long)
+        if (surfaceTotale > SURFACE_MAX) continue;
         const arriveeB_min   = finP1_min + surfaceTotale;
         const finP2_min      = arriveeB_min + DIVE_DUREE_MIN;
 
@@ -194,16 +197,10 @@ const BiPlongee = (() => {
         // Exclure les profils inversés
         if (!profilOk) continue;
 
-        // ── Statut global ─────────────────────────────────────
-
-        let statut;
-        if (p1EnFenetre && p2EnFenetre) {
-          statut = 'vert';
-        } else if (p1EnFenetre || p2EnFenetre) {
-          statut = 'orange';
-        } else {
-          statut = 'rouge';
-        }
+        // ── Statut global : uniquement les deux sites en fenêtre ──
+        // Exclure si l'une ou l'autre plongée est hors fenêtre d'étale
+        if (!p1EnFenetre || !p2EnFenetre) continue;
+        const statut = 'vert';
 
         // ── Détail fenêtres pour affichage ────────────────────
 
@@ -402,6 +399,8 @@ const BiPlongee = (() => {
 
           const transitAB     = _transitMin(cA.lat, cA.lon, cB.lat, cB.lon);
           const surfaceTotale = Math.max(SURFACE_MIN, transitAB);
+          // Exclure si surface > 3h (trop long)
+          if (surfaceTotale > SURFACE_MAX) continue;
           const arriveeB      = cA.finP1 + surfaceTotale;
           const finP2         = arriveeB + DIVE_DUREE_MIN;
           const profB         = _profReelleMax(cB.p.siteID, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
@@ -425,11 +424,8 @@ const BiPlongee = (() => {
           if (profilOk) {
             const p1EnFenetre = _couvreIntervalle(cA.arriveeA, cA.finP1, cA.fenetres);
             const p2EnFenetre = _couvreIntervalle(arriveeB, finP2, cB.fenetres);
-            const statut      = p1EnFenetre && p2EnFenetre ? 'vert'
-                              : p1EnFenetre || p2EnFenetre ? 'orange'
-                              : 'rouge';
-            const fenA = cA.fenetres.find(f => cA.arriveeA >= f.debutMin && cA.finP1 <= f.finMin) || cA.fenetres[0] || null;
-            const fenB = cB.fenetres.find(f => arriveeB   >= f.debutMin && finP2    <= f.finMin) || cB.fenetres[0] || null;
+            // Exclure si l'un des deux sites est hors fenêtre d'étale
+            if (!p1EnFenetre || !p2EnFenetre) continue;
 
             // distAB dérivée du transit (pas de 2e appel haversine)
             const distAB_nm = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
@@ -445,10 +441,9 @@ const BiPlongee = (() => {
               finP1_min:    Math.round(cA.finP1),
               arriveeB_min: Math.round(arriveeB),
               finP2_min:    Math.round(finP2),
-              p1EnFenetre, p2EnFenetre, fenA, fenB,
               profilNote, profilWarning,
               profA: cA.profA, profB,
-              statut,
+              statut: 'vert',
             });
           }
         }
@@ -468,29 +463,18 @@ const BiPlongee = (() => {
 
       // ── Toutes les paires traitées → rendu final ───────────────
 
-      const ordre = { vert: 0, orange: 1, rouge: 2 };
-      resultats.sort((a, b) => {
-        if (ordre[a.statut] !== ordre[b.statut]) return ordre[a.statut] - ordre[b.statut];
-        return a.finP2_min - b.finP2_min;
-      });
+      // Tri par durée totale croissante (finir le plus tôt)
+      resultats.sort((a, b) => a.finP2_min - b.finP2_min);
 
-      const verts   = resultats.filter(r => r.statut === 'vert');
-      const oranges = resultats.filter(r => r.statut === 'orange');
-
+      const MAX_DISPLAY = 30;
       let html = '';
-      if (verts.length > 0) {
-        html += `<div class="bi-section-title">✅ ${verts.length} combinaison(s) entièrement compatibles${verts.length > 20 ? ' — 20 premières affichées' : ''}</div>`;
-        html += verts.slice(0, 20).map(_rendrePaire).join('');
+      if (resultats.length > 0) {
+        html += `<div class="bi-section-title">✅ ${resultats.length} combinaison(s) compatibles${resultats.length > MAX_DISPLAY ? ` — ${MAX_DISPLAY} premières affichées` : ''}</div>`;
+        html += resultats.slice(0, MAX_DISPLAY).map(_rendrePaire).join('');
+      } else {
+        html = `<p class="bi-empty">Aucune combinaison compatible pour ce départ.<br>💡 Essayez un autre horaire ou une autre date.</p>`;
       }
-      if (oranges.length > 0) {
-        const slice = oranges.slice(0, 10);
-        html += `<div class="bi-section-title bi-section-orange">⚠️ ${oranges.length} combinaison(s) partiellement compatibles${oranges.length > 10 ? ' — 10 premières affichées' : ''}</div>`;
-        html += slice.map(_rendrePaire).join('');
-      }
-      if (verts.length === 0 && oranges.length === 0) {
-        html = `<p class="bi-empty">Aucune combinaison compatible.<br>💡 Essayez un autre horaire ou une autre date.</p>`;
-      }
-      html += `<p class="bi-note">📌 Distances × ${NAV_COEFF} (tolérance chenal). Profil inversé exclu.</p>`;
+      html += `<p class="bi-note">📌 Les deux plongées sont en fenêtre d'étale · surface ≤ 3h · profil non inversé</p>`;
 
       container.innerHTML = html;
       container.scrollTop = 0;
