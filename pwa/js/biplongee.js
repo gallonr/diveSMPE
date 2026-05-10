@@ -354,7 +354,7 @@ const BiPlongee = (() => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // Diagnostic préalable (affiché instantanément avant le calcul)
+    // Diagnostic préalable
     const geojson     = Sites.getGeojson();
     const entreeMaree = geojson
       ? Marees.getEntreePourDate(new Date(dateStr + 'T12:00:00'))
@@ -365,52 +365,161 @@ const BiPlongee = (() => {
       return;
     }
     if (!entreeMaree) {
-      container.innerHTML = `<p class="bi-empty">⚠️ Pas de données de marée pour le <strong>${dateStr}</strong>.<br>Vérifiez que cette date est dans la plage de marees.json.</p>`;
+      container.innerHTML = `<p class="bi-empty">⚠️ Pas de données de marée pour le <strong>${dateStr}</strong>.</p>`;
       return;
     }
 
-    const n = geojson.features.length;
-    container.innerHTML = `<p class="bi-loading">⏳ Calcul de ${n}×${n-1} = ${n*(n-1)} paires…</p>`;
+    const features = geojson.features;
+    const n        = features.length;
+    const total    = n * (n - 1);
 
-    // Laisser le navigateur rendre le message avant le calcul synchrone
-    requestAnimationFrame(() => requestAnimationFrame(() => {
+    // ── Calcul par lots avec barre de progression ─────────────
+    _fenetresCache.clear();
+    const resultats = [];
+    const latP = NAYE.lat;
+    const lonP = NAYE.lon;
+
+    // Pré-calculer les fenêtres une fois par site (cache)
+    for (const f of features) {
+      _getFenetres(f.properties, entreeMaree, dateStr);
+    }
+
+    let iGlobal = 0; // paire courante parmi toutes
+
+    // Affichage initial de la barre
+    const _renderProgress = (done, total) => {
+      const pct = Math.round(done / total * 100);
+      container.innerHTML = `
+        <div class="bi-progress-wrap">
+          <div class="bi-progress-label">⏳ Calcul… ${done} / ${total} paires</div>
+          <div class="bi-progress-bar-outer">
+            <div class="bi-progress-bar-inner" style="width:${pct}%"></div>
+          </div>
+          <div class="bi-progress-pct">${pct}%</div>
+        </div>`;
+    };
+
+    _renderProgress(0, total);
+
+    const BATCH = 300; // paires par lot (~1 frame)
+
+    const _runBatch = () => {
       const t0 = performance.now();
-      const resultats = calculerPaires(dateStr, departMin);
-      const ms = Math.round(performance.now() - t0);
+
+      outer:
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+          if (i === j) continue;
+
+          // Sauter les paires déjà traitées
+          const pairIdx = i * (n - 1) + (j < i ? j : j - 1);
+          if (pairIdx < iGlobal) continue;
+          iGlobal++;
+
+          const fA = features[i], fB = features[j];
+          const pA = fA.properties, pB = fB.properties;
+          const [lonA, latA] = fA.geometry.coordinates;
+          const [lonB, latB] = fB.geometry.coordinates;
+
+          const transitPA      = _transitMin(latP, lonP, latA, lonA);
+          const arriveeA_min   = departMin + transitPA;
+          const finP1_min      = arriveeA_min + DIVE_DUREE_MIN;
+          const transitAB      = _transitMin(latA, lonA, latB, lonB);
+          const surfaceTotale  = Math.max(SURFACE_MIN, transitAB);
+          const arriveeB_min   = finP1_min + surfaceTotale;
+          const finP2_min      = arriveeB_min + DIVE_DUREE_MIN;
+
+          const fenetresA = _getFenetres(pA, entreeMaree, dateStr);
+          const fenetresB = _getFenetres(pB, entreeMaree, dateStr);
+
+          const p1EnFenetre = _couvreIntervalle(arriveeA_min, finP1_min, fenetresA);
+          const p2EnFenetre = _couvreIntervalle(arriveeB_min, finP2_min, fenetresB);
+
+          const midP1 = arriveeA_min + DIVE_DUREE_MIN / 2;
+          const midP2 = arriveeB_min + DIVE_DUREE_MIN / 2;
+          const profA = _profReelleMax(pA.siteID, midP1, dateStr);
+          const profB = _profReelleMax(pB.siteID, midP2, dateStr);
+
+          let profilOk = true, profilNote = '', profilWarning = false;
+          if (profA !== null && profB !== null) {
+            const tolerance = profB <= 20 ? 5 : 0;
+            if (profB > profA + tolerance) {
+              profilOk = false;
+            } else if (profB > profA) {
+              profilWarning = true;
+              profilNote = `⚠️ ${profA.toFixed(0)} m → ${profB.toFixed(0)} m (tolérance ≤ 5 m)`;
+            } else {
+              profilNote = `✅ ${profA.toFixed(0)} m → ${profB.toFixed(0)} m`;
+            }
+          } else {
+            profilNote = '⚙️ Profondeur LiDAR non disponible';
+          }
+          if (!profilOk) continue;
+
+          const statut = p1EnFenetre && p2EnFenetre ? 'vert'
+                       : p1EnFenetre || p2EnFenetre ? 'orange'
+                       : 'rouge';
+
+          const fenA = fenetresA.find(f => arriveeA_min >= f.debutMin && finP1_min <= f.finMin) || fenetresA[0];
+          const fenB = fenetresB.find(f => arriveeB_min >= f.debutMin && finP2_min <= f.finMin) || fenetresB[0];
+
+          resultats.push({
+            siteA: pA, siteB: pB,
+            distPA_nm: Math.round(_distanceNM(latP, lonP, latA, lonA) * 10) / 10,
+            distAB_nm: Math.round(_distanceNM(latA, lonA, latB, lonB) * 10) / 10,
+            transitPA_min: Math.round(transitPA),
+            transitAB_min: Math.round(transitAB),
+            surfaceTotale_min: Math.round(surfaceTotale),
+            arriveeA_min: Math.round(arriveeA_min),
+            finP1_min: Math.round(finP1_min),
+            arriveeB_min: Math.round(arriveeB_min),
+            finP2_min: Math.round(finP2_min),
+            p1EnFenetre, p2EnFenetre, fenA, fenB,
+            profilNote, profilWarning, profA, profB,
+            statut,
+          });
+
+          // Pause toutes les BATCH paires pour laisser le navigateur respirer
+          if (iGlobal % BATCH === 0) {
+            _renderProgress(iGlobal, total);
+            requestAnimationFrame(_runBatch);
+            return; // ← reprendre au prochain frame
+          }
+        }
+      }
+
+      // ── Toutes les paires traitées → afficher les résultats ──
+      _renderProgress(total, total);
+
+      const ordre = { vert: 0, orange: 1, rouge: 2 };
+      resultats.sort((a, b) => {
+        if (ordre[a.statut] !== ordre[b.statut]) return ordre[a.statut] - ordre[b.statut];
+        return a.finP2_min - b.finP2_min;
+      });
 
       const verts   = resultats.filter(r => r.statut === 'vert');
       const oranges = resultats.filter(r => r.statut === 'orange');
 
       let html = '';
-
       if (verts.length > 0) {
         html += `<div class="bi-section-title">✅ ${verts.length} combinaison(s) entièrement compatibles</div>`;
         html += verts.map(_rendrePaire).join('');
       }
-
       if (oranges.length > 0) {
-        const affichesOranges = oranges.slice(0, 15);
+        const slice = oranges.slice(0, 15);
         html += `<div class="bi-section-title bi-section-orange">⚠️ ${oranges.length} combinaison(s) partiellement compatibles${oranges.length > 15 ? ' (15 premières)' : ''}</div>`;
-        html += affichesOranges.map(_rendrePaire).join('');
+        html += slice.map(_rendrePaire).join('');
       }
-
       if (verts.length === 0 && oranges.length === 0) {
-        html = `
-          <p class="bi-empty">
-            Aucune combinaison compatible pour ce départ.<br>
-            💡 Essayez un autre horaire ou une autre date.
-          </p>`;
+        html = `<p class="bi-empty">Aucune combinaison compatible.<br>💡 Essayez un autre horaire ou une autre date.</p>`;
       }
-
-      html += `
-        <p class="bi-note">
-          📌 Distances × ${NAV_COEFF} (tolérance chenal). Profil inversé exclu
-          (2e &gt; 1re + 5 m si ≤ 20 m, + 0 m si &gt; 20 m).
-          Calcul : ${ms} ms pour ${n*(n-1)} paires.
-        </p>`;
+      html += `<p class="bi-note">📌 Distances × ${NAV_COEFF} (tolérance chenal). Profil inversé exclu.</p>`;
 
       container.innerHTML = html;
-    }));
+    };
+
+    // Démarrer après un frame pour afficher la barre
+    requestAnimationFrame(_runBatch);
   }
 
   // ── Initialisation ────────────────────────────────────────────
