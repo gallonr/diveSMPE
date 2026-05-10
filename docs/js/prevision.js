@@ -12,6 +12,7 @@ const Prevision = (() => {
 
   let _hauteurCourante = null; // hauteur de marée calculée pour la date/heure choisie
   let _filtreProf = 'all';     // filtre profondeur : 'all' | 6 | 10 | 20 | '20+'
+  let _mode2tanks = false;     // true = mode bi-journée actif
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -171,6 +172,31 @@ const Prevision = (() => {
     const dateStr = document.getElementById('prev-date').value;
     const timeStr = document.getElementById('prev-time').value;
     if (!dateStr || !timeStr) return;
+
+    // ── Mode bi-journée ──────────────────────────────────────
+    if (_mode2tanks) {
+      // Cacher les éléments mode 1 plongée
+      document.getElementById('prev-sites')?.classList.add('hidden');
+      document.getElementById('prev-prof-filter')?.classList.add('hidden');
+      document.getElementById('prev-maree-bloc')?.classList.add('hidden');
+      document.getElementById('prev-port')?.classList.add('hidden');
+      // Afficher les résultats bi-journée
+      const biEl = document.getElementById('prev-bi-resultats');
+      if (biEl) biEl.classList.remove('hidden');
+      // Déléguer au module BiPlongee (conteneur = prev-bi-resultats)
+      if (typeof BiPlongee !== 'undefined') {
+        const [h, m]    = timeStr.split(':').map(Number);
+        const departMin = h * 60 + m;
+        BiPlongee.afficher(dateStr, departMin, 'prev-bi-resultats');
+      }
+      return;
+    }
+
+    // ── Mode 1 plongée (comportement original) ────────────────
+    document.getElementById('prev-bi-resultats')?.classList.add('hidden');
+    document.getElementById('prev-sites')?.classList.remove('hidden');
+    document.getElementById('prev-maree-bloc')?.classList.remove('hidden');
+    document.getElementById('prev-port')?.classList.remove('hidden');
 
     const targetDate     = _buildDate(dateStr, timeStr);
     const entree         = Marees.getEntreePourDate(targetDate);
@@ -404,6 +430,22 @@ const Prevision = (() => {
     // Recalcul automatique sur changement de date/heure
     document.getElementById('prev-date')?.addEventListener('change', _calculer);
     document.getElementById('prev-time')?.addEventListener('change', _calculer);
+
+    // Checkbox 2 tanks
+    document.getElementById('prev-2tanks')?.addEventListener('change', e => {
+      _mode2tanks = e.target.checked;
+      // Mettre à jour le libellé heure selon le mode
+      const infoEl = document.getElementById('prev-2tanks-info');
+      const timeLabel = document.querySelector('label[for="prev-time"]');
+      if (_mode2tanks) {
+        infoEl?.classList.remove('hidden');
+        if (timeLabel) timeLabel.textContent = '🚤 Départ Naye';
+      } else {
+        infoEl?.classList.add('hidden');
+        if (timeLabel) timeLabel.textContent = '⏱ Heure';
+      }
+      _calculer();
+    });
 
     // Filtre profondeur
     document.getElementById('prev-prof-filter')?.addEventListener('click', e => {

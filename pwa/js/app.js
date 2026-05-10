@@ -114,10 +114,7 @@ const App = (() => {
       Navigation.centrerSurMoi();
     });
 
-    // ── Header : Bi-journée
-    document.getElementById('btn-biplongee')?.addEventListener('click', () => {
-      document.getElementById('modal-biplongee')?.classList.remove('hidden');
-    });
+    // ── Header : Bi-journée (intégré dans Prévision — checkbox 2 tanks)
     document.getElementById('btn-close-biplongee')?.addEventListener('click', () => {
       document.getElementById('modal-biplongee')?.classList.add('hidden');
     });

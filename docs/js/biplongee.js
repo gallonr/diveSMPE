@@ -345,10 +345,13 @@ const BiPlongee = (() => {
   }
 
   /**
-   * Lance le calcul et affiche les résultats dans le conteneur #bi-resultats.
+   * Lance le calcul et affiche les résultats dans le conteneur spécifié.
+   * @param {string} dateStr    "YYYY-MM-DD"
+   * @param {number} departMin  minutes depuis minuit
+   * @param {string} [containerId="prev-bi-resultats"]  id du div cible
    */
-  function afficher(dateStr, departMin) {
-    const container = document.getElementById('bi-resultats');
+  function afficher(dateStr, departMin, containerId = 'prev-bi-resultats') {
+    const container = document.getElementById(containerId);
     if (!container) return;
 
     container.innerHTML = '<p class="bi-loading">⏳ Calcul des paires en cours…</p>';
@@ -401,36 +404,10 @@ const BiPlongee = (() => {
     }, 30);
   }
 
-  // ── UI ────────────────────────────────────────────────────────
+  // ── Initialisation ────────────────────────────────────────────
 
-  function _setDefaultDateTime() {
-    const dateEl = document.getElementById('bi-date');
-    const timeEl = document.getElementById('bi-time');
-    if (!dateEl || !timeEl) return;
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    dateEl.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-    timeEl.value = '08:30';
-  }
-
-  function _bindUI() {
-    const btn = document.getElementById('btn-bi-calculer');
-    if (btn) btn.addEventListener('click', _onCalculer);
-
-    // Recalcul automatique sur changement de date/heure
-    ['bi-date', 'bi-time'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('change', _onCalculer);
-    });
-  }
-
-  function _onCalculer() {
-    const dateEl = document.getElementById('bi-date');
-    const timeEl = document.getElementById('bi-time');
-    if (!dateEl || !timeEl || !dateEl.value || !timeEl.value) return;
-    const [h, m]   = timeEl.value.split(':').map(Number);
-    const departMin = h * 60 + m;
-    afficher(dateEl.value, departMin);
+  function init() {
+    // Tout est piloté depuis Prevision.js via afficher()
   }
 
   return { init, calculerPaires, afficher };
