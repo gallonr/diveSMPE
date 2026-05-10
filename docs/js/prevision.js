@@ -185,9 +185,7 @@ const Prevision = (() => {
       if (biEl) biEl.classList.remove('hidden');
       // Déléguer au module BiPlongee (conteneur = prev-bi-resultats)
       if (typeof BiPlongee !== 'undefined') {
-        const [h, m]    = timeStr.split(':').map(Number);
-        const departMin = h * 60 + m;
-        BiPlongee.afficher(dateStr, departMin, 'prev-bi-resultats');
+        BiPlongee.afficher(dateStr, 'prev-bi-resultats');
       }
       return;
     }
@@ -430,12 +428,11 @@ const Prevision = (() => {
     // Checkbox 2 tanks
     document.getElementById('prev-2tanks')?.addEventListener('change', e => {
       _mode2tanks = e.target.checked;
-      // Mettre à jour le libellé heure selon le mode
-      const infoEl = document.getElementById('prev-2tanks-info');
-      const timeLabel = document.querySelector('label[for="prev-time"]');
+      const infoEl    = document.getElementById('prev-2tanks-info');
+      const timeRow   = document.getElementById('prev-time-row');
       if (_mode2tanks) {
         infoEl?.classList.remove('hidden');
-        if (timeLabel) timeLabel.textContent = '🚤 Départ Naye';
+        timeRow?.classList.add('hidden');    // champ heure inutile en mode 2 tanks
         // Vider la zone résultats bi-journée sans lancer le calcul
         const biEl = document.getElementById('prev-bi-resultats');
         if (biEl) biEl.innerHTML = '<p class="bi-empty">Appuyez sur <strong>Calculer</strong> pour planifier la bi-journée.</p>';
@@ -446,7 +443,7 @@ const Prevision = (() => {
         document.getElementById('prev-port')?.classList.add('hidden');
       } else {
         infoEl?.classList.add('hidden');
-        if (timeLabel) timeLabel.textContent = '⏱ Heure';
+        timeRow?.classList.remove('hidden'); // restaurer le champ heure
         document.getElementById('prev-bi-resultats')?.classList.add('hidden');
         document.getElementById('prev-sites')?.classList.remove('hidden');
         document.getElementById('prev-maree-bloc')?.classList.remove('hidden');

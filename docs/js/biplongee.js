@@ -278,6 +278,12 @@ const BiPlongee = (() => {
     const idA = r.siteA.siteID;
     const idB = r.siteB.siteID;
 
+    // Fenêtre de départ
+    const fenDuree = r.deptMax - r.deptMin;
+    const deptStr = fenDuree === 0
+      ? `${_minToHHMM(r.deptMin)}`
+      : `${_minToHHMM(r.deptMin)} – ${_minToHHMM(r.deptMax)} (${_formatDuree(fenDuree)})`;
+
     // Infos surface inter-plongée
     let surfaceNote;
     if (r.transitAB_min >= SURFACE_MIN) {
@@ -288,6 +294,7 @@ const BiPlongee = (() => {
 
     return `
       <div class="bi-card" style="border-left-color:${borderColor}">
+        <div class="bi-card-depart">🕐 Départ : ${deptStr}</div>
         <div class="bi-card-dive bi-card-clickable" onclick="BiPlongee._ouvrirSite('${idA}')" title="Voir ${r.siteA.siteNom} sur la carte">
           <div class="bi-card-num">P1</div>
           <div class="bi-card-info">
@@ -326,20 +333,14 @@ const BiPlongee = (() => {
   /**
    * Lance le calcul et affiche les résultats dans le conteneur spécifié.
    *
-   * Optimisations :
-   *  • Pré-calcul O(n) par site (transit port→site, arrivée, fin P1, fenêtres, profA)
-   *    → élimine n-1 recalculs identiques par site dans la boucle interne.
-   *  • État de progression (_ci, _cj) conservé en closure entre les frames
-   *    → plus de logique de skip O(n²) : chaque reprise repart exactement où
-   *      elle s'est arrêtée sans rescanner les paires précédentes.
-   *  • Lot de BATCH paires par frame (requestAnimationFrame) pour ne pas
-   *    bloquer le thread principal.
+   * Parcourt tous les créneaux de départ de 7h00 à 22h00 (pas 5 min)
+   * pour chaque paire (A, B) et affiche une carte par paire unique avec
+   * la fenêtre de départ valide [deptMin – deptMax].
    *
    * @param {string} dateStr    "YYYY-MM-DD"
-   * @param {number} departMin  minutes depuis minuit
    * @param {string} [containerId="prev-bi-resultats"]  id du div cible
    */
-  function afficher(dateStr, departMin, containerId = 'prev-bi-resultats') {
+  function afficher(dateStr, containerId = 'prev-bi-resultats') {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -360,36 +361,37 @@ const BiPlongee = (() => {
 
     const features = geojson.features;
     const n        = features.length;
-    const total    = n * (n - 1);
-
     _fenetresCache.clear();
     const resultats = [];
     const latP = NAYE.lat;
     const lonP = NAYE.lon;
 
-    // ── Port : vérification du seuil pour Maclow ───────────────
-    const portFen    = (typeof Port !== 'undefined') ? Port.getFenetresJour(entreeMaree) : null;
-    const maclowBl   = portFen?.['Maclow']?.bloque ?? [];
-    /** Retourne true si le port est accessible (non bloqué) à l'instant tMin */
+    // ── Port : fenêtres de blocage pour Maclow ─────────────────
+    const portFen  = (typeof Port !== 'undefined') ? Port.getFenetresJour(entreeMaree) : null;
+    const maclowBl = portFen?.['Maclow']?.bloque ?? [];
     const _portOuvert = tMin => !maclowBl.some(pl => tMin >= pl.debut && tMin < pl.fin);
-    const sortiePortOk = _portOuvert(departMin);
 
-    // ── Pré-calcul O(n) : données fixes par site ───────────────
-    // Ces valeurs ne dépendent que du site A (indice i) et de l'heure de départ ;
-    // les calculer ici évite de les répéter (n-1) fois dans la boucle interne.
+    // ── Pré-calcul O(n) par site ───────────────────────────────
     const sc = features.map(f => {
-      const p           = f.properties;
-      const [lon, lat]  = f.geometry.coordinates;
-      const transitPA   = _transitMin(latP, lonP, lat, lon);
-      const arriveeA    = departMin + transitPA;
-      const finP1       = arriveeA + DIVE_DUREE_MIN;
-      const fenetres    = _getFenetres(p, entreeMaree, dateStr);
-      // profA dépend du milieu de P1, qui ne change pas d'une paire à l'autre
-      const profA       = _profReelleMax(p.siteID, arriveeA + DIVE_DUREE_MIN / 2, dateStr);
-      // distance port→site en NM (pour l'affichage)
-      const distPA_nm   = Math.round(_distanceNM(latP, lonP, lat, lon) * 10) / 10;
-      return { p, lon, lat, transitPA, arriveeA, finP1, fenetres, profA, distPA_nm };
+      const p          = f.properties;
+      const [lon, lat] = f.geometry.coordinates;
+      const transitPA  = _transitMin(latP, lonP, lat, lon);
+      const fenetres   = _getFenetres(p, entreeMaree, dateStr);
+      const distPA_nm  = Math.round(_distanceNM(latP, lonP, lat, lon) * 10) / 10;
+      return { p, lon, lat, transitPA, fenetres, distPA_nm };
     });
+
+    // ── Créneaux de départ à scanner : 07h00 → 22h00, pas 5 min ─
+    const departures = [];
+    for (let t = 7 * 60; t <= 22 * 60; t += 5) departures.push(t);
+
+    // ── Paires plates ──────────────────────────────────────────
+    const pairs = [];
+    for (let i = 0; i < n; i++)
+      for (let j = 0; j < n; j++)
+        if (i !== j) pairs.push(i * 256 + j);
+
+    const total = pairs.length;
 
     // ── Barre de progression ───────────────────────────────────
     const _renderProgress = (done, tot) => {
@@ -403,23 +405,10 @@ const BiPlongee = (() => {
           <div class="bi-progress-pct">${pct}%</div>
         </div>`;
     };
-
     _renderProgress(0, total);
 
-    // ── Paires pré-aplaties : tableau plat [[i, j], …] ────────
-    // Taille : n*(n-1) ≈ 3 540 entrées → ~28 Ko, négligeable.
-    // Avantage : indice entier unique, aucune logique de curseur.
-    const pairs = [];
-    for (let i = 0; i < n; i++) {
-      for (let j = 0; j < n; j++) {
-        if (i !== j) pairs.push(i * 256 + j); // encodage compact (n ≤ 255)
-      }
-    }
-    // (si n > 255 un jour : utiliser pairs.push([i,j]) et adapter la lecture)
-
-    // ── Boucle par lots (setTimeout, jamais throttlé) ──────────
-    const BATCH = 400; // paires par appel
-    let _idx = 0;      // position courante dans pairs[]
+    const BATCH = 80; // paires par appel (chacune scanne ~181 créneaux en interne)
+    let _idx = 0;
 
     const _runBatch = () => {
       try {
@@ -427,72 +416,85 @@ const BiPlongee = (() => {
 
         while (_idx < end) {
           const code = pairs[_idx++];
-          const i    = code >> 8;     // quotient
-          const j    = code & 0xFF;   // reste
+          const i    = code >> 8;
+          const j    = code & 0xFF;
+          const cA   = sc[i];
+          const cB   = sc[j];
 
-          // ── Calcul de la paire (i, j) ─────────────────────
-          const cA = sc[i];
-          const cB = sc[j];
-
+          // Transit A→B constant pour cette paire
           const transitAB     = _transitMin(cA.lat, cA.lon, cB.lat, cB.lon);
           const surfaceTotale = Math.max(SURFACE_MIN, transitAB);
-          // Exclure si surface > 3h (trop long)
           if (surfaceTotale > SURFACE_MAX) continue;
-          const arriveeB      = cA.finP1 + surfaceTotale;
-          const finP2         = arriveeB + DIVE_DUREE_MIN;
-          const profB         = _profReelleMax(cB.p.siteID, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
 
-          // Vérification profil anti-inversion
-          let profilOk = true, profilNote = '', profilWarning = false;
-          if (cA.profA !== null && profB !== null) {
-            const tolerance = profB <= 20 ? 5 : 0;
-            if (profB > cA.profA + tolerance) {
-              profilOk = false;
-            } else if (profB > cA.profA) {
-              profilWarning = true;
-              profilNote = `⚠️ ${cA.profA.toFixed(0)} m → ${profB.toFixed(0)} m (tolérance ≤ 5 m)`;
+          const distAB_nm     = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
+          const transitRetour = _transitMin(cB.lat, cB.lon, latP, lonP);
+
+          let deptMin  = null;
+          let deptMax  = null;
+          let firstData = null;
+
+          // ── Scan de tous les créneaux de départ ─────────────
+          for (const dept of departures) {
+            const arriveeA = dept + cA.transitPA;
+            const finP1    = arriveeA + DIVE_DUREE_MIN;
+            const arriveeB = finP1 + surfaceTotale;
+            const finP2    = arriveeB + DIVE_DUREE_MIN;
+
+            // Fenêtres d'étale
+            if (!_couvreIntervalle(arriveeA, finP1, cA.fenetres)) continue;
+            if (!_couvreIntervalle(arriveeB, finP2, cB.fenetres, MARGE_FIN_P2)) continue;
+
+            // Profil anti-inversion
+            const profA = _profReelleMax(cA.p.siteID, arriveeA + DIVE_DUREE_MIN / 2, dateStr);
+            const profB = _profReelleMax(cB.p.siteID, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
+
+            let profilOk = true, profilNote = '', profilWarning = false;
+            if (profA !== null && profB !== null) {
+              const tolerance = profB <= 20 ? 5 : 0;
+              if (profB > profA + tolerance) {
+                profilOk = false;
+              } else if (profB > profA) {
+                profilWarning = true;
+                profilNote = `⚠️ ${profA.toFixed(0)} m → ${profB.toFixed(0)} m (tolérance ≤ 5 m)`;
+              } else {
+                profilNote = `✅ ${profA.toFixed(0)} m → ${profB.toFixed(0)} m`;
+              }
             } else {
-              profilNote = `✅ ${cA.profA.toFixed(0)} m → ${profB.toFixed(0)} m`;
+              profilNote = '⚙️ Profondeur LiDAR non disponible';
             }
-          } else {
-            profilNote = '⚙️ Profondeur LiDAR non disponible';
+            if (!profilOk) continue;
+
+            // ── Créneau valide ──────────────────────────────────
+            if (deptMin === null) deptMin = dept;
+            deptMax = dept;
+
+            // Conserver les données du premier créneau valide
+            if (firstData === null) {
+              const retourMin = finP2 + transitRetour;
+              firstData = {
+                siteA: cA.p, siteB: cB.p,
+                distPA_nm: cA.distPA_nm,
+                distAB_nm,
+                transitAB_min:     Math.round(transitAB),
+                surfaceTotale_min: Math.round(surfaceTotale),
+                arriveeA_min: Math.round(arriveeA),
+                finP1_min:    Math.round(finP1),
+                arriveeB_min: Math.round(arriveeB),
+                finP2_min:    Math.round(finP2),
+                retourMin:    Math.round(retourMin),
+                retourPortOk: _portOuvert(retourMin),
+                profilNote, profilWarning,
+                profA, profB,
+                statut: 'vert',
+              };
+            }
           }
 
-          if (profilOk) {
-            const p1EnFenetre = _couvreIntervalle(cA.arriveeA, cA.finP1, cA.fenetres);
-            const p2EnFenetre = _couvreIntervalle(arriveeB, finP2, cB.fenetres, MARGE_FIN_P2);
-            // Exclure si l'un des deux sites est hors fenêtre d'étale
-            if (!p1EnFenetre || !p2EnFenetre) continue;
-
-            // Port : transit retour B → Port après la fin de P2
-            const transitRetour = _transitMin(cB.lat, cB.lon, latP, lonP);
-            const retourMin     = finP2 + transitRetour;
-            const retourPortOk  = _portOuvert(retourMin);
-
-            // distAB dérivée du transit (pas de 2e appel haversine)
-            const distAB_nm = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
-
-            resultats.push({
-              siteA: cA.p, siteB: cB.p,
-              distPA_nm: cA.distPA_nm,
-              distAB_nm,
-              transitPA_min:     Math.round(cA.transitPA),
-              transitAB_min:     Math.round(transitAB),
-              surfaceTotale_min: Math.round(surfaceTotale),
-              arriveeA_min: Math.round(cA.arriveeA),
-              finP1_min:    Math.round(cA.finP1),
-              arriveeB_min: Math.round(arriveeB),
-              finP2_min:    Math.round(finP2),
-              retourMin:    Math.round(retourMin),
-              retourPortOk,
-              profilNote, profilWarning,
-              profA: cA.profA, profB,
-              statut: 'vert',
-            });
+          if (firstData !== null) {
+            resultats.push({ ...firstData, deptMin, deptMax });
           }
         }
 
-        // Mettre à jour la barre et programmer le prochain lot
         _renderProgress(_idx, total);
         if (_idx < total) {
           setTimeout(_runBatch, 0);
@@ -505,29 +507,22 @@ const BiPlongee = (() => {
         return;
       }
 
-      // ── Toutes les paires traitées → rendu final ───────────────
+      // ── Rendu final ────────────────────────────────────────────
+      // Tri : par heure de premier départ possible, puis par fin P2
+      resultats.sort((a, b) => a.deptMin - b.deptMin || a.finP2_min - b.finP2_min);
 
-      // Tri par durée totale croissante (finir le plus tôt)
-      resultats.sort((a, b) => a.finP2_min - b.finP2_min);
-
-      // Stocker pour la recherche (accessible via _filtrer)
       _dernierResultats = resultats;
       _dernierContainer = containerId;
-      _dernieresSortiePortOk = sortiePortOk;
-      _dernierDepartMin = departMin;
 
       _afficherResultats(resultats, container);
     };
 
-    // Démarrer le premier lot après un tick (laisse le navigateur afficher la barre)
     setTimeout(_runBatch, 0);
   }
 
   // ── Résultats en mémoire (pour la recherche et le filtrage) ──────────────────
   let _dernierResultats = [];
   let _dernierContainer = 'prev-bi-resultats';
-  let _dernieresSortiePortOk = null; // null = Port module non disponible
-  let _dernierDepartMin = 0;
 
   /**
    * Injecte le HTML des résultats + barre de recherche dans le conteneur.
@@ -563,16 +558,6 @@ const BiPlongee = (() => {
         <span class="bi-search-count">${q ? `${visible} / ${total}` : total} combinaison(s)</span>
       </div>
     `;
-
-    // Bannière port (sortie, identique pour toutes les cartes)
-    if (_dernieresSortiePortOk !== null) {
-      const cls  = _dernieresSortiePortOk ? 'bi-port-ok' : 'bi-port-bloque';
-      const icon = _dernieresSortiePortOk ? '✅' : '🚫';
-      const txt  = _dernieresSortiePortOk
-        ? 'Port accessible à la sortie'
-        : 'Port bloqué à l\'heure de sortie (seuil non atteint)';
-      html += `<div class="bi-port-banner ${cls}">⚓ Sortie ${_minToHHMM(_dernierDepartMin)} : ${icon} ${txt}</div>`;
-    }
 
     if (slice.length > 0) {
       if (visible > MAX_DISPLAY) {

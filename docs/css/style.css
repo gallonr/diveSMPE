@@ -2124,6 +2124,17 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 .bi-card-port.bi-card-port-ok  { color: var(--vert-ok); }
 .bi-card-port.bi-card-port-bloque { color: #ff7070; }
 
+/* ── En-tête départ bi-journée ────────────────────────────────── */
+
+.bi-card-depart {
+  font-size: 12px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  color: var(--bleu-ciel);
+  padding: 5px 8px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
 /* ── Titres de section ────────────────────────────────────────── */
 
 .bi-section-title {
