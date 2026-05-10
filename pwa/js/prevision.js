@@ -440,11 +440,24 @@ const Prevision = (() => {
       if (_mode2tanks) {
         infoEl?.classList.remove('hidden');
         if (timeLabel) timeLabel.textContent = '🚤 Départ Naye';
+        // Vider la zone résultats bi-journée sans lancer le calcul
+        const biEl = document.getElementById('prev-bi-resultats');
+        if (biEl) biEl.innerHTML = '<p class="bi-empty">Appuyez sur <strong>Calculer</strong> pour planifier la bi-journée.</p>';
+        biEl?.classList.remove('hidden');
+        document.getElementById('prev-sites')?.classList.add('hidden');
+        document.getElementById('prev-prof-filter')?.classList.add('hidden');
+        document.getElementById('prev-maree-bloc')?.classList.add('hidden');
+        document.getElementById('prev-port')?.classList.add('hidden');
       } else {
         infoEl?.classList.add('hidden');
         if (timeLabel) timeLabel.textContent = '⏱ Heure';
+        document.getElementById('prev-bi-resultats')?.classList.add('hidden');
+        document.getElementById('prev-sites')?.classList.remove('hidden');
+        document.getElementById('prev-maree-bloc')?.classList.remove('hidden');
+        document.getElementById('prev-port')?.classList.remove('hidden');
+        // Relancer le calcul 1 plongée avec les paramètres actuels
+        _calculer();
       }
-      _calculer();
     });
 
     // Filtre profondeur
