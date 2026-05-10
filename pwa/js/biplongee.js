@@ -532,7 +532,8 @@ const BiPlongee = (() => {
 
   /**
    * Injecte le HTML des résultats + barre de recherche dans le conteneur.
-   * Appelé après le calcul et après chaque frappe dans le champ de recherche.
+   * La barre de recherche n'est créée qu'une seule fois (premier appel ou reset).
+   * Les cartes seules sont mises à jour à chaque filtrage.
    */
   function _afficherResultats(resultats, container, filtre = '') {
     const MAX_DISPLAY = 50;
@@ -547,44 +548,55 @@ const BiPlongee = (() => {
     const visible = filtres.length;
     const slice   = filtres.slice(0, MAX_DISPLAY);
 
-    let html = '';
-
-    // Barre de recherche (persistante)
-    html += `
-      <div class="bi-search-bar">
+    // ── Barre de recherche : créée une seule fois ───────────────
+    let searchBar = container.querySelector('.bi-search-bar');
+    if (!searchBar) {
+      searchBar = document.createElement('div');
+      searchBar.className = 'bi-search-bar';
+      searchBar.innerHTML = `
         <input
-          type="search"
+          type="text"
           id="bi-search-input"
           class="bi-search-input"
           placeholder="🔍 Filtrer par nom de site…"
-          value="${filtre.replace(/"/g, '&quot;')}"
-          oninput="BiPlongee._filtrer(this.value)"
           autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          spellcheck="false"
+          oninput="BiPlongee._filtrer(this.value)"
         />
-        <span class="bi-search-count">${q ? `${visible} / ${total}` : total} combinaison(s)</span>
-      </div>
-    `;
+        <span class="bi-search-count"></span>
+      `;
+      container.innerHTML = '';
+      container.appendChild(searchBar);
+    }
 
+    // Mettre à jour le compteur
+    const countEl = searchBar.querySelector('.bi-search-count');
+    if (countEl) countEl.textContent = `${q ? `${visible} / ${total}` : total} combinaison(s)`;
+
+    // ── Zone des cartes : mise à jour uniquement ────────────────
+    let cardsEl = container.querySelector('.bi-cards-zone');
+    if (!cardsEl) {
+      cardsEl = document.createElement('div');
+      cardsEl.className = 'bi-cards-zone';
+      container.appendChild(cardsEl);
+    }
+
+    let cardsHtml = '';
     if (slice.length > 0) {
       if (visible > MAX_DISPLAY) {
-        html += `<p class="bi-search-hint">${MAX_DISPLAY} premières affichées sur ${visible}</p>`;
+        cardsHtml += `<p class="bi-search-hint">${MAX_DISPLAY} premières affichées sur ${visible}</p>`;
       }
-      html += slice.map(_rendrePaire).join('');
+      cardsHtml += slice.map(_rendrePaire).join('');
     } else {
-      html += `<p class="bi-empty">${q ? `Aucun site ne correspond à « ${filtre} »` : 'Aucune combinaison compatible.<br>💡 Essayez un autre horaire ou une autre date.'}</p>`;
+      cardsHtml += `<p class="bi-empty">${q ? `Aucun site ne correspond à « ${filtre} »` : 'Aucune combinaison compatible.<br>💡 Essayez un autre horaire ou une autre date.'}</p>`;
     }
+    cardsHtml += `<p class="bi-note">📌 Les deux plongées sont en fenêtre d'étale · surface ≤ 3h · profil non inversé</p>`;
+    cardsEl.innerHTML = cardsHtml;
 
-    html += `<p class="bi-note">📌 Les deux plongées sont en fenêtre d'étale · surface ≤ 3h · profil non inversé</p>`;
-
-    container.innerHTML = html;
-
-    // Redonner le focus au champ de recherche si un filtre est actif
-    if (q) {
-      const inp = container.querySelector('#bi-search-input');
-      if (inp) { inp.focus(); inp.setSelectionRange(q.length, q.length); }
-    } else {
-      container.scrollTop = 0;
-    }
+    // Scroll en haut uniquement lors du rendu initial (pas de filtre)
+    if (!q) container.scrollTop = 0;
   }
 
   /**
