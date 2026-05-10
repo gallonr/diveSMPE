@@ -2091,6 +2091,39 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   font-style: italic;
 }
 
+/* ── Bannière port bi-journée ─────────────────────────────────── */
+
+.bi-port-banner {
+  font-size: 12px;
+  font-family: var(--font-title);
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border-left: 3px solid;
+}
+.bi-port-banner.bi-port-ok {
+  background: rgba(58,175,168,0.10);
+  border-color: var(--vert-ok);
+  color: var(--vert-ok);
+}
+.bi-port-banner.bi-port-bloque {
+  background: rgba(220,60,60,0.12);
+  border-color: #dc3c3c;
+  color: #ff7070;
+}
+
+/* ── Pied de carte : retour port ──────────────────────────────── */
+
+.bi-card-port {
+  font-size: 11px;
+  font-family: var(--font-title);
+  padding: 4px 8px 6px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 2px;
+}
+.bi-card-port.bi-card-port-ok  { color: var(--vert-ok); }
+.bi-card-port.bi-card-port-bloque { color: #ff7070; }
+
 /* ── Titres de section ────────────────────────────────────────── */
 
 .bi-section-title {
