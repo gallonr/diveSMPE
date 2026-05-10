@@ -1,130 +1,107 @@
-# CLAUDE.md — Catalogue Sites de Plongée SMPE
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Description du projet
 
-Application de catalogue et d'aide à la navigation pour les sites de plongée du club **SMPE** (Saint-Malo Plongée Emeraude), couvrant la **Baie de Saint-Malo**. L'application est utilisée :
-- **Au centre de plongée** (PC) : gestion de la base de données, preprocessing des données
-- **En mer sur tablette** : consultation offline des sites, navigation, marées
+Application de catalogue et d'aide à la navigation pour les sites de plongée du club **SMPE** (Saint-Malo Plongée Emeraude), couvrant la **Baie de Saint-Malo**. Deux contextes d'utilisation :
+- **Au centre de plongée** (PC) : preprocessing R/Python à partir de la BDD Excel et du LiDAR
+- **En mer sur tablette** : PWA consultée 100% offline (Service Worker)
 
----
+Cycle de mise à jour : modifier la BDD → `build_all.R` → `./sync_docs.sh` → tablette sur WiFi → SW met à jour automatiquement.
 
-## Architecture retenue : Approche B — R preprocessing + PWA offline-first ⭐
+## Architecture — les deux mondes
 
-### Principe
+### 1. Pipeline preprocessing (centre)
 
-Deux mondes distincts :
-- **R (centre)** : preprocessing lourd une seule fois, génère des fichiers statiques
-- **PWA (tablette en mer)** : consomme les fichiers statiques, fonctionne 100% offline
+`r/build_all.R` est le script maître. Il enchaîne :
+1. **`r/02_process_bdd.R`** — XLSX (`bdd/bddAtlasPlongeeSMPE.xlsx`) → `data/sites.geojson` (60 sites, WGS84)
+2. **`r/01_process_las.R`** — LiDAR LITTO3D (~3,8 Go) → `data/bathy_sites.json` + miniatures PNG dans `pwa/data/thumbs/` (44 sites couverts)
+3. **`r/03_generate_profile.R`** — profils bathymétriques + transects
+4. **`r/04_marees_fes.py`** — atlas FES2022 → `data/marees.json` (PM/BM ±1 an, 34 constituantes harmoniques)
+5. **`r/05_courants_fes.py`** — courants FES2014/2022 → `data/courants_grid.json`
+6. Copie automatique `data/` → `pwa/data/` pour les fichiers synchronisés (`FILES_TO_SYNC` dans `build_all.R:84`)
+7. Validation end-to-end : nombre de features GeoJSON, jours dans `marees.json`, sites dans `bathy_sites.json`
 
-### Cycle de mise à jour
-```
-1. Modifier la BDD sur PC  →  2. Lancer script R  →  3. Tablette sur WiFi centre  →  4. Ouvrir le navigateur  →  ✅ Mis à jour
-```
+Les miniatures PNG sont écrites **directement** dans `pwa/data/thumbs/` par `01_process_las.R` (pas de copie supplémentaire).
 
----
+### 2. PWA offline-first (tablette)
 
-## Stack technique
+`pwa/js/app.js` orchestre l'init dans un ordre précis (dépendances) :
+`Marees → Bathy → Courants → Carte → Sites → Navigation (GPS) → Prevision`.
 
-### Preprocessing R (centre de plongée)
-| Outil | Usage |
-|-------|-------|
-| `lidR`, `terra` | LAS 3,9 Go → GeoTIFF tuilé + profils bathymétriques |
-| `sf`, `jsonlite` | XLSX sites → GeoJSON |
-| `readxl`, `httr2` | Lecture BDD Excel, requêtes API |
-| Calcul marées SHOM | Tables JSON pré-calculées ±365 jours |
+Modules sous `pwa/js/` (Vanilla JS, IIFE, pas de bundler) :
+- `carte.js` — Leaflet + couches IGN/SHOM/OpenSeaMap
+- `marees.js` / `mareesite.js` — courbe ±48h, fenêtre d'étale par site
+- `bathy.js` — affichage MNT, transect interactif sur miniature
+- `courants.js`, `port.js`, `prevision.js` — courants FES, état du port, prévision météo
+- `meteo.js` — Open-Meteo (sans clé) + Météo-France via proxy Cloudflare
+- `navigation.js` — Geolocation API, cap, ETA
+- `sw.js` — Service Worker (Cache First statique + Network First API)
+- `auth.js`, `tokens.js`, `secrets.js` — gestion clés API (cf. section Secrets)
 
-### Frontend PWA (tablette en mer)
-| Outil | Usage |
-|-------|-------|
-| `Leaflet.js` | Carte marine IGN/SHOM + affichage des sites |
-| `Turf.js` | Calculs géospatiaux dans le navigateur |
-| `Geolocation API` | GPS temps réel, ETA, cap |
-| `Service Worker` | Offline natif, mise à jour automatique sur WiFi |
-| `Météo-France API` | Données marines si 4G disponible |
-| Vanilla JS | Pas de framework — simplicité et maintenabilité |
+### 3. Déploiement GitHub Pages
 
-### Cartes marines
-- **IGN Géoportail WMS** — fond cartographique officiel
-- **OpenSeaMap** — overlay nautique
+Le dossier **`docs/`** est la copie publiée sur GitHub Pages. **Ne jamais éditer `docs/` directement** — utiliser :
 
-### Serveur local (centre)
-- `nginx` ou `http-server` (PC du centre, allumé en permanence)
-
----
-
-## Données sources
-
-| Fichier | Description | Taille |
-|---------|-------------|--------|
-| `bdd/bddAtlasPlongeeSMPE.xlsx` | Base de données des sites de plongée | ~15 Ko |
-| `las/LITTO3D_BaieSaintMalo.las` | Données LiDAR bathymétriques LITTO3D — Baie de Saint-Malo | ~3,8 Go |
-
----
-
-## Structure cible du projet
-
-```
-CatalogueSitePlongée/
-├── CLAUDE.md                   # Ce fichier
-├── bdd/
-│   └── bddAtlasPlongeeSMPE.xlsx  # Base de données sites
-├── las/
-│   └── LITTO3D_BaieSaintMalo.las # Données LiDAR brutes
-├── r/
-│   ├── 01_process_las.R          # Traitement LiDAR → GeoTIFF/tuiles
-│   ├── 02_process_bdd.R          # XLSX → GeoJSON sites
-│   ├── 03_marees.R               # Calcul tables de marées SHOM
-│   └── build_all.R               # Script maître (lance tout)
-├── data/                         # Fichiers générés par R (gitignorés si volumineux)
-│   ├── sites.geojson
-│   ├── marees.json
-│   └── tiles/                    # Tuiles MNT
-└── pwa/
-    ├── index.html
-    ├── manifest.json
-    ├── sw.js                     # Service Worker
-    ├── css/
-    ├── js/
-    └── data/                     # Copie des fichiers statiques pour la PWA
+```bash
+./sync_docs.sh "message de commit"
 ```
 
----
+Ce script copie `pwa/{js,css,sw.js,manifest.json,index.html}` → `docs/`, corrige le lien guide-utilisateur, puis commit/push. Toute modif PWA passe par `pwa/` puis ce script.
 
-## Commandes utiles
+### 4. Proxy Cloudflare Worker
 
-### Lancer le preprocessing R complet
+`cloudflare-worker/mf-wms-proxy.js` — proxy WMS Météo-France (clé API serveur, CORS). Déploiement séparé via Wrangler.
+
+## Commandes
+
 ```r
+# Build complet (depuis racine projet, R ou Rscript)
 source("r/build_all.R")
+# ou
+Rscript r/build_all.R
 ```
 
-### Servir la PWA en local (développement)
 ```bash
+# PWA en local (dev)
 cd pwa && npx http-server -p 8080
+
+# Sync vers docs/ + commit + push (déploiement GitHub Pages)
+./sync_docs.sh "feat: …"
 ```
 
-### Servir via nginx (production centre)
-```bash
-# Config nginx pointant vers /pwa
-sudo nginx -s reload
-```
+Prérequis : R ≥ 4.3 avec `lidR`, `terra`, `sf`, `readxl`, `jsonlite` ; Python (`.venv/`) avec `pyfes` pour FES2022.
 
----
+## Service Worker — versioning
+
+Le SW (`pwa/sw.js`) utilise une constante `VERSION` (ex: `'v16'`). **Toute modification de la liste `ASSETS_STATIQUES` ou d'un fichier statique listé doit s'accompagner d'un bump de `VERSION`** — sinon les tablettes ne rechargent pas le cache. Bump aussi quand on ajoute un nouveau module JS.
+
+L'ordre de chargement dans `app.js` doit rester cohérent avec les dépendances (Courants doit précéder Carte car `Carte.init()` consulte `Courants.isDisponible()`).
+
+## Données — fichiers volumineux non commités
+
+Voir `.gitignore`. À ne jamais commiter :
+- `las/` (~3,8 Go LiDAR LITTO3D)
+- `fes2022/` (atlas marées CNES)
+- `currents/` (atlas courants FES)
+- `data/tiles/`, `data/*.tif*` (sorties intermédiaires)
+- `pwa/js/secrets.js`, `pwa/js/tokens.js`, équivalents `docs/js/`
+
+## Secrets / tokens
+
+`pwa/js/secrets.js.example` est le template versionné. Le vrai `secrets.js` (clé Météo-France notamment) reste local. `tokens.js` est généré côté client. Lors du sync vers `docs/`, ces fichiers ne sont pas copiés (ils doivent être déposés manuellement côté hébergement, ou — préférable — les appels passent par le worker Cloudflare).
+
+## Conventions
+
+- **Vanilla JS uniquement** dans `pwa/` — pas de React/Vue, pas de bundler. Modules en pattern IIFE (`const Module = (() => { ... })()`).
+- **R** est le domaine de l'utilisateur ; le frontend JS lui est moins familier — privilégier la simplicité.
+- Le Service Worker n'est servi qu'en HTTPS ou localhost (contrainte navigateur).
+- Validation systématique en fin de `build_all.R` — un build avec features manquantes échoue explicitement.
 
 ## Contexte métier
 
-- **Club** : SMPE — Saint-Malo Plongée Emeraude
-- **Zone** : Baie de Saint-Malo (Manche, Bretagne Nord)
-- **Utilisateurs** : moniteurs et plongeurs du club
-- **Contrainte principale** : fonctionnement **offline en mer** (pas ou peu de réseau 4G)
-- **Mise à jour** : réalisée au centre, synchronisée sur WiFi avant de partir en mer
-
----
-
-## Notes pour Claude
-
-- L'utilisateur maîtrise **R** (lidR, terra, sf) — c'est son domaine principal
-- Le **frontend JS** (Leaflet, Service Worker) est nouveau — privilégier Vanilla JS simple
-- **Éviter React/Vue/Angular** — trop complexe à maintenir pour ce contexte
-- Les scripts R de preprocessing peuvent être longs (~minutes pour le LAS)
-- Le fichier LAS (~3,8 Go) ne doit jamais être commité dans git
-- Toujours tester le mode offline de la PWA avant livraison
+- Club SMPE — Saint-Malo Plongée Emeraude, Baie de Saint-Malo (Manche)
+- Utilisateurs : moniteurs et plongeurs du club
+- Contrainte clé : **fonctionnement offline en mer** (4G inégale)
+- Mise à jour : au centre, sur WiFi, avant la sortie

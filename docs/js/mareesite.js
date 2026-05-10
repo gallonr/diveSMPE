@@ -374,6 +374,70 @@ const MaréeSite = (() => {
   }
 
   /**
+   * Construit la liste des fenêtres de plongeabilité pour un site et un jour donné,
+   * indépendamment de l'heure actuelle.
+   * Utilisé par BiPlongee pour la planification bi-journée.
+   *
+   * @param {object} props       - feature.properties du site (maree, tpsEtale)
+   * @param {object} entreeMaree - entrée marees.json du jour
+   * @returns {Array<{debutMin:number, finMin:number, etaleLabel:string}>}
+   *          Fenêtres triées par heure de début. Tableau vide si pas de contrainte.
+   */
+  function getFenetres(props, entreeMaree) {
+    const codeRaw = props.maree;
+    const tpsRaw  = props.tpsEtale;
+
+    // Pas de contrainte de marée → site plongeable toute la journée (fenêtre illimitée)
+    if (!codeRaw) return [{ debutMin: 0, finMin: 1440, etaleLabel: 'Aucune contrainte' }];
+    if (!entreeMaree) return [];
+
+    const typeEauJour = _typeEau(entreeMaree);
+    const etalesJour  = _etalesJour(entreeMaree);
+    if (etalesJour.length === 0) return [];
+
+    const codes = codeRaw.split('/').map(c => _parseCode(c)).filter(Boolean);
+    if (codes.length === 0) return [];
+
+    const tpsParsed = _parseTpsEtale(tpsRaw);
+    const fenetres  = [];
+
+    for (const code of codes) {
+      const fenetreMin = tpsParsed[code.eau] ?? 60;
+      const etalesCompatibles = etalesJour.filter(e => {
+        if (e.typeEtale !== code.type) return false;
+        if (typeEauJour && code.eau !== typeEauJour) return false;
+        return true;
+      });
+      const etalesRef = etalesCompatibles.length > 0
+        ? etalesCompatibles
+        : etalesJour.filter(e => e.typeEtale === code.type);
+      if (etalesRef.length === 0) continue;
+
+      for (const etale of etalesRef) {
+        let debutMin, finMin;
+        if (code.dir === 'H') {
+          debutMin = etale.tMin - Math.round(fenetreMin / 2);
+          finMin   = etale.tMin + Math.round(fenetreMin / 2);
+        } else if (code.dir === 'A') {
+          debutMin = etale.tMin - code.decalMin;
+          finMin   = debutMin + fenetreMin;
+        } else {
+          debutMin = etale.tMin + code.decalMin;
+          finMin   = debutMin + fenetreMin;
+        }
+        fenetres.push({
+          etaleLabel: `${code.type === 'PM' ? 'PM' : 'BM'} ${code.eau === 'ME' ? 'morte-eau' : 'vive-eau'} à ${_minToHHMM(etale.tMin)}`,
+          debutMin,
+          finMin,
+        });
+      }
+    }
+
+    fenetres.sort((a, b) => a.debutMin - b.debutMin);
+    return fenetres;
+  }
+
+  /**
    * Calcule le statut pour tous les sites d'un GeoJSON (pour les badges liste).
    * Retourne un Map<siteID, etat>
    */
@@ -388,5 +452,5 @@ const MaréeSite = (() => {
     return map;
   }
 
-  return { calculerEtat, calculerTous, rendreBloc };
+  return { calculerEtat, calculerTous, rendreBloc, getFenetres };
 })();
