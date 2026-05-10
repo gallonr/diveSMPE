@@ -406,7 +406,6 @@ const BiPlongee = (() => {
     });
 
     // ── Barre de progression ───────────────────────────────────
-    let iGlobal = 0;
     const _renderProgress = (done, tot) => {
       const pct = Math.round(done / tot * 100);
       container.innerHTML = `
@@ -421,90 +420,101 @@ const BiPlongee = (() => {
 
     _renderProgress(0, total);
 
-    // ── Boucle par lots (état conservé entre frames) ───────────
-    const BATCH = 400; // paires par frame (~16 ms visés)
-    let _ci = 0;       // indice site A courant
-    let _cj = 0;       // indice site B courant
+    // ── Paires pré-aplaties : tableau plat [[i, j], …] ────────
+    // Taille : n*(n-1) ≈ 3 540 entrées → ~28 Ko, négligeable.
+    // Avantage : indice entier unique, aucune logique de curseur.
+    const pairs = [];
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        if (i !== j) pairs.push(i * 256 + j); // encodage compact (n ≤ 255)
+      }
+    }
+    // (si n > 255 un jour : utiliser pairs.push([i,j]) et adapter la lecture)
+
+    // ── Boucle par lots (setTimeout, jamais throttlé) ──────────
+    const BATCH = 400; // paires par appel
+    let _idx = 0;      // position courante dans pairs[]
 
     const _runBatch = () => {
-      let batchCount = 0;
+      try {
+        const end = Math.min(_idx + BATCH, total);
 
-      while (_ci < n) {
-        // Sauter la diagonale (A === B)
-        if (_cj === _ci) _cj++;
-        if (_cj >= n) { _ci++; _cj = 0; continue; }
+        while (_idx < end) {
+          const code = pairs[_idx++];
+          const i    = code >> 8;     // quotient
+          const j    = code & 0xFF;   // reste
 
-        // ── Calcul de la paire (_ci, _cj) ─────────────────────
-        const cA = sc[_ci];
-        const cB = sc[_cj];
+          // ── Calcul de la paire (i, j) ─────────────────────
+          const cA = sc[i];
+          const cB = sc[j];
 
-        const transitAB     = _transitMin(cA.lat, cA.lon, cB.lat, cB.lon);
-        const surfaceTotale = Math.max(SURFACE_MIN, transitAB);
-        const arriveeB      = cA.finP1 + surfaceTotale;
-        const finP2         = arriveeB + DIVE_DUREE_MIN;
-        const profB         = _profReelleMax(cB.p.siteID, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
+          const transitAB     = _transitMin(cA.lat, cA.lon, cB.lat, cB.lon);
+          const surfaceTotale = Math.max(SURFACE_MIN, transitAB);
+          const arriveeB      = cA.finP1 + surfaceTotale;
+          const finP2         = arriveeB + DIVE_DUREE_MIN;
+          const profB         = _profReelleMax(cB.p.siteID, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
 
-        // Avancer les curseurs et le compteur global avant tout `continue`
-        _cj++;
-        iGlobal++;
-        batchCount++;
-
-        // Vérification profil anti-inversion
-        let profilOk = true, profilNote = '', profilWarning = false;
-        if (cA.profA !== null && profB !== null) {
-          const tolerance = profB <= 20 ? 5 : 0;
-          if (profB > cA.profA + tolerance) {
-            profilOk = false;
-          } else if (profB > cA.profA) {
-            profilWarning = true;
-            profilNote = `⚠️ ${cA.profA.toFixed(0)} m → ${profB.toFixed(0)} m (tolérance ≤ 5 m)`;
+          // Vérification profil anti-inversion
+          let profilOk = true, profilNote = '', profilWarning = false;
+          if (cA.profA !== null && profB !== null) {
+            const tolerance = profB <= 20 ? 5 : 0;
+            if (profB > cA.profA + tolerance) {
+              profilOk = false;
+            } else if (profB > cA.profA) {
+              profilWarning = true;
+              profilNote = `⚠️ ${cA.profA.toFixed(0)} m → ${profB.toFixed(0)} m (tolérance ≤ 5 m)`;
+            } else {
+              profilNote = `✅ ${cA.profA.toFixed(0)} m → ${profB.toFixed(0)} m`;
+            }
           } else {
-            profilNote = `✅ ${cA.profA.toFixed(0)} m → ${profB.toFixed(0)} m`;
+            profilNote = '⚙️ Profondeur LiDAR non disponible';
           }
-        } else {
-          profilNote = '⚙️ Profondeur LiDAR non disponible';
+
+          if (profilOk) {
+            const p1EnFenetre = _couvreIntervalle(cA.arriveeA, cA.finP1, cA.fenetres);
+            const p2EnFenetre = _couvreIntervalle(arriveeB, finP2, cB.fenetres);
+            const statut      = p1EnFenetre && p2EnFenetre ? 'vert'
+                              : p1EnFenetre || p2EnFenetre ? 'orange'
+                              : 'rouge';
+            const fenA = cA.fenetres.find(f => cA.arriveeA >= f.debutMin && cA.finP1 <= f.finMin) || cA.fenetres[0] || null;
+            const fenB = cB.fenetres.find(f => arriveeB   >= f.debutMin && finP2    <= f.finMin) || cB.fenetres[0] || null;
+
+            // distAB dérivée du transit (pas de 2e appel haversine)
+            const distAB_nm = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
+
+            resultats.push({
+              siteA: cA.p, siteB: cB.p,
+              distPA_nm: cA.distPA_nm,
+              distAB_nm,
+              transitPA_min:     Math.round(cA.transitPA),
+              transitAB_min:     Math.round(transitAB),
+              surfaceTotale_min: Math.round(surfaceTotale),
+              arriveeA_min: Math.round(cA.arriveeA),
+              finP1_min:    Math.round(cA.finP1),
+              arriveeB_min: Math.round(arriveeB),
+              finP2_min:    Math.round(finP2),
+              p1EnFenetre, p2EnFenetre, fenA, fenB,
+              profilNote, profilWarning,
+              profA: cA.profA, profB,
+              statut,
+            });
+          }
         }
 
-        if (profilOk) {
-          const p1EnFenetre = _couvreIntervalle(cA.arriveeA, cA.finP1, cA.fenetres);
-          const p2EnFenetre = _couvreIntervalle(arriveeB, finP2, cB.fenetres);
-          const statut      = p1EnFenetre && p2EnFenetre ? 'vert'
-                            : p1EnFenetre || p2EnFenetre ? 'orange'
-                            : 'rouge';
-          const fenA = cA.fenetres.find(f => cA.arriveeA >= f.debutMin && cA.finP1 <= f.finMin) || cA.fenetres[0];
-          const fenB = cB.fenetres.find(f => arriveeB   >= f.debutMin && finP2    <= f.finMin) || cB.fenetres[0];
-
-          // distAB dérivée du transit pour éviter un 2e appel haversine
-          const distAB_nm = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
-
-          resultats.push({
-            siteA: cA.p, siteB: cB.p,
-            distPA_nm: cA.distPA_nm,
-            distAB_nm,
-            transitPA_min:    Math.round(cA.transitPA),
-            transitAB_min:    Math.round(transitAB),
-            surfaceTotale_min: Math.round(surfaceTotale),
-            arriveeA_min: Math.round(cA.arriveeA),
-            finP1_min:    Math.round(cA.finP1),
-            arriveeB_min: Math.round(arriveeB),
-            finP2_min:    Math.round(finP2),
-            p1EnFenetre, p2EnFenetre, fenA, fenB,
-            profilNote, profilWarning,
-            profA: cA.profA, profB,
-            statut,
-          });
-        }
-
-        // Pause toutes les BATCH paires — reprend exactement ici au prochain frame
-        if (batchCount >= BATCH) {
-          _renderProgress(iGlobal, total);
-          requestAnimationFrame(_runBatch);
+        // Mettre à jour la barre et programmer le prochain lot
+        _renderProgress(_idx, total);
+        if (_idx < total) {
+          setTimeout(_runBatch, 0);
           return;
         }
+
+      } catch (err) {
+        console.error('[BiPlongee] Erreur lors du calcul :', err);
+        container.innerHTML = `<p class="bi-empty">❌ Erreur de calcul : ${err.message}<br><small>Ouvrez la console (F12) pour le détail.</small></p>`;
+        return;
       }
 
       // ── Toutes les paires traitées → rendu final ───────────────
-      _renderProgress(total, total);
 
       const ordre = { vert: 0, orange: 1, rouge: 2 };
       resultats.sort((a, b) => {
@@ -533,8 +543,8 @@ const BiPlongee = (() => {
       container.innerHTML = html;
     };
 
-    // Premier frame après affichage de la barre de progression
-    requestAnimationFrame(_runBatch);
+    // Démarrer le premier lot après un tick (laisse le navigateur afficher la barre)
+    setTimeout(_runBatch, 0);
   }
 
   // ── Initialisation ────────────────────────────────────────────
