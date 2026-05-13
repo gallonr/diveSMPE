@@ -25,6 +25,9 @@ Modifier la BDD  →  Lancer build_all.R  →  Tablette sur WiFi centre  →  Ou
 - Transect bathymétrique libre (clic-clic sur la miniature)
 - Marées en temps réel : PM/BM, coefficient, hauteur actuelle, courbe J-1/J+2
 - Indicateur d'étale et fenêtre de plongée optimale par site
+- **Courants de marée** : couche Leaflet animée (flèches colorées) calculée par synthèse harmonique FES2022, avec contrôle temporel et interrogation au site sélectionné
+- **Port — créneaux de sortie** : widget temps réel + plages de blocage journalières par bateau selon le tirant d'eau et le seuil de la cale du Naye
+- **Planificateur bi-journée** : calcul automatique des combinaisons (site 1 + site 2) compatibles avec les fenêtres de marée, les temps de transit et les règles de décompression
 - Navigation GPS : cap, distance, ETA vers le site sélectionné
 - Météo marine (Open-Meteo) si réseau disponible
 - Mode offline natif via Service Worker — bandeau de statut réseau

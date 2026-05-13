@@ -2,6 +2,8 @@
 
 Application de catalogue et d'aide à la navigation pour les sites de plongée de la Baie de Saint-Malo.
 
+> **Version du guide : mai 2026**
+
 ---
 
 ## Installer l'application sur la tablette
@@ -39,7 +41,7 @@ L'application fonctionne dans le navigateur — **Chrome** est recommandé sur A
 |--------|----------|
 | **☰** | Ouvrir la liste des sites |
 | **📍** | Centrer la carte sur votre position GPS |
-| **🗓** | Prévision plongeabilité (choisir une date/heure) |
+| **🗓** | Prévision plongeabilité et planificateur bi-journée |
 | **🌊** | Courbe de marée (J-1 à J+2) |
 | **🌬** | Météo marine (nécessite le réseau) |
 
@@ -170,9 +172,74 @@ Appuyer sur **🗓** pour simuler les conditions à une date et heure futures.
 
 L'application affiche :
 - La hauteur de marée prévue à ce moment
-- La liste des **sites plongeables** à cette heure (fenêtre marée compatible)
+- Une mini-courbe de la journée avec le créneau sélectionné
+- La liste des **sites plongeables** à cette heure (fenêtre marée compatible), triés par statut (vert → orange → rouge)
+- Un filtre par profondeur : **Tous / ≤ 6 m / ≤ 10 m / ≤ 20 m / +20 m**
 
 Utile pour préparer une sortie plusieurs jours à l'avance.
+
+---
+
+## Planificateur bi-journée
+
+Dans la modal Prévision, cocher la case **"2 plongées"** pour activer le planificateur de bi-journée.
+
+Ce module calcule automatiquement toutes les combinaisons de deux sites réalisables sur une même journée en tenant compte :
+
+- Des **fenêtres de plongeabilité** de chaque site (marée)
+- Du **temps de transit** Port du Naye → site 1 → site 2 → retour (15 nœuds, coefficient de chenal 1,35)
+- De l'**intervalle surface** minimum (60 min) et maximum (3 h) entre les deux plongées
+- De la **règle de profondeur** : la 2e plongée ne doit pas être plus profonde que la 1re (tolérance 5 m si ≤ 20 m de profondeur réelle)
+
+Les résultats s'affichent sous forme de paires de sites avec :
+- Horaires de mise à l'eau suggérés (plongée 1 et plongée 2)
+- Temps de transit et intervalles de surface calculés
+- Profondeurs estimées (intégrant la hauteur de marée à l'heure de plongée)
+
+---
+
+## Courants de marée
+
+La carte affiche en option une **couche de courants** calculée en temps réel à partir du modèle harmonique FES2022.
+
+### Activer la couche courants
+
+Dans le contrôle de couches (coin supérieur droit de la carte), activer **"Courants"**.
+
+Des **flèches colorées** apparaissent sur la carte :
+- La **direction** indique le sens du courant (convention nautique : vers où il va)
+- La **couleur** indique l'intensité : bleu (faible) → vert → jaune → rouge (fort)
+- La **taille** des flèches est proportionnelle à la vitesse
+
+### Contrôle temporel
+
+Par défaut, les courants sont affichés pour **maintenant** et se mettent à jour automatiquement.
+
+Un contrôle permet de sélectionner une **date et une heure** pour visualiser les courants futurs ou passés. Un bouton **▶ Animer** fait défiler les courants heure par heure sur 24 h.
+
+### Courant au site sélectionné
+
+Lorsqu'un site est sélectionné, la vitesse et la direction du courant au point le plus proche de la grille sont affichées dans la fiche site (onglet Conditions).
+
+---
+
+## Port — Créneaux de sortie
+
+Un **widget flottant** sur la carte indique en permanence si le passage du port est possible pour les bateaux du club.
+
+Le calcul tient compte :
+- Du **seuil d'eau au port** (cale du Naye, Saint-Malo) configuré en mètres au-dessus du zéro hydrographique
+- Du **tirant d'eau** de chaque bateau
+
+| Couleur du widget | Signification |
+|-------------------|---------------|
+| 🟢 Vert | Passage libre pour tous les bateaux |
+| 🟠 Orange | Passage restreint (certains bateaux bloqués) |
+| 🔴 Rouge | Port bloqué (hauteur insuffisante) |
+
+### Créneaux journaliers
+
+Dans la modal Prévision, une section **Port** affiche les **plages horaires de blocage** de chaque bateau pour la journée sélectionnée. Cela permet d'anticiper les sorties dès la planification.
 
 ---
 
