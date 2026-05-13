@@ -88,15 +88,24 @@
       <button id="btn-meteo" class="btn-icon" title="Météo marine" aria-label="Météo">
         🌬
       </button>
-      <a href="guide-utilisateur.html" target="_blank" class="btn-icon" title="Documentation" aria-label="Documentation">
-        📖
-      </a>
-      <button id="btn-tutorial" class="btn-icon" title="Tutoriel de l'application" aria-label="Tutoriel">
-        🎓
-      </button>
-      <button id="btn-cgu" class="btn-icon" title="Conditions générales d'utilisation" aria-label="CGU">
-        ⚖
-      </button>
+
+      <!-- Menu secondaire -->
+      <div class="header-more-wrap">
+        <button id="btn-more" class="btn-icon" title="Plus" aria-label="Plus d'options">
+          ···
+        </button>
+        <div id="header-more-menu" class="header-more-menu hidden">
+          <a href="guide-utilisateur.html" target="_blank" class="more-item">
+            📖 Documentation
+          </a>
+          <button id="btn-tutorial" class="more-item">
+            🎓 Tutoriel
+          </button>
+          <button id="btn-cgu" class="more-item">
+            ⚖ CGU
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
