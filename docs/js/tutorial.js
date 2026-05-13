@@ -185,7 +185,6 @@ const Tutorial = (() => {
     });
 
     if (!etape.cible || etape.position === 'center') {
-      // Mode centré : pas de spotlight, carte centrée
       _spotlight.style.display = 'none';
       _card.className          = 'tutorial-card tutorial-card--center';
       _card.removeAttribute('style');
@@ -194,7 +193,6 @@ const Tutorial = (() => {
 
     const cible = document.querySelector(etape.cible);
     if (!cible) {
-      // Élément introuvable → mode centré
       _spotlight.style.display = 'none';
       _card.className          = 'tutorial-card tutorial-card--center';
       _card.removeAttribute('style');
@@ -204,49 +202,68 @@ const Tutorial = (() => {
     // Highlight CSS sur l'élément cible
     cible.classList.add('tuto-highlighted');
 
-    const r = cible.getBoundingClientRect();
-    const p = PADDING;
-
-    // Position du "trou" dans l'overlay (clip-path)
-    const x1 = r.left   - p;
-    const y1 = r.top    - p;
-    const x2 = r.right  + p;
-    const y2 = r.bottom + p;
-
+    const r  = cible.getBoundingClientRect();
+    const p  = PADDING;
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
+    const x1 = Math.max(0, r.left   - p);
+    const y1 = Math.max(0, r.top    - p);
+    const x2 = Math.min(vw, r.right  + p);
+    const y2 = Math.min(vh, r.bottom + p);
+
+    // Spotlight (clip-path "trou")
     _spotlight.style.display = 'block';
     _spotlight.style.clipPath = [
       `polygon(`,
-      `0% 0%, 100% 0%, 100% 100%, 0% 100%,`,         // contour extérieur
+      `0% 0%, 100% 0%, 100% 100%, 0% 100%,`,
       `0% ${y1}px,`,
-      `${x1}px ${y1}px, ${x1}px ${y2}px,`,           // trou
+      `${x1}px ${y1}px, ${x1}px ${y2}px,`,
       `${x2}px ${y2}px, ${x2}px ${y1}px,`,
       `0% ${y1}px, 0% 100%`,
       `)`
     ].join(' ');
 
-    // Positionnement de la carte tooltip
-    _card.removeAttribute('style');
+    // Positionner la carte hors-écran temporairement pour mesurer ses dimensions réelles
     _card.className = 'tutorial-card tutorial-card--positioned';
+    _card.style.top      = '-9999px';
+    _card.style.left     = '-9999px';
+    _card.style.maxWidth = `${Math.min(340, vw - 24)}px`;
 
-    const cardH = _card.offsetHeight || 180;
-    const cardW = _card.offsetWidth  || 300;
+    // Forcer le navigateur à calculer le layout
+    const cardW = _card.offsetWidth;
+    const cardH = _card.offsetHeight;
+
+    const MARGE = 10; // marge min avec les bords
 
     let top, left;
 
-    if (etape.position === 'bottom') {
-      top  = Math.min(y2 + 12, vh - cardH - 12);
-      left = Math.max(8, Math.min(r.left, vw - cardW - 8));
-    } else if (etape.position === 'top') {
-      top  = Math.max(8, y1 - cardH - 12);
-      left = Math.max(8, Math.min(r.left, vw - cardW - 8));
+    // Espace disponible dans chaque direction
+    const espaceBottom = vh - y2;
+    const espaceTop    = y1;
+    const espaceRight  = vw - x2;
+    const espaceLeft   = x1;
+
+    // Choisir la meilleure direction (respecter le hint mais s'adapter)
+    let dir = etape.position;
+    if (dir === 'bottom' && espaceBottom < cardH + MARGE && espaceTop >= cardH + MARGE) dir = 'top';
+    if (dir === 'top'    && espaceTop    < cardH + MARGE && espaceBottom >= cardH + MARGE) dir = 'bottom';
+
+    if (dir === 'bottom') {
+      top = y2 + MARGE;
+    } else if (dir === 'top') {
+      top = y1 - cardH - MARGE;
     } else {
-      // right
-      top  = Math.max(8, r.top);
-      left = Math.min(x2 + 12, vw - cardW - 8);
+      // right / fallback : à côté
+      top = r.top;
     }
+
+    // Alignement horizontal : aligner sur le bord gauche de la cible, puis clamper
+    left = r.left;
+    left = Math.max(MARGE, Math.min(left, vw - cardW - MARGE));
+
+    // Clamper verticalement dans tous les cas
+    top = Math.max(MARGE, Math.min(top, vh - cardH - MARGE));
 
     _card.style.top  = `${top}px`;
     _card.style.left = `${left}px`;
