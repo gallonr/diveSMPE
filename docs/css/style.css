@@ -2313,6 +2313,59 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   MENU SECONDAIRE HEADER (···)
+══════════════════════════════════════════════════════════════ */
+
+.header-more-wrap {
+  position: relative;
+}
+
+#btn-more {
+  font-size: 18px;
+  letter-spacing: 1px;
+  line-height: 1;
+}
+
+.header-more-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--emeraude-dark);
+  border: 1px solid var(--emeraude);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  min-width: 180px;
+  z-index: 2000;
+  overflow: hidden;
+  animation: tuto-fadein 0.18s ease;
+}
+
+.more-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 16px;
+  background: none;
+  border: none;
+  color: var(--blanc);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.more-item:hover {
+  background: rgba(58, 175, 168, 0.15);
+  color: var(--emeraude-light);
+}
+.more-item + .more-item {
+  border-top: 1px solid rgba(58, 175, 168, 0.12);
+}
+
+/* ══════════════════════════════════════════════════════════════
    TUTORIEL PREMIER DÉMARRAGE
 ══════════════════════════════════════════════════════════════ */
 
