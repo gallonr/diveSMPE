@@ -20,7 +20,7 @@ const Tutorial = (() => {
     },
     {
       titre:    '🗺️ La carte interactive',
-      texte:    'La carte est le cœur de l\'application. Cliquez sur un marqueur pour ouvrir la fiche d\'un site de plongée.\n\nVous pouvez zoomer, déplacer la carte et basculer entre les couches (carte/satellite/bathymétrie).',
+      texte:    'La carte est le cœur de l\'application. Cliquez sur un marqueur pour ouvrir la fiche d\'un site de plongée.<br><br>Basculez entre les couches via le sélecteur en haut à droite de la carte :<br><div class="tuto-layers-demo"><span class="tuto-layer tuto-layer--active">🗺️ Carte</span><span class="tuto-layer">🛰️ Satellite</span><span class="tuto-layer">🌊 Bathymétrie</span></div>',
       cible:    '#map',
       position: 'center'
     },

@@ -2365,6 +2365,32 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   border-top: 1px solid rgba(58, 175, 168, 0.12);
 }
 
+/* Illustration couches carte dans le tutoriel */
+.tuto-layers-demo {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.tuto-layer {
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(58, 175, 168, 0.1);
+  border: 1px solid rgba(58, 175, 168, 0.3);
+  color: var(--gris-texte);
+  cursor: default;
+}
+
+.tuto-layer--active {
+  background: var(--emeraude);
+  border-color: var(--emeraude);
+  color: var(--emeraude-dark);
+  font-weight: 700;
+}
+
 /* ══════════════════════════════════════════════════════════════
    TUTORIEL PREMIER DÉMARRAGE
 ══════════════════════════════════════════════════════════════ */
