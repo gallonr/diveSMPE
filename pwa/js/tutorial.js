@@ -20,9 +20,9 @@ const Tutorial = (() => {
     },
     {
       titre:    '🗺️ La carte interactive',
-      texte:    'La carte est le cœur de l\'application. Cliquez sur un marqueur pour ouvrir la fiche d\'un site de plongée.<br><br>Basculez entre les couches via le sélecteur en haut à droite de la carte :<br><div class="tuto-layers-demo"><span class="tuto-layer tuto-layer--active">🗺️ Carte</span><span class="tuto-layer">🛰️ Satellite</span><span class="tuto-layer">🌊 Bathymétrie</span></div>',
-      cible:    '#map',
-      position: 'center'
+      texte:    'La carte est le cœur de l\'application. Cliquez sur un marqueur pour ouvrir la fiche d\'un site de plongée.<br><br>Le bouton ci-contre permet de basculer entre les couches :<br><div class="tuto-layers-demo"><span class="tuto-layer tuto-layer--active">⚓ SHOM Marine</span><span class="tuto-layer">�️ IGN Plan</span><span class="tuto-layer">🌊 ESRI Ocean</span></div>',
+      cible:    '.leaflet-control-layers-toggle',
+      position: 'left'
     },
     {
       titre:    '☰ Liste des sites',
@@ -262,17 +262,21 @@ const Tutorial = (() => {
     if (dir === 'top'    && espaceTop    < cardH + MARGE && espaceBottom >= cardH + MARGE) dir = 'bottom';
 
     if (dir === 'bottom') {
-      top = y2 + MARGE;
+      top  = y2 + MARGE;
+      left = r.left;
     } else if (dir === 'top') {
-      top = y1 - cardH - MARGE;
+      top  = y1 - cardH - MARGE;
+      left = r.left;
+    } else if (dir === 'left') {
+      top  = r.top;
+      left = x1 - cardW - MARGE;
+      // Si pas assez de place à gauche, passer à droite
+      if (left < MARGE) left = x2 + MARGE;
     } else {
-      // right / fallback : à côté
-      top = r.top;
+      // right
+      top  = r.top;
+      left = x2 + MARGE;
     }
-
-    // Alignement horizontal : aligner sur le bord gauche de la cible, puis clamper
-    left = r.left;
-    left = Math.max(MARGE, Math.min(left, vw - cardW - MARGE));
 
     // Clamper verticalement dans tous les cas (jamais sous le header)
     top = Math.max(TOP_MIN, Math.min(top, vh - cardH - MARGE));
