@@ -22,6 +22,8 @@ cp pwa/js/navigation.js docs/js/navigation.js
 cp pwa/js/port.js      docs/js/port.js
 cp pwa/js/prevision.js docs/js/prevision.js
 cp pwa/js/sites.js     docs/js/sites.js
+cp pwa/js/biplongee.js docs/js/biplongee.js
+cp pwa/js/cgu.js       docs/js/cgu.js
 
 # CSS
 cp pwa/css/style.css   docs/css/style.css
