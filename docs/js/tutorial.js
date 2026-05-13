@@ -22,7 +22,7 @@ const Tutorial = (() => {
       titre:    '🗺️ La carte interactive',
       texte:    'La carte est le cœur de l\'application. Cliquez sur un marqueur pour ouvrir la fiche d\'un site de plongée.\n\nVous pouvez zoomer, déplacer la carte et basculer entre les couches (carte/satellite/bathymétrie).',
       cible:    '#map',
-      position: 'top'
+      position: 'center'
     },
     {
       titre:    '☰ Liste des sites',
@@ -234,7 +234,8 @@ const Tutorial = (() => {
     const cardW = _card.offsetWidth;
     const cardH = _card.offsetHeight;
 
-    const MARGE = 10; // marge min avec les bords
+    const MARGE   = 10; // marge min avec les bords
+    const TOP_MIN = 96; // header (52px) + bandeau marées (36px) + marge (8px)
 
     let top, left;
 
@@ -262,8 +263,8 @@ const Tutorial = (() => {
     left = r.left;
     left = Math.max(MARGE, Math.min(left, vw - cardW - MARGE));
 
-    // Clamper verticalement dans tous les cas
-    top = Math.max(MARGE, Math.min(top, vh - cardH - MARGE));
+    // Clamper verticalement dans tous les cas (jamais sous le header)
+    top = Math.max(TOP_MIN, Math.min(top, vh - cardH - MARGE));
 
     _card.style.top  = `${top}px`;
     _card.style.left = `${left}px`;
