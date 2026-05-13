@@ -103,6 +103,9 @@ const Tutorial = (() => {
     _spotlight = document.getElementById('tutorial-spotlight');
     _card      = document.getElementById('tutorial-card');
 
+    // Afficher l'overlay
+    _overlay.classList.remove('hidden');
+
     document.getElementById('tuto-btn-skip')?.addEventListener('click', _terminer);
     document.getElementById('tuto-btn-prev')?.addEventListener('click', _precedent);
     document.getElementById('tuto-btn-next')?.addEventListener('click', _suivant);
