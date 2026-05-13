@@ -144,6 +144,16 @@ const App = (() => {
       if (typeof Tutorial !== 'undefined') Tutorial.relancer();
     });
 
+    // ── Header : Menu secondaire (···)
+    const btnMore  = document.getElementById('btn-more');
+    const moreMenu = document.getElementById('header-more-menu');
+    btnMore?.addEventListener('click', e => {
+      e.stopPropagation();
+      moreMenu?.classList.toggle('hidden');
+    });
+    // Fermer en cliquant ailleurs
+    document.addEventListener('click', () => moreMenu?.classList.add('hidden'));
+
     // ── Fiche : fermer
     document.getElementById('btn-close-fiche')?.addEventListener('click', () => {
       Sites.fermerFiche();
