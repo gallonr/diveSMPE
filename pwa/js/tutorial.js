@@ -261,10 +261,11 @@ const Tutorial = (() => {
 
     if (dir === 'bottom') {
       top  = y2 + MARGE;
-      left = r.left;
+      // Si l'élément est dans la moitié droite, aligner la carte sur le bord droit de l'élément
+      left = (r.right > vw / 2) ? r.right - cardW : r.left;
     } else if (dir === 'top') {
       top  = y1 - cardH - MARGE;
-      left = r.left;
+      left = (r.right > vw / 2) ? r.right - cardW : r.left;
     } else if (dir === 'left') {
       top  = r.top;
       left = x1 - cardW - MARGE;
