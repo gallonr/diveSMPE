@@ -187,15 +187,19 @@ const Tutorial = (() => {
   function _positionnerSpotlight(etape) {
     if (!_spotlight || !_card) return;
 
-    // Retirer l'ancien highlight
     document.querySelectorAll('.tuto-highlighted').forEach(el => {
       el.classList.remove('tuto-highlighted');
     });
 
+    const isMobile = window.innerWidth <= 600;
+
+    // Pas de cible ou centré
     if (!etape.cible || etape.position === 'center') {
       _spotlight.style.display = 'none';
-      _card.style.cssText = ''; // vider tous les styles inline
-      _card.className     = 'tutorial-card tutorial-card--center';
+      _card.style.cssText = '';
+      _card.className = isMobile
+        ? 'tutorial-card tutorial-card--bottom'
+        : 'tutorial-card tutorial-card--center';
       _hideRing();
       return;
     }
@@ -204,12 +208,13 @@ const Tutorial = (() => {
     if (!cible) {
       _spotlight.style.display = 'none';
       _card.style.cssText = '';
-      _card.className     = 'tutorial-card tutorial-card--center';
+      _card.className = isMobile
+        ? 'tutorial-card tutorial-card--bottom'
+        : 'tutorial-card tutorial-card--center';
       _hideRing();
       return;
     }
 
-    // Highlight CSS + anneau fixe
     cible.classList.add('tuto-highlighted');
     _showRing(cible);
 
@@ -218,12 +223,12 @@ const Tutorial = (() => {
     const vw = window.innerWidth;
     const vh = window.innerHeight;
 
-    const x1 = Math.max(0, r.left   - p);
-    const y1 = Math.max(0, r.top    - p);
+    const x1 = Math.max(0,  r.left   - p);
+    const y1 = Math.max(0,  r.top    - p);
     const x2 = Math.min(vw, r.right  + p);
     const y2 = Math.min(vh, r.bottom + p);
 
-    // Spotlight (clip-path "trou")
+    // Spotlight
     _spotlight.style.display = 'block';
     _spotlight.style.clipPath = [
       `polygon(`,
@@ -235,33 +240,34 @@ const Tutorial = (() => {
       `)`
     ].join(' ');
 
-    // Positionner hors-écran pour mesurer les vraies dimensions
-    _card.className  = 'tutorial-card';
+    // ── Mobile : bottom sheet pleine largeur ──────────────────
+    if (isMobile) {
+      _card.style.cssText = '';
+      _card.className = 'tutorial-card tutorial-card--bottom';
+      return;
+    }
+
+    // ── Desktop : positionnement intelligent ──────────────────
+    _card.className = 'tutorial-card';
     _card.style.cssText = `position:fixed; top:-9999px; left:-9999px; max-width:${Math.min(340, vw - 24)}px;`;
 
-    // Forcer le navigateur à calculer le layout
     const cardW = _card.offsetWidth;
     const cardH = _card.offsetHeight;
 
-    const MARGE   = 10; // marge min avec les bords
-    const TOP_MIN = 96; // header (52px) + bandeau marées (36px) + marge (8px)
+    const MARGE   = 10;
+    const TOP_MIN = 96;
 
     let top, left;
+    let dir = etape.position;
 
-    // Espace disponible dans chaque direction
     const espaceBottom = vh - y2;
     const espaceTop    = y1;
-    const espaceRight  = vw - x2;
-    const espaceLeft   = x1;
 
-    // Choisir la meilleure direction (respecter le hint mais s'adapter)
-    let dir = etape.position;
     if (dir === 'bottom' && espaceBottom < cardH + MARGE && espaceTop >= cardH + MARGE) dir = 'top';
     if (dir === 'top'    && espaceTop    < cardH + MARGE && espaceBottom >= cardH + MARGE) dir = 'bottom';
 
     if (dir === 'bottom') {
       top  = y2 + MARGE;
-      // Si l'élément est dans la moitié droite, aligner la carte sur le bord droit de l'élément
       left = (r.right > vw / 2) ? r.right - cardW : r.left;
     } else if (dir === 'top') {
       top  = y1 - cardH - MARGE;
@@ -269,17 +275,13 @@ const Tutorial = (() => {
     } else if (dir === 'left') {
       top  = r.top;
       left = x1 - cardW - MARGE;
-      // Si pas assez de place à gauche, passer à droite
       if (left < MARGE) left = x2 + MARGE;
     } else {
-      // right
       top  = r.top;
       left = x2 + MARGE;
     }
 
-    // Clamper verticalement (jamais derrière le header)
     top  = Math.max(TOP_MIN, Math.min(top,  vh - cardH - MARGE));
-    // Clamper horizontalement (jamais hors de l'écran)
     left = Math.max(MARGE,   Math.min(left, vw - cardW - MARGE));
 
     _card.style.cssText = `position:fixed; top:${top}px; left:${left}px; max-width:${Math.min(340, vw - 24)}px;`;
