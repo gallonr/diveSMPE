@@ -24,6 +24,7 @@ cp pwa/js/prevision.js docs/js/prevision.js
 cp pwa/js/sites.js     docs/js/sites.js
 cp pwa/js/biplongee.js docs/js/biplongee.js
 cp pwa/js/cgu.js       docs/js/cgu.js
+cp pwa/js/tutorial.js  docs/js/tutorial.js
 
 # CSS
 cp pwa/css/style.css   docs/css/style.css
