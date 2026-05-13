@@ -2337,7 +2337,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   min-width: 180px;
   z-index: 2000;
   overflow: hidden;
-  animation: tuto-fadein 0.18s ease;
+  animation: tuto-fadein-opacity 0.18s ease;
 }
 
 .more-item {
@@ -2455,7 +2455,12 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   padding: 20px;
   width: min(340px, calc(100vw - 24px));
   pointer-events: all;
-  animation: tuto-fadein 0.3s ease;
+  animation: tuto-fadein-opacity 0.25s ease;
+}
+
+@keyframes tuto-fadein-opacity {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* Centre absolu — appliqué via JS avec transform */
