@@ -194,8 +194,8 @@ const Tutorial = (() => {
 
     if (!etape.cible || etape.position === 'center') {
       _spotlight.style.display = 'none';
-      _card.className          = 'tutorial-card tutorial-card--center';
-      _card.removeAttribute('style');
+      _card.style.cssText = ''; // vider tous les styles inline
+      _card.className     = 'tutorial-card tutorial-card--center';
       _hideRing();
       return;
     }
@@ -203,8 +203,8 @@ const Tutorial = (() => {
     const cible = document.querySelector(etape.cible);
     if (!cible) {
       _spotlight.style.display = 'none';
-      _card.className          = 'tutorial-card tutorial-card--center';
-      _card.removeAttribute('style');
+      _card.style.cssText = '';
+      _card.className     = 'tutorial-card tutorial-card--center';
       _hideRing();
       return;
     }
@@ -235,11 +235,9 @@ const Tutorial = (() => {
       `)`
     ].join(' ');
 
-    // Positionner la carte hors-écran temporairement pour mesurer ses dimensions réelles
-    _card.className = 'tutorial-card tutorial-card--positioned';
-    _card.style.top      = '-9999px';
-    _card.style.left     = '-9999px';
-    _card.style.maxWidth = `${Math.min(340, vw - 24)}px`;
+    // Positionner hors-écran pour mesurer les vraies dimensions
+    _card.className  = 'tutorial-card';
+    _card.style.cssText = `position:fixed; top:-9999px; left:-9999px; max-width:${Math.min(340, vw - 24)}px;`;
 
     // Forcer le navigateur à calculer le layout
     const cardW = _card.offsetWidth;
@@ -281,8 +279,7 @@ const Tutorial = (() => {
     // Clamper verticalement dans tous les cas (jamais sous le header)
     top = Math.max(TOP_MIN, Math.min(top, vh - cardH - MARGE));
 
-    _card.style.top  = `${top}px`;
-    _card.style.left = `${left}px`;
+    _card.style.cssText = `position:fixed; top:${top}px; left:${left}px; max-width:${Math.min(340, vw - 24)}px;`;
   }
 
   /* ── Anneau fixe ───────────────────────────────────────────── */
