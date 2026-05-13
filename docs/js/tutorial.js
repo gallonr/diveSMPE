@@ -276,8 +276,10 @@ const Tutorial = (() => {
       left = x2 + MARGE;
     }
 
-    // Clamper verticalement dans tous les cas (jamais sous le header)
-    top = Math.max(TOP_MIN, Math.min(top, vh - cardH - MARGE));
+    // Clamper verticalement (jamais derrière le header)
+    top  = Math.max(TOP_MIN, Math.min(top,  vh - cardH - MARGE));
+    // Clamper horizontalement (jamais hors de l'écran)
+    left = Math.max(MARGE,   Math.min(left, vw - cardW - MARGE));
 
     _card.style.cssText = `position:fixed; top:${top}px; left:${left}px; max-width:${Math.min(340, vw - 24)}px;`;
   }
