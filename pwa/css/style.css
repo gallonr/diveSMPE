@@ -2416,9 +2416,14 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 .tuto-highlighted {
   position: relative;
   z-index: 12001 !important;
-  box-shadow: 0 0 0 4px var(--emeraude), 0 0 0 8px rgba(58, 175, 168, 0.35) !important;
   border-radius: 6px;
-  transition: box-shadow 0.3s ease;
+  animation: tuto-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes tuto-pulse {
+  0%   { box-shadow: 0 0 0 3px var(--emeraude), 0 0 0 6px rgba(58,175,168,0.4), 0 0 18px 4px rgba(58,175,168,0.25); }
+  50%  { box-shadow: 0 0 0 4px var(--emeraude), 0 0 0 10px rgba(58,175,168,0.2), 0 0 28px 8px rgba(58,175,168,0.15); }
+  100% { box-shadow: 0 0 0 3px var(--emeraude), 0 0 0 6px rgba(58,175,168,0.4), 0 0 18px 4px rgba(58,175,168,0.25); }
 }
 
 /* Carte de description */
