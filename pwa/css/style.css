@@ -2463,11 +2463,26 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   to   { opacity: 1; }
 }
 
-/* Centre absolu — appliqué via JS avec transform */
+/* Centre absolu — desktop */
 .tutorial-card--center {
   top:       50% !important;
   left:      50% !important;
   transform: translate(-50%, -50%) !important;
+}
+
+/* Bottom sheet — mobile */
+.tutorial-card--bottom {
+  position: fixed !important;
+  bottom:   0 !important;
+  left:     0 !important;
+  right:    0 !important;
+  top:      auto !important;
+  transform: none !important;
+  width:    100% !important;
+  max-width: 100% !important;
+  border-radius: var(--radius) var(--radius) 0 0 !important;
+  border-bottom: none !important;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
 }
 
 /* En-tête de la carte */
@@ -2558,11 +2573,12 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 }
 
 /* Responsive mobile */
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   .tutorial-card {
     padding: 16px;
-    width: calc(100vw - 16px);
   }
   .tuto-titre { font-size: 15px; }
-  .tuto-texte { font-size: 12px; }
+  .tuto-texte { font-size: 13px; }
+  .tuto-btn   { padding: 10px 20px; font-size: 14px; }
+  .tuto-footer { gap: 8px; }
 }
