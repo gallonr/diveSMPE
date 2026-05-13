@@ -55,14 +55,14 @@ const Tutorial = (() => {
       position: 'bottom'
     },
     {
-      titre:    '📖 Documentation',
-      texte:    'Le guide utilisateur complet est disponible en ligne. Il détaille toutes les fonctionnalités, les données utilisées et les conseils de sécurité.',
-      cible:    'a[title="Documentation"]',
+      titre:    '📖 Documentation & réglages',
+      texte:    'Le bouton "···" regroupe le guide utilisateur complet, ce tutoriel et les Conditions générales d\'utilisation.',
+      cible:    '#btn-more',
       position: 'bottom'
     },
     {
       titre:    '✅ Vous êtes prêt !',
-      texte:    'Le tutoriel est terminé. Bonne exploration des sites de plongée de la Baie de Saint-Malo !\n\nVous pouvez relancer ce tutoriel à tout moment via le menu ⚙️ Paramètres.',
+      texte:    'Le tutoriel est terminé. Bonne exploration des sites de plongée de la Baie de Saint-Malo !\n\nVous pouvez relancer ce tutoriel à tout moment via le bouton "···" dans le header.',
       cible:    null,
       position: 'center'
     }
