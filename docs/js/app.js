@@ -57,6 +57,9 @@ const App = (() => {
     // 11. Init module CGU
     if (typeof Cgu !== 'undefined') Cgu.init();
 
+    // 12. Tutoriel premier démarrage
+    if (typeof Tutorial !== 'undefined') Tutorial.init();
+
     // 9. Événements UI
     _bindEvents();
 
@@ -134,6 +137,11 @@ const App = (() => {
     });
     document.getElementById('btn-close-meteo')?.addEventListener('click', () => {
       document.getElementById('modal-meteo')?.classList.add('hidden');
+    });
+
+    // ── Header : Tutoriel
+    document.getElementById('btn-tutorial')?.addEventListener('click', () => {
+      if (typeof Tutorial !== 'undefined') Tutorial.relancer();
     });
 
     // ── Fiche : fermer
