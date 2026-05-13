@@ -2242,3 +2242,72 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   background: rgba(0,0,0,0.15);
 }
 
+/* ── Modale CGU ──────────────────────────────────────────────── */
+.modal-content-cgu {
+  max-height: 85vh;
+}
+
+.cgu-body {
+  overflow-y: auto;
+  max-height: calc(85vh - 80px);
+  padding-right: 4px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--gris-texte-clair, #ccd);
+}
+
+.cgu-body h3 {
+  font-family: var(--font-title);
+  font-size: 0.92rem;
+  color: var(--emeraude);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 1.2rem 0 0.4rem;
+}
+
+.cgu-body p,
+.cgu-body ul {
+  margin: 0 0 0.6rem;
+}
+
+.cgu-body ul {
+  padding-left: 1.2rem;
+}
+
+.cgu-body li {
+  margin-bottom: 0.25rem;
+}
+
+.cgu-version {
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  margin-bottom: 1rem !important;
+  font-style: italic;
+}
+
+.cgu-footer {
+  margin-top: 1.5rem !important;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(58,175,168,0.2);
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  text-align: center;
+  font-style: italic;
+}
+
+/* ── Lien CGU dans l'écran de login ─────────────────────────── */
+.login-cgu-link {
+  text-align: center;
+  margin-top: 0.9rem;
+  font-size: 0.78rem;
+}
+
+.login-cgu-link a {
+  color: var(--emeraude);
+  text-decoration: underline;
+  opacity: 0.8;
+}
+
+.login-cgu-link a:hover {
+  opacity: 1;
+}
