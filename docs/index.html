@@ -49,6 +49,9 @@
         <p id="login-error" class="login-error hidden"></p>
         <button type="submit" class="login-btn">Connexion</button>
       </form>
+      <p class="login-cgu-link">
+        <a href="#" id="link-cgu-login">Conditions générales d'utilisation</a>
+      </p>
     </div>
   </div>
 
@@ -85,9 +88,12 @@
       <button id="btn-meteo" class="btn-icon" title="Météo marine" aria-label="Météo">
         🌬
       </button>
-      <a href="https://gallonr.github.io/diveSMPE/guide-utilisateur.html" target="_blank" class="btn-icon" title="Documentation" aria-label="Documentation">
+      <a href="guide-utilisateur.html" target="_blank" class="btn-icon" title="Documentation" aria-label="Documentation">
         📖
       </a>
+      <button id="btn-cgu" class="btn-icon" title="Conditions générales d'utilisation" aria-label="CGU">
+        ⚖
+      </button>
     </div>
   </header>
 
@@ -411,6 +417,59 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
+       MODAL CGU
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-cgu" class="modal hidden">
+    <div class="modal-content modal-content-cgu">
+      <div class="modal-header">
+        <h2>⚖ Conditions Générales d'Utilisation</h2>
+        <button id="btn-close-cgu" class="btn-icon">✕</button>
+      </div>
+      <div class="cgu-body">
+
+        <p class="cgu-version">Version 1.1 — Mai 2026</p>
+
+        <h3>Article 1 — Présentation</h3>
+        <p>L'application <strong>diveSMPE</strong> est développée par <strong>Régis GALLON</strong> (« l'Auteur ») et mise à disposition à titre gracieux et révocable auprès du club <strong>Saint-Malo Plongée Emeraude (SMPE)</strong>.</p>
+
+        <h3>Article 2 — Propriété intellectuelle</h3>
+        <p>Le code source, l'architecture, le concept et l'ensemble des développements de l'application sont et demeurent la <strong>propriété exclusive de l'Auteur</strong>. Aucun transfert de propriété n'est opéré au bénéfice du Club ou de tout tiers.</p>
+        <p>Une licence d'usage non exclusive, non transférable, gratuite et révocable est consentie au Club pour un usage interne strictement limité aux activités du SMPE. Cette licence ne confère aucun droit de modifier, redistribuer, sous-licencier ou exploiter commercialement l'application.</p>
+        <p>La base de données des sites de plongée reste la propriété exclusive du club SMPE.</p>
+
+        <h3>Article 3 — Accès</h3>
+        <p>L'accès est <strong>strictement limité aux personnes autorisées par la direction du club SMPE</strong>. Toute demande d'accès doit être validée préalablement par la direction. L'accès peut être restreint ou supprimé à tout moment, sans préavis, à la discrétion de l'Auteur ou de la direction du Club.</p>
+
+        <h3>Article 4 — Limites de l'outil</h3>
+        <p>L'application diveSMPE est un <strong>outil d'aide à la décision</strong>. Elle ne se substitue en aucun cas :</p>
+        <ul>
+          <li>au jugement du directeur de plongée ou du guide de palanquée ;</li>
+          <li>aux règles de sécurité FFESSM et aux textes réglementaires en vigueur ;</li>
+          <li>aux sources officielles (SHOM, Météo-France, préfecture maritime) ;</li>
+          <li>à la vérification des conditions réelles en mer.</li>
+        </ul>
+        <p>Les données de marées (FES2022), bathymétriques (LiDAR LITTO3D) et météo (Open-Meteo) sont fournies à titre estimatif.</p>
+
+        <h3>Article 5 — Responsabilités</h3>
+        <p><strong>L'Auteur</strong> met l'application à disposition « telle quelle », sans garantie d'exactitude ni de disponibilité. Il ne saurait être tenu responsable de dommages résultant de son utilisation.</p>
+        <p><strong>L'utilisateur</strong> est seul responsable de ses décisions en mer. Il s'engage à ne pas diffuser les identifiants d'accès, à ne pas reproduire ni décompiler l'application, et à signaler tout dysfonctionnement.</p>
+
+        <h3>Article 6 — Données personnelles</h3>
+        <p>L'application ne collecte pas de données personnelles identifiantes. La géolocalisation GPS est traitée uniquement localement sur l'appareil et n'est pas transmise.</p>
+
+        <h3>Article 7 — Utilisation en mer</h3>
+        <p><strong>L'application ne remplace pas un équipement de navigation homologué.</strong> En cas d'urgence en mer, les procédures officielles de sécurité (CROSS, VHF Ch16) doivent être appliquées.</p>
+
+        <h3>Article 8 — Droit applicable</h3>
+        <p>Les présentes conditions sont régies par le droit français.</p>
+
+        <p class="cgu-footer">Auteur et propriétaire : Régis GALLON — Mise à disposition : Club SMPE — Saint-Malo Plongée Emeraude</p>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        SCRIPTS
   ══════════════════════════════════════════════════════════════ -->
   <!-- Leaflet JS (local) -->
@@ -432,6 +491,7 @@
   <script src="js/navigation.js"></script>
   <script src="js/meteo.js"></script>
   <script src="js/biplongee.js"></script>
+  <script src="js/cgu.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
 

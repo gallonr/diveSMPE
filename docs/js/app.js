@@ -54,6 +54,9 @@ const App = (() => {
     // 10. Init module Bi-journée
     BiPlongee.init();
 
+    // 11. Init module CGU
+    if (typeof Cgu !== 'undefined') Cgu.init();
+
     // 9. Événements UI
     _bindEvents();
 
