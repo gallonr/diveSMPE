@@ -106,6 +106,14 @@ const Tutorial = (() => {
     // Afficher l'overlay
     _overlay.classList.remove('hidden');
 
+    // Créer l'anneau de surlignage fixe (échappe à overflow:hidden)
+    let ring = document.getElementById('tuto-ring');
+    if (!ring) {
+      ring = document.createElement('div');
+      ring.id = 'tuto-ring';
+      document.body.appendChild(ring);
+    }
+
     document.getElementById('tuto-btn-skip')?.addEventListener('click', _terminer);
     document.getElementById('tuto-btn-prev')?.addEventListener('click', _precedent);
     document.getElementById('tuto-btn-next')?.addEventListener('click', _suivant);
@@ -168,7 +176,7 @@ const Tutorial = (() => {
   function _terminer() {
     localStorage.setItem(STORAGE_KEY, '1');
     if (_overlay) _overlay.classList.add('hidden');
-    // Retirer le highlight des éléments
+    _hideRing();
     document.querySelectorAll('.tuto-highlighted').forEach(el => {
       el.classList.remove('tuto-highlighted');
     });
@@ -188,6 +196,7 @@ const Tutorial = (() => {
       _spotlight.style.display = 'none';
       _card.className          = 'tutorial-card tutorial-card--center';
       _card.removeAttribute('style');
+      _hideRing();
       return;
     }
 
@@ -196,11 +205,13 @@ const Tutorial = (() => {
       _spotlight.style.display = 'none';
       _card.className          = 'tutorial-card tutorial-card--center';
       _card.removeAttribute('style');
+      _hideRing();
       return;
     }
 
-    // Highlight CSS sur l'élément cible
+    // Highlight CSS + anneau fixe
     cible.classList.add('tuto-highlighted');
+    _showRing(cible);
 
     const r  = cible.getBoundingClientRect();
     const p  = PADDING;
@@ -268,6 +279,25 @@ const Tutorial = (() => {
 
     _card.style.top  = `${top}px`;
     _card.style.left = `${left}px`;
+  }
+
+  /* ── Anneau fixe ───────────────────────────────────────────── */
+
+  function _showRing(el) {
+    const ring = document.getElementById('tuto-ring');
+    if (!ring) return;
+    const r = el.getBoundingClientRect();
+    const pad = 6;
+    ring.style.display = 'block';
+    ring.style.top     = `${r.top    - pad}px`;
+    ring.style.left    = `${r.left   - pad}px`;
+    ring.style.width   = `${r.width  + pad * 2}px`;
+    ring.style.height  = `${r.height + pad * 2}px`;
+  }
+
+  function _hideRing() {
+    const ring = document.getElementById('tuto-ring');
+    if (ring) ring.style.display = 'none';
   }
 
   /* ── Utilitaires ────────────────────────────────────────────── */
