@@ -40,20 +40,25 @@ function doPost(e) {
     return _respond(false, 'JSON invalide');
   }
 
+  // Note: Non-constant-time comparison — acceptable for internal club threat model.
   if (!expectedSecret || payload.secret !== expectedSecret) {
     return _respond(false, 'Secret invalide');
   }
 
-  const data = payload.data || {};
-  const row = HEADERS.map(key => (data[key] !== undefined && data[key] !== null) ? data[key] : '');
-
   const sheetId = props.getProperty('SHEET_ID');
   if (!sheetId) return _respond(false, 'SHEET_ID non configuré');
 
-  const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('retours_plongee');
-  if (!sheet) return _respond(false, 'Onglet retours_plongee introuvable');
+  const data = payload.data || {};
+  const row = HEADERS.map(key => (data[key] !== undefined && data[key] !== null) ? data[key] : '');
 
-  sheet.appendRow(row);
+  try {
+    const sheet = SpreadsheetApp.openById(sheetId).getSheetByName('retours_plongee');
+    if (!sheet) return _respond(false, 'Onglet retours_plongee introuvable');
+    sheet.appendRow(row);
+  } catch (err) {
+    return _respond(false, 'Erreur écriture Sheet : ' + err.message);
+  }
+
   return _respond(true, '');
 }
 
