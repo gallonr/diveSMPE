@@ -1,18 +1,21 @@
 /**
- * Cloudflare Worker — Proxy WMS Météo-France
+ * Cloudflare Worker — Proxy WMS Météo-France + relais retour d'expérience
  *
  * Déploiement :
  *  1. Créer un compte sur https://workers.cloudflare.com/
  *  2. Nouveau Worker → coller ce code
  *  3. Dans "Settings > Variables" du Worker, ajouter les secrets :
- *       MF_TOKEN_PAAROME  = votre_token_paarome
- *       MF_TOKEN_AROMEPI  = votre_token_aromepi
+ *       MF_TOKEN_PAAROME   = votre_token_paarome
+ *       MF_TOKEN_AROMEPI   = votre_token_aromepi
+ *       APPSCRIPT_URL      = URL du déploiement Web App Google Apps Script (retour-experience.gs)
+ *       APPSCRIPT_SECRET   = secret partagé avec ce script Apps Script
  *  4. Déployer → noter l'URL (ex: https://mf-proxy.moncompte.workers.dev)
  *  5. Mettre cette URL dans CONFIG.METEO_FRANCE.proxyUrl (config.js)
  *
  * Usage depuis le navigateur :
- *   GET https://mf-proxy.moncompte.workers.dev/paarome?SERVICE=WMS&...
- *   GET https://mf-proxy.moncompte.workers.dev/aromepi?SERVICE=WMS&...
+ *   GET  https://mf-proxy.moncompte.workers.dev/paarome?SERVICE=WMS&...
+ *   GET  https://mf-proxy.moncompte.workers.dev/aromepi?SERVICE=WMS&...
+ *   POST https://mf-proxy.moncompte.workers.dev/retour-experience
  *
  * Le token n'est JAMAIS exposé côté client.
  */
@@ -39,7 +42,7 @@ export default {
     const corsOk = ALLOWED_ORIGINS.some(o => origin.startsWith(o));
     const corsHeaders = {
       'Access-Control-Allow-Origin':  corsOk ? origin : 'null',
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
       'Access-Control-Max-Age':       '86400',
     };
@@ -48,11 +51,16 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    // ── Routing : /paarome ou /aromepi ──────────────────────────
+    // ── Routing ──────────────────────────────────────────────────
     const path = url.pathname.replace(/^\//, '').split('/')[0];
+
+    if (path === 'retour-experience') {
+      return handleRetourExperience(request, env, corsHeaders);
+    }
+
     const endpoint = MF_ENDPOINTS[path];
     if (!endpoint) {
-      return new Response('Not found. Use /paarome or /aromepi', { status: 404 });
+      return new Response('Not found. Use /paarome, /aromepi ou /retour-experience', { status: 404, headers: corsHeaders });
     }
 
     // ── Token côté serveur (jamais exposé au client) ────────────
@@ -94,3 +102,36 @@ export default {
     });
   },
 };
+
+// ── Route /retour-experience — relais vers Google Apps Script ────
+async function handleRetourExperience(request, env, corsHeaders) {
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+  }
+  if (!env.APPSCRIPT_URL || !env.APPSCRIPT_SECRET) {
+    return new Response('Route non configurée (APPSCRIPT_URL/APPSCRIPT_SECRET manquants)', { status: 500, headers: corsHeaders });
+  }
+
+  let data;
+  try {
+    data = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: 'JSON invalide' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const gasRes = await fetch(env.APPSCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ secret: env.APPSCRIPT_SECRET, data }),
+  });
+
+  const gasJson = await gasRes.json().catch(() => ({ ok: false, error: 'Réponse Apps Script invalide' }));
+
+  return new Response(JSON.stringify(gasJson), {
+    status: gasJson.ok ? 200 : 502,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
