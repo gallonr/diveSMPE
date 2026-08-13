@@ -6,7 +6,7 @@
 
 // ── Configuration ─────────────────────────────────────────────
 const DEBUG   = false;          // Passer à true pour les logs en développement
-const VERSION = 'v34';
+const VERSION = 'v35';
 
 const CACHE_STATIC  = `smpe-static-${VERSION}`;
 const CACHE_DYNAMIC = `smpe-dynamic-${VERSION}`;
@@ -34,6 +34,7 @@ const ASSETS_STATIQUES = [
   BASE + 'js/bathy.js',
   BASE + 'js/carte.js',
   BASE + 'js/sites.js',
+  BASE + 'js/retourexperience.js',
   BASE + 'js/navigation.js',
   BASE + 'js/meteo.js',
   BASE + 'js/courants.js',
