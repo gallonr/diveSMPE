@@ -57,7 +57,10 @@ const App = (() => {
     // 11. Init module CGU
     if (typeof Cgu !== 'undefined') Cgu.init();
 
-    // 12. Tutoriel premier démarrage
+    // 12. Init module Retour d'expérience
+    if (typeof RetourExperience !== 'undefined') RetourExperience.init();
+
+    // 13. Tutoriel premier démarrage
     if (typeof Tutorial !== 'undefined') Tutorial.init();
 
     // 9. Événements UI
