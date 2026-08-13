@@ -122,13 +122,20 @@ async function handleRetourExperience(request, env, corsHeaders) {
     });
   }
 
-  const gasRes = await fetch(env.APPSCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ secret: env.APPSCRIPT_SECRET, data }),
-  });
-
-  const gasJson = await gasRes.json().catch(() => ({ ok: false, error: 'Réponse Apps Script invalide' }));
+  let gasJson;
+  try {
+    const gasRes = await fetch(env.APPSCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: env.APPSCRIPT_SECRET, data }),
+    });
+    gasJson = await gasRes.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: 'Apps Script injoignable' }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   return new Response(JSON.stringify(gasJson), {
     status: gasJson.ok ? 200 : 502,
