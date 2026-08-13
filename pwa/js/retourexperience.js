@@ -11,7 +11,6 @@
 const RetourExperience = (() => {
 
   const QUEUE_KEY = 'smpe_retour_queue';
-  let _siteImposeID = null; // siteID pré-rempli si ouvert depuis la fiche site
 
   // ── File d'attente locale ────────────────────────────────────
 
@@ -24,7 +23,11 @@ const RetourExperience = (() => {
   }
 
   function _ecrireQueue(queue) {
-    localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    try {
+      localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    } catch (e) {
+      // quota dépassé ou stockage indisponible (navigation privée) — ne pas bloquer l'appelant
+    }
     _majBadge(queue.length);
   }
 
@@ -164,7 +167,8 @@ const RetourExperience = (() => {
 
     if (!siteID) return { erreur: 'Choisissez un site.' };
     if (!dateStr) return { erreur: 'Choisissez une date.' };
-    if (new Date(dateStr) > new Date(new Date().toDateString())) return { erreur: 'La date ne peut pas être dans le futur.' };
+    const aujourdhui = new Date().toISOString().slice(0, 10);
+    if (dateStr > aujourdhui) return { erreur: 'La date ne peut pas être dans le futur.' };
     if (!hMise || !hSortie) return { erreur: "Renseignez l'heure de mise à l'eau et de sortie." };
     if (hSortie <= hMise) return { erreur: "L'heure de sortie doit être postérieure à l'heure de mise à l'eau." };
     if (!bateau) return { erreur: 'Choisissez le bateau.' };
