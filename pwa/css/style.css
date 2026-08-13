@@ -2582,3 +2582,106 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   .tuto-btn   { padding: 10px 20px; font-size: 14px; }
   .tuto-footer { gap: 8px; }
 }
+
+/* ── Formulaire retour d'expérience ─────────────────────────── */
+.modal-content-retour {
+  max-height: 88vh;
+}
+
+#form-retour-experience {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+  max-height: calc(88vh - 70px);
+  padding-right: 4px;
+}
+
+.re-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.re-field label {
+  font-size: 12px;
+  color: var(--gris-texte);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-family: var(--font-title);
+}
+.re-field-row {
+  display: flex;
+  gap: 12px;
+}
+.re-field-row .re-field { flex: 1; }
+
+#form-retour-experience input[type="date"],
+#form-retour-experience input[type="time"],
+#form-retour-experience input[type="text"],
+#form-retour-experience select,
+#form-retour-experience textarea {
+  background: var(--gris-card);
+  border: 1px solid rgba(58,175,168,0.3);
+  border-radius: var(--radius);
+  color: var(--blanc);
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: var(--font-body);
+}
+#form-retour-experience textarea { resize: vertical; }
+
+.re-btn-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.re-btn {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(58,175,168,0.4);
+  background: transparent;
+  color: var(--gris-texte);
+  font-size: 12px;
+  font-family: var(--font-title);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.re-btn.active, .re-btn:hover {
+  background: var(--emeraude);
+  color: var(--blanc);
+  border-color: var(--emeraude);
+}
+
+.re-calculs {
+  background: rgba(58,175,168,0.08);
+  border-radius: var(--radius);
+  padding: 10px;
+  font-size: 12px;
+  color: var(--gris-texte);
+  line-height: 1.6;
+}
+
+.re-erreur {
+  color: var(--rouge);
+  font-size: 13px;
+}
+
+.btn-retour-experience {
+  background: rgba(58,175,168,0.15);
+  border: 1px solid rgba(58,175,168,0.4);
+}
+
+.badge-pending {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--orange-warn);
+  color: #1a1a1a;
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 6px;
+}
