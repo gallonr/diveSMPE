@@ -104,6 +104,10 @@
           <button id="btn-cgu" class="more-item">
             ⚖ CGU
           </button>
+          <button id="btn-menu-retour" class="more-item">
+            📝 Retour d'expérience
+            <span id="badge-retour-pending" class="badge-pending hidden">0</span>
+          </button>
         </div>
       </div>
     </div>
@@ -214,6 +218,7 @@
       <span id="nav-eta">ETA —</span>
     </div>
     <button id="btn-naviguer" class="btn-naviguer hidden">🧭 Naviguer vers ce site</button>
+    <button id="btn-fiche-retour" class="btn-naviguer btn-retour-experience">📝 Retour d'expérience</button>
 
     <!-- Onglets fiche -->
     <div class="fiche-tabs">
@@ -425,6 +430,77 @@
       <div id="meteo-contenu" class="meteo-contenu">
         <p class="loading">Chargement…</p>
       </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MODAL RETOUR D'EXPÉRIENCE POST-PLONGÉE
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-retour-experience" class="modal hidden">
+    <div class="modal-content modal-content-retour">
+      <div class="modal-header">
+        <h2>📝 Retour d'expérience</h2>
+        <button id="btn-close-retour" class="btn-icon">✕</button>
+      </div>
+
+      <form id="form-retour-experience">
+        <div class="re-field">
+          <label for="re-site">Site</label>
+          <select id="re-site" required></select>
+        </div>
+
+        <div class="re-field">
+          <label for="re-date">Date de la plongée</label>
+          <input type="date" id="re-date" required>
+        </div>
+
+        <div class="re-field-row">
+          <div class="re-field">
+            <label for="re-heure-mise">Mise à l'eau</label>
+            <input type="time" id="re-heure-mise" required>
+          </div>
+          <div class="re-field">
+            <label for="re-heure-sortie">Sortie d'eau</label>
+            <input type="time" id="re-heure-sortie" required>
+          </div>
+        </div>
+
+        <div class="re-field">
+          <label>Bateau</label>
+          <div id="re-bateau-group" class="re-btn-group"></div>
+        </div>
+
+        <div class="re-field">
+          <label>État de la mer</label>
+          <div id="re-etatmer-group" class="re-btn-group"></div>
+        </div>
+
+        <div class="re-field">
+          <label>Vent</label>
+          <div id="re-vent-group" class="re-btn-group"></div>
+        </div>
+
+        <div class="re-field">
+          <label>Courant ressenti</label>
+          <div id="re-courant-group" class="re-btn-group"></div>
+        </div>
+
+        <div id="re-calculs" class="re-calculs hidden"></div>
+
+        <div class="re-field">
+          <label for="re-rempli-par">Rempli par (optionnel)</label>
+          <input type="text" id="re-rempli-par" placeholder="Prénom">
+        </div>
+
+        <div class="re-field">
+          <label for="re-commentaire">Commentaire (optionnel)</label>
+          <textarea id="re-commentaire" rows="3" placeholder="Visibilité, faune, incident mineur…"></textarea>
+        </div>
+
+        <p id="re-erreur" class="re-erreur hidden"></p>
+
+        <button type="submit" id="btn-re-submit" class="tuto-btn tuto-btn-primary">Envoyer</button>
+      </form>
     </div>
   </div>
 
