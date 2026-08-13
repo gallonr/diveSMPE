@@ -101,6 +101,17 @@ const RetourExperience = (() => {
 
   // ── Calculs automatiques ──────────────────────────────────────
 
+  // Date du jour au format YYYY-MM-DD en heure LOCALE (toISOString() renvoie
+  // l'UTC, ce qui décale la date d'un jour entre minuit et l'heure du
+  // décalage horaire — ex. 00h30 heure d'été française = 22h30 UTC la veille
+  // — et rejetait à tort la date du jour comme "dans le futur").
+  function _dateLocaleISO(d = new Date()) {
+    const annee = d.getFullYear();
+    const mois = String(d.getMonth() + 1).padStart(2, '0');
+    const jour = String(d.getDate()).padStart(2, '0');
+    return `${annee}-${mois}-${jour}`;
+  }
+
   function _dateHeure(dateStr, heureStr) {
     if (!dateStr || !heureStr) return null;
     const d = new Date(`${dateStr}T${heureStr}:00`);
@@ -167,7 +178,7 @@ const RetourExperience = (() => {
 
     if (!siteID) return { erreur: 'Choisissez un site.' };
     if (!dateStr) return { erreur: 'Choisissez une date.' };
-    const aujourdhui = new Date().toISOString().slice(0, 10);
+    const aujourdhui = _dateLocaleISO();
     if (dateStr > aujourdhui) return { erreur: 'La date ne peut pas être dans le futur.' };
     if (!hMise || !hSortie) return { erreur: "Renseignez l'heure de mise à l'eau et de sortie." };
     if (hSortie <= hMise) return { erreur: "L'heure de sortie doit être postérieure à l'heure de mise à l'eau." };
@@ -246,8 +257,8 @@ const RetourExperience = (() => {
     document.querySelectorAll('#modal-retour-experience .re-btn.active').forEach(b => b.classList.remove('active'));
     document.getElementById('re-calculs').classList.add('hidden');
     _erreur('');
-    document.getElementById('re-date').value = new Date().toISOString().slice(0, 10);
-    document.getElementById('re-date').max = new Date().toISOString().slice(0, 10);
+    document.getElementById('re-date').value = _dateLocaleISO();
+    document.getElementById('re-date').max = _dateLocaleISO();
   }
 
   function ouvrir(siteID = null) {
