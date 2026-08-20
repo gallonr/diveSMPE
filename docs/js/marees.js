@@ -381,5 +381,43 @@ const Marees = (() => {
     };
   }
 
-  return { init, ouvrirModal, getData, getAujourd, getEntreePourDate, getHauteurAt, getHauteurActuelle, getExtremaJour };
+  /**
+   * Étale (PM ou BM) la plus proche d'une heure donnée.
+   * Retourne { type: 'PM'|'BM', heure: 'HH:MM', coeff, deltaMin, avantApres }
+   * ou null si les données marée du jour sont absentes.
+   */
+  function getEtaleProche(date) {
+    const entree = getEntreePourDate(date);
+    if (!entree) return null;
+
+    const targetMin = date.getHours() * 60 + date.getMinutes();
+    const candidats = [
+      { key: 'PM1', type: 'PM' },
+      { key: 'BM1', type: 'BM' },
+      { key: 'PM2', type: 'PM' },
+      { key: 'BM2', type: 'BM' },
+      { key: 'BM3', type: 'BM' },
+    ];
+
+    let best = null;
+    for (const c of candidats) {
+      const t = _hhmm2min(entree[c.key + '_h']);
+      if (t === null) continue;
+      const delta = t - targetMin;
+      if (best === null || Math.abs(delta) < Math.abs(best.delta)) {
+        best = { ...c, heure: entree[c.key + '_h'], coeff: entree[c.key + '_coeff'] ?? null, delta };
+      }
+    }
+    if (!best) return null;
+
+    return {
+      type: best.type,
+      heure: best.heure,
+      coeff: best.coeff,
+      deltaMin: Math.abs(best.delta),
+      avantApres: best.delta > 0 ? 'avant' : (best.delta < 0 ? 'après' : "à l'étale"),
+    };
+  }
+
+  return { init, ouvrirModal, getData, getAujourd, getEntreePourDate, getHauteurAt, getHauteurActuelle, getExtremaJour, getEtaleProche };
 })();

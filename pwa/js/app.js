@@ -60,6 +60,9 @@ const App = (() => {
     // 12. Init module Retour d'expérience
     if (typeof RetourExperience !== 'undefined') RetourExperience.init();
 
+    // 12bis. Init module Export marées
+    if (typeof MareesExport !== 'undefined') MareesExport.init();
+
     // 13. Tutoriel premier démarrage
     if (typeof Tutorial !== 'undefined') Tutorial.init();
 

@@ -82,8 +82,12 @@
       <button id="btn-prevision" class="btn-icon" title="Prévision plongeabilité" aria-label="Prévision">
         &#x1F4C5;
       </button>
+      <button id="btn-menu-retour" class="btn-icon btn-icon-retour" title="Retour d'expérience" aria-label="Retour d'expérience">
+        📝
+        <span id="badge-retour-pending" class="badge-pending hidden">0</span>
+      </button>
       <button id="btn-marees" class="btn-icon" title="Marées" aria-label="Marées">
-        🌊
+        �
       </button>
       <button id="btn-meteo" class="btn-icon" title="Météo marine" aria-label="Météo">
         🌬
@@ -100,6 +104,9 @@
           </a>
           <button id="btn-tutorial" class="more-item">
             🎓 Tutoriel
+          </button>
+          <button id="btn-export-marees" class="more-item">
+            📤 Exporter marées
           </button>
           <button id="btn-cgu" class="more-item">
             ⚖ CGU
@@ -214,6 +221,7 @@
       <span id="nav-eta">ETA —</span>
     </div>
     <button id="btn-naviguer" class="btn-naviguer hidden">🧭 Naviguer vers ce site</button>
+    <button id="btn-fiche-retour" class="btn-naviguer btn-retour-experience">📝 Retour d'expérience</button>
 
     <!-- Onglets fiche -->
     <div class="fiche-tabs">
@@ -429,6 +437,77 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
+       MODAL RETOUR D'EXPÉRIENCE POST-PLONGÉE
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-retour-experience" class="modal hidden">
+    <div class="modal-content modal-content-retour">
+      <div class="modal-header">
+        <h2>📝 Retour d'expérience</h2>
+        <button id="btn-close-retour" class="btn-icon">✕</button>
+      </div>
+
+      <form id="form-retour-experience">
+        <div class="re-field">
+          <label for="re-site">Site</label>
+          <select id="re-site" required></select>
+        </div>
+
+        <div class="re-field">
+          <label for="re-date">Date de la plongée</label>
+          <input type="date" id="re-date" required>
+        </div>
+
+        <div class="re-field-row">
+          <div class="re-field">
+            <label for="re-heure-mise">Mise à l'eau</label>
+            <input type="time" id="re-heure-mise" required>
+          </div>
+          <div class="re-field">
+            <label for="re-heure-sortie">Sortie d'eau</label>
+            <input type="time" id="re-heure-sortie" required>
+          </div>
+        </div>
+
+        <div class="re-field">
+          <label>Bateau</label>
+          <div id="re-bateau-group" class="re-btn-group"></div>
+        </div>
+
+        <div class="re-field">
+          <label>État de la mer</label>
+          <div id="re-etatmer-group" class="re-btn-group"></div>
+        </div>
+
+        <div class="re-field">
+          <label>Vent</label>
+          <div id="re-vent-group" class="re-btn-group"></div>
+        </div>
+
+        <div class="re-field">
+          <label>Courant ressenti</label>
+          <div id="re-courant-group" class="re-btn-group"></div>
+        </div>
+
+        <div id="re-calculs" class="re-calculs hidden"></div>
+
+        <div class="re-field">
+          <label for="re-rempli-par">Rempli par</label>
+          <input type="text" id="re-rempli-par" placeholder="Nom et prénom" required>
+        </div>
+
+        <div class="re-field">
+          <label for="re-commentaire">Commentaire (optionnel)</label>
+          <textarea id="re-commentaire" rows="3" placeholder="Visibilité, faune, incident mineur…"></textarea>
+        </div>
+
+        <p id="re-erreur" class="re-erreur hidden"></p>
+
+        <button type="submit" id="btn-re-submit" class="tuto-btn tuto-btn-primary">Envoyer</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        MODAL CGU
   ══════════════════════════════════════════════════════════════ -->
   <div id="modal-cgu" class="modal hidden">
@@ -482,6 +561,39 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════════
+       MODAL EXPORT MARÉES
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="modal-export-marees" class="modal hidden">
+    <div class="modal-content modal-content-export">
+      <div class="modal-header">
+        <h2>📤 Exporter marées</h2>
+        <button id="btn-close-export-marees" class="btn-icon">✕</button>
+      </div>
+
+      <form id="form-export-marees">
+        <p id="export-marees-plage" class="export-marees-info"></p>
+
+        <div class="re-field-row">
+          <div class="re-field">
+            <label for="export-date-debut">Début</label>
+            <input type="date" id="export-date-debut" required>
+          </div>
+          <div class="re-field">
+            <label for="export-date-fin">Fin</label>
+            <input type="date" id="export-date-fin" required>
+          </div>
+        </div>
+
+        <p class="export-marees-info">Le fichier CSV contient, pour chaque marée : date, heure, type, coefficient, hauteur, ainsi que les créneaux de blocage des 3 bateaux du club.</p>
+
+        <p id="export-marees-erreur" class="re-erreur hidden"></p>
+
+        <button type="submit" id="btn-export-marees-submit" class="tuto-btn tuto-btn-primary">Exporter en CSV</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        TUTORIEL PREMIER DÉMARRAGE
   ══════════════════════════════════════════════════════════════ -->
   <div id="tutorial-overlay" class="tutorial-overlay hidden" role="dialog" aria-modal="true" aria-label="Tutoriel de l'application">
@@ -529,6 +641,8 @@
   <script src="js/meteo.js"></script>
   <script src="js/biplongee.js"></script>
   <script src="js/cgu.js"></script>
+  <script src="js/retourexperience.js"></script>
+  <script src="js/mareesexport.js"></script>
   <script src="js/tutorial.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/app.js"></script>
