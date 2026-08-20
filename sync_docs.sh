@@ -25,6 +25,8 @@ cp pwa/js/sites.js     docs/js/sites.js
 cp pwa/js/biplongee.js docs/js/biplongee.js
 cp pwa/js/cgu.js       docs/js/cgu.js
 cp pwa/js/tutorial.js  docs/js/tutorial.js
+cp pwa/js/retourexperience.js docs/js/retourexperience.js
+cp pwa/js/mareesexport.js docs/js/mareesexport.js
 
 # CSS
 cp pwa/css/style.css   docs/css/style.css

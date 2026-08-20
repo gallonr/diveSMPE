@@ -115,6 +115,31 @@ const CONFIG = {
     ],
   },
 
+  // ── Retour d'expérience post-plongée ──────────────────────
+  // URL du Worker Cloudflare (route /retour-experience).
+  RETOUR_EXPERIENCE: {
+    workerUrl: 'https://mf-wms-proxy.reg-gallon.workers.dev',
+    bateaux: null, // résolu juste après la fermeture de CONFIG (PORT.bateaux n'est pas encore accessible en tant que CONFIG.PORT ici)
+    etatMer: [
+      { degre: 0, label: 'Calme',       detail: '0 m' },
+      { degre: 1, label: 'Ridée',       detail: '0–0,10 m' },
+      { degre: 2, label: 'Belle',       detail: '0,10–0,50 m' },
+      { degre: 3, label: 'Peu agitée',  detail: '0,50–1,25 m' },
+      { degre: 4, label: 'Agitée',      detail: '1,25–2,50 m' },
+    ],
+    vent: [
+      { code: 'calme', label: 'Calme / très léger', detail: '0–5 km/h' },
+      { code: 'leger', label: 'Léger / petite brise', detail: '6–19 km/h' },
+      { code: 'jolie', label: 'Jolie / bonne brise',  detail: '20–38 km/h' },
+      { code: 'frais', label: 'Vent frais et plus',   detail: '> 39 km/h' },
+    ],
+    courant: [
+      { code: 'aucun',  label: 'Pas de courant' },
+      { code: 'modere', label: 'Modéré' },
+      { code: 'fort',   label: 'Fort' },
+    ],
+  },
+
   // ── Météo (OpenMeteo — gratuit, pas de clé) ────────────────
   METEO: {
     // Coordonnées de Saint-Malo pour la météo générale
@@ -159,6 +184,8 @@ const CONFIG = {
     default:{ classe: 'badge-default', markerClasse: 'marker-default', emoji: '📍' },
   },
 };
+
+CONFIG.RETOUR_EXPERIENCE.bateaux = CONFIG.PORT.bateaux.map(b => b.nom);
 
 // Clé de cache Service Worker (incrémentez à chaque mise à jour)
 const SW_CACHE_VERSION = 'smpe-v9';

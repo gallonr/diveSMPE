@@ -116,10 +116,9 @@ const CONFIG = {
   },
 
   // ── Retour d'expérience post-plongée ──────────────────────
-  // URL du Worker Cloudflare (route /retour-experience) — à renseigner une
-  // fois le Worker déployé (cf. cloudflare-worker/mf-wms-proxy.js).
+  // URL du Worker Cloudflare (route /retour-experience).
   RETOUR_EXPERIENCE: {
-    workerUrl: null,
+    workerUrl: 'https://mf-wms-proxy.reg-gallon.workers.dev',
     bateaux: null, // résolu juste après la fermeture de CONFIG (PORT.bateaux n'est pas encore accessible en tant que CONFIG.PORT ici)
     etatMer: [
       { degre: 0, label: 'Calme',       detail: '0 m' },
