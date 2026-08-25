@@ -53,7 +53,7 @@ MARNAGE_VE_REF_CM = 1366.0
 
 # Période de calcul
 TODAY = date.today()
-DATE_START = TODAY - timedelta(days=365)
+DATE_START = TODAY
 
 # La date de fin peut être surchargée via la variable d'environnement
 # MAREES_DATE_END (format YYYY-MM-DD), sinon on garde le comportement
