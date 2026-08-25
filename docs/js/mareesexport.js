@@ -134,7 +134,9 @@ const MareesExport = (() => {
 
     if (min && max) {
       [inputDebut, inputFin].forEach(inp => { inp.min = min; inp.max = max; });
-      inputDebut.value = min;
+      const aujourdHui = _dateLocal(new Date());
+      const debutParDefaut = aujourdHui < min ? min : (aujourdHui > max ? max : aujourdHui);
+      inputDebut.value = debutParDefaut;
       inputFin.value   = max;
       if (info) info.textContent = `Données disponibles du ${min} au ${max}.`;
     }
