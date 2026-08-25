@@ -54,7 +54,15 @@ MARNAGE_VE_REF_CM = 1366.0
 # Période de calcul
 TODAY = date.today()
 DATE_START = TODAY - timedelta(days=365)
-DATE_END   = TODAY + timedelta(days=365)
+
+# La date de fin peut être surchargée via la variable d'environnement
+# MAREES_DATE_END (format YYYY-MM-DD), sinon on garde le comportement
+# par défaut (aujourd'hui + 365 jours).
+_env_end = os.environ.get('MAREES_DATE_END')
+if _env_end:
+    DATE_END = date.fromisoformat(_env_end)
+else:
+    DATE_END = TODAY + timedelta(days=365)
 
 # Pas de temps pour la détection des extrema (10 min)
 DT_MIN = 10
