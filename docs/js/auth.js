@@ -1,53 +1,96 @@
 /**
- * auth.js — Authentification locale (login + mot de passe hashé SHA-256)
+ * auth.js — Authentification par compte individuel (email + lien magique)
  *
- * Identifiants par défaut :
- *   login    : smpe
- *   password : smpe2026
- *
- * Pour changer le mot de passe, calculez le SHA-256 du nouveau mot de passe
- * et remplacez la valeur de HASH_PASSWORD ci-dessous.
- * Exemple JS : const hash = await sha256("nouveauMotDePasse");
+ * Remplace l'ancien login partagé. Chaque plongeur demande un lien de
+ * connexion envoyé par email (Worker Cloudflare → Apps Script dédié, cf.
+ * specs/2026-08-25-auth-utilisateur-token-design.md). La session est
+ * conservée localement 90 jours, glissante, revalidée en tâche de fond dès
+ * que l'app est en ligne (jamais bloquant, pour rester utilisable hors
+ * ligne en mer).
  */
 
 const Auth = (() => {
 
-  const VALID_LOGIN    = 'smpe';
-  const HASH_PASSWORD  = 'cc45ac040c800aa7093a3f804b8dd284213bb5df03419526c00ba91881d565af';
-  const SESSION_KEY    = 'smpe_auth';
-  const SESSION_EXPIRY = 6 * 60 * 60 * 1000; // 6 heures en ms (persiste après fermeture)
+  const SESSION_KEY   = 'smpe_auth_v2';
+  const SESSION_DUREE_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours, glissant
 
-  // ── Hash SHA-256 via Web Crypto API ──────────────────────────
+  let _session = null; // { email, nom, token, ts } une fois connecté
 
-  async function sha256(message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  // ── Session locale ───────────────────────────────────────────
+
+  function _lireSession() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(SESSION_KEY));
+      if (!stored || !stored.token || !stored.ts) return null;
+      if ((Date.now() - stored.ts) >= SESSION_DUREE_MS) return null;
+      return stored;
+    } catch {
+      return null;
+    }
   }
 
-  // ── Vérifie si la session est encore valide ──────────────────
+  function _ecrireSession(session) {
+    try {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    } catch {
+      // quota dépassé ou stockage indisponible (navigation privée) — la
+      // session reste valide pour l'onglet courant, juste pas persistée
+    }
+  }
 
   function isAuthenticated() {
+    return _lireSession() !== null;
+  }
+
+  function getUser() {
+    return _session ? { email: _session.email, nom: _session.nom } : null;
+  }
+
+  // ── Appels réseau ────────────────────────────────────────────
+
+  async function _appelWorker(action, body) {
+    const url = CONFIG.AUTH.workerUrl;
+    if (!url) return { ok: false, error: 'workerUrl non configurée' };
     try {
-      const stored = localStorage.getItem(SESSION_KEY);
-      if (!stored) return false;
-      const { ts } = JSON.parse(stored);
-      return (Date.now() - ts) < SESSION_EXPIRY;
+      const res = await fetch(`${url}/auth/${action}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      return await res.json().catch(() => ({ ok: false, error: 'Réponse invalide' }));
     } catch {
-      return false;
+      return { ok: false, error: 'network' };
     }
   }
 
-  // ── Tente de connecter l'utilisateur ────────────────────────
+  async function demanderLien(email) {
+    return _appelWorker('request-link', { email: String(email).trim().toLowerCase() });
+  }
 
-  async function login(loginInput, passwordInput) {
-    const hash = await sha256(passwordInput);
-    if (loginInput.trim().toLowerCase() === VALID_LOGIN && hash === HASH_PASSWORD) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ ts: Date.now() }));
-      return true;
+  async function validerToken(token) {
+    const res = await _appelWorker('verify', { token });
+    if (res.ok) {
+      _session = { email: res.email, nom: res.nom, token, ts: Date.now() };
+      _ecrireSession(_session);
     }
-    return false;
+    return res;
+  }
+
+  // ── Revalidation silencieuse (non bloquante) ────────────────
+
+  function _revaliderEnArrierePlan() {
+    if (!navigator.onLine || !_session) return;
+    _appelWorker('verify', { token: _session.token }).then(res => {
+      if (res.ok) {
+        _session = { email: res.email, nom: res.nom, token: _session.token, ts: Date.now() };
+        _ecrireSession(_session);
+      } else if (res.error !== 'network') {
+        // Refus explicite du serveur (compte désactivé) — jamais déclenché
+        // par un simple souci réseau, seulement par une réponse ok:false.
+        try { localStorage.setItem('smpe_auth_revoque', '1'); } catch {}
+        logout();
+      }
+    });
   }
 
   // ── Déconnexion ──────────────────────────────────────────────
@@ -57,11 +100,17 @@ const Auth = (() => {
     location.reload();
   }
 
-  // ── Affiche l'écran de login ─────────────────────────────────
+  // ── Affichage écran de login ─────────────────────────────────
 
   function showLoginScreen() {
     const overlay = document.getElementById('login-overlay');
     if (overlay) overlay.classList.remove('hidden');
+    let revoque = false;
+    try { revoque = !!localStorage.getItem('smpe_auth_revoque'); } catch {}
+    if (revoque) {
+      try { localStorage.removeItem('smpe_auth_revoque'); } catch {}
+      _afficherMessage('login-error', 'Votre accès a été révoqué. Contactez le club.');
+    }
   }
 
   function hideLoginScreen() {
@@ -69,38 +118,80 @@ const Auth = (() => {
     if (overlay) overlay.classList.add('hidden');
   }
 
+  function _afficherMessage(elementId, msg) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.toggle('hidden', !msg);
+  }
+
+  // ── Lecture du token dans l'URL (retour du lien magique) ────
+
+  function _extraireTokenURL() {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (token) {
+      params.delete('token');
+      const reste = params.toString();
+      history.replaceState({}, '', location.pathname + (reste ? `?${reste}` : ''));
+    }
+    return token;
+  }
+
   // ── Initialisation ───────────────────────────────────────────
 
   function init(onSuccess) {
-    if (isAuthenticated()) {
-      // Session encore valide, démarrage direct
-      if (onSuccess) onSuccess();
+    const session = _lireSession();
+    if (session) {
+      _session = session;
+      onSuccess();
+      _revaliderEnArrierePlan();
       return;
     }
 
     showLoginScreen();
 
-    const form      = document.getElementById('login-form');
-    const errorMsg  = document.getElementById('login-error');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const loginVal = document.getElementById('login-input').value;
-      const passVal  = document.getElementById('login-password').value;
-
-      const ok = await login(loginVal, passVal);
-      if (ok) {
+    async function _valider(token) {
+      _afficherMessage('login-info', '');
+      _afficherMessage('login-error', '');
+      const res = await validerToken(token);
+      if (res.ok) {
         hideLoginScreen();
-        if (onSuccess) onSuccess();
+        onSuccess();
       } else {
-        errorMsg.textContent = '❌ Identifiants incorrects';
-        errorMsg.classList.remove('hidden');
-        document.getElementById('login-password').value = '';
-        setTimeout(() => errorMsg.classList.add('hidden'), 3000);
+        _afficherMessage('login-error', 'Lien invalide ou expiré, redemandez un lien.');
       }
+    }
+
+    const tokenURL = _extraireTokenURL();
+    if (tokenURL) _valider(tokenURL);
+
+    const formLien = document.getElementById('form-demande-lien');
+    formLien.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      _afficherMessage('login-error', '');
+      const email = document.getElementById('login-email').value;
+      const btn = document.getElementById('btn-demander-lien');
+      btn.disabled = true;
+      const res = await demanderLien(email);
+      btn.disabled = false;
+      if (res.ok) {
+        _afficherMessage('login-info', 'Lien envoyé — vérifiez vos emails.');
+      } else if (res.error === 'network') {
+        _afficherMessage('login-error', 'Connexion internet requise pour recevoir le lien.');
+      } else {
+        _afficherMessage('login-error', "Cet email n'est pas reconnu, contactez le club.");
+      }
+    });
+
+    const formToken = document.getElementById('form-coller-token');
+    formToken.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const token = document.getElementById('login-token').value.trim();
+      if (token) _valider(token);
     });
   }
 
-  return { init, logout, isAuthenticated };
+  return { init, logout, isAuthenticated, getUser };
 
 })();

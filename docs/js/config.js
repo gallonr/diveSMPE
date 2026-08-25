@@ -140,6 +140,13 @@ const CONFIG = {
     ],
   },
 
+  // ── Authentification (compte individuel, lien magique) ────
+  // URL du Worker Cloudflare (routes /auth/request-link, /auth/verify) —
+  // même Worker que RETOUR_EXPERIENCE.
+  AUTH: {
+    workerUrl: 'https://mf-wms-proxy.reg-gallon.workers.dev',
+  },
+
   // ── Météo (OpenMeteo — gratuit, pas de clé) ────────────────
   METEO: {
     // Coordonnées de Saint-Malo pour la météo générale

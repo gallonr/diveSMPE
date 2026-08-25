@@ -1766,6 +1766,34 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   display: none;
 }
 
+.login-info {
+  color: var(--emeraude-light);
+  font-size: 0.85rem;
+  margin: 0.4rem 0 0.8rem;
+  min-height: 1.2em;
+}
+
+.login-info.hidden {
+  display: none;
+}
+
+.login-form-token {
+  margin-top: 1.2rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--emeraude-mid);
+}
+
+.login-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--emeraude-mid);
+  color: var(--blanc);
+}
+
+.login-btn-secondary:hover {
+  background: var(--emeraude-mid);
+  color: var(--blanc);
+}
+
 .login-btn {
   width: 100%;
   background: var(--emeraude);

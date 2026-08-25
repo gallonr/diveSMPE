@@ -175,7 +175,7 @@ const RetourExperience = (() => {
     const etatMerDegre = _valeurActive('re-etatmer-group');
     const ventCode = _valeurActive('re-vent-group');
     const courantCode = _valeurActive('re-courant-group');
-    const rempliPar = document.getElementById('re-rempli-par').value.trim();
+    const rempliPar = Auth.getUser()?.nom || '';
 
     if (!siteID) return { erreur: 'Choisissez un site.' };
     if (!dateStr) return { erreur: 'Choisissez une date.' };
@@ -184,7 +184,6 @@ const RetourExperience = (() => {
     if (!hMise || !hSortie) return { erreur: "Renseignez l'heure de mise à l'eau et de sortie." };
     if (hSortie <= hMise) return { erreur: "L'heure de sortie doit être postérieure à l'heure de mise à l'eau." };
     if (!bateau) return { erreur: 'Choisissez le bateau.' };
-    if (!rempliPar) return { erreur: 'Indiquez le nom et prénom de la personne qui remplit le formulaire.' };
     if (etatMerDegre === null) return { erreur: "Choisissez l'état de la mer." };
     if (!ventCode) return { erreur: 'Choisissez le vent.' };
     if (!courantCode) return { erreur: 'Choisissez le courant ressenti.' };
@@ -256,6 +255,7 @@ const RetourExperience = (() => {
 
   function _reinitialiserForm() {
     document.getElementById('form-retour-experience').reset();
+    document.getElementById('re-rempli-par').value = Auth.getUser()?.nom || '';
     document.querySelectorAll('#modal-retour-experience .re-btn.active').forEach(b => b.classList.remove('active'));
     document.getElementById('re-calculs').classList.add('hidden');
     _erreur('');

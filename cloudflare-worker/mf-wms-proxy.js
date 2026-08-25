@@ -1,14 +1,17 @@
 /**
  * Cloudflare Worker — Proxy WMS Météo-France + relais retour d'expérience
+ * + relais authentification par lien magique
  *
  * Déploiement :
  *  1. Créer un compte sur https://workers.cloudflare.com/
  *  2. Nouveau Worker → coller ce code
  *  3. Dans "Settings > Variables" du Worker, ajouter les secrets :
- *       MF_TOKEN_PAAROME   = votre_token_paarome
- *       MF_TOKEN_AROMEPI   = votre_token_aromepi
- *       APPSCRIPT_URL      = URL du déploiement Web App Google Apps Script (retour-experience.gs)
- *       APPSCRIPT_SECRET   = secret partagé avec ce script Apps Script
+ *       MF_TOKEN_PAAROME     = votre_token_paarome
+ *       MF_TOKEN_AROMEPI     = votre_token_aromepi
+ *       APPSCRIPT_URL        = URL du déploiement Web App retour-experience.gs
+ *       APPSCRIPT_SECRET     = secret partagé avec ce script Apps Script
+ *       AUTH_APPSCRIPT_URL   = URL du déploiement Web App auth.gs
+ *       AUTH_APPSCRIPT_SECRET = secret partagé avec ce script Apps Script
  *  4. Déployer → noter l'URL (ex: https://mf-proxy.moncompte.workers.dev)
  *  5. Mettre cette URL dans CONFIG.METEO_FRANCE.proxyUrl (config.js)
  *
@@ -16,8 +19,10 @@
  *   GET  https://mf-proxy.moncompte.workers.dev/paarome?SERVICE=WMS&...
  *   GET  https://mf-proxy.moncompte.workers.dev/aromepi?SERVICE=WMS&...
  *   POST https://mf-proxy.moncompte.workers.dev/retour-experience
+ *   POST https://mf-proxy.moncompte.workers.dev/auth/request-link
+ *   POST https://mf-proxy.moncompte.workers.dev/auth/verify
  *
- * Le token n'est JAMAIS exposé côté client.
+ * Les tokens/secrets ne sont JAMAIS exposés côté client.
  */
 
 const MF_ENDPOINTS = {
@@ -52,10 +57,15 @@ export default {
     }
 
     // ── Routing ──────────────────────────────────────────────────
-    const path = url.pathname.replace(/^\//, '').split('/')[0];
+    const segments = url.pathname.replace(/^\//, '').split('/');
+    const path = segments[0];
 
     if (path === 'retour-experience') {
       return handleRetourExperience(request, env, corsHeaders);
+    }
+
+    if (path === 'auth') {
+      return handleAuth(request, env, corsHeaders, segments[1]);
     }
 
     const endpoint = MF_ENDPOINTS[path];
@@ -128,6 +138,52 @@ async function handleRetourExperience(request, env, corsHeaders) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ secret: env.APPSCRIPT_SECRET, data }),
+    });
+    gasJson = await gasRes.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: 'Apps Script injoignable' }), {
+      status: 502,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  return new Response(JSON.stringify(gasJson), {
+    status: gasJson.ok ? 200 : 502,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// ── Routes /auth/* — relais vers Google Apps Script (auth.gs) ────
+async function handleAuth(request, env, corsHeaders, action) {
+  if (request.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+  }
+  if (action !== 'request-link' && action !== 'verify') {
+    return new Response(JSON.stringify({ ok: false, error: 'Action inconnue' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+  if (!env.AUTH_APPSCRIPT_URL || !env.AUTH_APPSCRIPT_SECRET) {
+    return new Response('Route non configurée (AUTH_APPSCRIPT_URL/AUTH_APPSCRIPT_SECRET manquants)', { status: 500, headers: corsHeaders });
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch (e) {
+    return new Response(JSON.stringify({ ok: false, error: 'JSON invalide' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  let gasJson;
+  try {
+    const gasRes = await fetch(env.AUTH_APPSCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: env.AUTH_APPSCRIPT_SECRET, action, ...body }),
     });
     gasJson = await gasRes.json();
   } catch (e) {
