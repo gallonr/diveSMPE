@@ -221,14 +221,34 @@ const App = (() => {
       });
     });
 
-    // ── Filtres mouillage
+    // ── Filtres mouillage (widget flottant carte)
     document.querySelectorAll('.filter-mouillage-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.filter-mouillage-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _filtreMouillage = btn.dataset.mouillage;
         Sites.filtrer(_termeRecherche, _filtreType, _filtreProf, _filtreMouillage);
+
+        // Reflète le filtre actif sur le bouton FAB + referme le panneau
+        const btnFab = document.getElementById('btn-filtre-mouillage');
+        btnFab?.classList.toggle('filtre-actif', _filtreMouillage !== 'all');
+        document.getElementById('panel-filtre-mouillage')?.classList.add('hidden');
       });
+    });
+
+    // ── Widget filtre mouillage : ouverture/fermeture du panneau
+    const btnFiltreMouillage   = document.getElementById('btn-filtre-mouillage');
+    const panelFiltreMouillage = document.getElementById('panel-filtre-mouillage');
+    btnFiltreMouillage?.addEventListener('click', e => {
+      e.stopPropagation();
+      panelFiltreMouillage?.classList.toggle('hidden');
+    });
+    // Fermer en cliquant ailleurs sur la page
+    document.addEventListener('click', e => {
+      if (panelFiltreMouillage && !panelFiltreMouillage.classList.contains('hidden')
+          && !panelFiltreMouillage.contains(e.target) && e.target !== btnFiltreMouillage) {
+        panelFiltreMouillage.classList.add('hidden');
+      }
     });
 
     // ── Fermer modales en cliquant dehors

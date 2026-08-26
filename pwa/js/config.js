@@ -194,12 +194,12 @@ const CONFIG = {
   // ── Types de mouillage → couleur + badge ──────────────────
   // Emojis choisis pour rester lisibles sur la carte/la liste et distincts
   // de TYPE_SITE : 🧱 = corps-mort en béton fixe, ⚓ = mouillage à l'ancre
-  // du bateau, � = gueuse avec bouée de surface (rond orange, faute
+  // du bateau, 🟠 = gueuse avec bouée de surface (rond orange, faute
   // d'emoji "bouée de mouillage" dédié — 🛟 étant une bouée de sauvetage).
   TYPE_MOUILLAGE: {
     fixe:   { classe: 'badge-fixe',   emoji: '🧱' },
     ancre:  { classe: 'badge-ancre',  emoji: '⚓' },
-    gueuse: { classe: 'badge-gueuse', emoji: '�' },
+    gueuse: { classe: 'badge-gueuse', emoji: '🟠' },
     default:{ classe: 'badge-default', emoji: '❔' },
   },
 };

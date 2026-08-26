@@ -146,6 +146,24 @@
   <div id="port-widget" class="port-widget hidden"></div>
 
   <!-- ═══════════════════════════════════════════════════════════
+       WIDGET FILTRE MOUILLAGE (flottant sur la carte, coin haut-droit)
+       Bouton FAB toujours visible (même panneau sites fermé) pour
+       sélectionner/appliquer le filtre mouillage sans ouvrir le menu.
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="map-filtre-mouillage" class="map-filtre-mouillage">
+    <button id="btn-filtre-mouillage" class="btn-filtre-mouillage" title="Filtrer par mouillage" aria-label="Filtrer par mouillage">
+      ⚓
+    </button>
+    <div id="panel-filtre-mouillage" class="panel-filtre-mouillage hidden">
+      <div class="panel-filtre-titre">Mouillage</div>
+      <button class="filter-mouillage-btn active" data-mouillage="all">Tous</button>
+      <button class="filter-mouillage-btn" data-mouillage="fixe">🧱 Fixe</button>
+      <button class="filter-mouillage-btn" data-mouillage="ancre">⚓ Ancre</button>
+      <button class="filter-mouillage-btn" data-mouillage="gueuse">🟠 Gueuse</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
        HUD NAVIGATION (flottant sur la carte, coin bas-gauche)
   ══════════════════════════════════════════════════════════════ -->
   <div id="nav-hud" class="nav-hud hidden">
@@ -204,12 +222,9 @@
       <button class="filter-prof-btn" data-prof="20">≤ 20 m</button>
       <button class="filter-prof-btn" data-prof="20+">+20 m</button>
     </div>
-    <div class="filter-bar filter-bar-mouillage">
-      <button class="filter-mouillage-btn active" data-mouillage="all">Tous mouillages</button>
-      <button class="filter-mouillage-btn" data-mouillage="fixe">🧱 Fixe</button>
-      <button class="filter-mouillage-btn" data-mouillage="ancre">🪢 Ancre</button>
-      <button class="filter-mouillage-btn" data-mouillage="gueuse">� Gueuse</button>
-    </div>
+    <!-- Filtre mouillage : widget dédié flottant sur la carte
+         (#map-filtre-mouillage), pas dupliqué ici pour éviter deux jeux de
+         boutons .filter-mouillage-btn désynchronisés sur l'état "actif". -->
     <ul id="liste-sites" class="liste-sites"></ul>
   </aside>
 

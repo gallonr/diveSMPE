@@ -384,6 +384,23 @@ body:has(#panel-sites:not(.hidden)) .btn-widgets-toggle {
   border-color: #c47f17;
 }
 
+/* Cibles tactiles agrandies sur mobile (smartphone) : les chips de filtre
+   type/profondeur/mouillage sont sinon trop petites pour un doigt (règle
+   min. ~44px recommandée Apple/Google). */
+@media (max-width: 768px) {
+  .filter-bar, .filter-bar-prof, .filter-bar-mouillage {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+  .filter-btn, .filter-prof-btn, .filter-mouillage-btn {
+    padding: 8px 14px;
+    font-size: 12.5px;
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
 .liste-sites {
   list-style: none;
   overflow-y: auto;
@@ -1419,6 +1436,70 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 .port-ok  { color: #2ecc71; }
 .port-bloque { color: #e74c3c; }
+
+/* ── Widget filtre mouillage (carte, coin haut-droit) ────────
+   FAB toujours visible + panneau déroulant, pour appliquer le filtre
+   mouillage sans devoir ouvrir le panneau latéral (utile sur smartphone). */
+.map-filtre-mouillage {
+  position: fixed;
+  top: calc(var(--header-h) + var(--bandeau-h) + 12px);
+  right: 12px;
+  z-index: 810;
+}
+.btn-filtre-mouillage {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(58, 175, 168, 0.35);
+  background: rgba(3, 31, 27, 0.92);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--blanc);
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+}
+.btn-filtre-mouillage:hover,
+.btn-filtre-mouillage.filtre-actif {
+  background: #c47f17;
+  border-color: #c47f17;
+}
+.panel-filtre-mouillage {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  background: rgba(3, 31, 27, 0.95);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(58, 175, 168, 0.35);
+  border-radius: var(--radius);
+  padding: 10px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+.panel-filtre-titre {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--emeraude-light);
+  font-family: var(--font-title);
+  margin-bottom: 2px;
+}
+/* Boutons du widget : cibles tactiles pleine largeur, confortables au doigt */
+.panel-filtre-mouillage .filter-mouillage-btn {
+  width: 100%;
+  text-align: left;
+  min-height: 40px;
+  padding: 8px 12px;
+}
 
 /* Port widget remonte au-dessus du contrôle courants (bas-droite) quand courants actifs */
 body.courants-actifs .port-widget {
