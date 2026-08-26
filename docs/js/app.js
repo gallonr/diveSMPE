@@ -151,6 +151,11 @@ const App = (() => {
       if (typeof Tutorial !== 'undefined') Tutorial.relancer();
     });
 
+    // ── Header : Déconnexion
+    document.getElementById('btn-logout')?.addEventListener('click', () => {
+      if (confirm('Se déconnecter ?')) Auth.logout();
+    });
+
     // ── Header : Menu secondaire (···)
     const btnMore  = document.getElementById('btn-more');
     const moreMenu = document.getElementById('header-more-menu');
