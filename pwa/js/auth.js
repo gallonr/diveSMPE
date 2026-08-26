@@ -129,13 +129,29 @@ const Auth = (() => {
 
   function _extraireTokenURL() {
     const params = new URLSearchParams(location.search);
-    const token = params.get('token');
+    let token = params.get('token');
     if (token) {
       params.delete('token');
       const reste = params.toString();
       history.replaceState({}, '', location.pathname + (reste ? `?${reste}` : ''));
     }
-    return token;
+    return _corrigerDoubleEncodage(token);
+  }
+
+  // Compat liens envoyés par une version antérieure d'auth.gs qui appliquait
+  // encodeURIComponent() une seconde fois sur le token (déjà URI-encodé côté
+  // serveur). Un token valide ressemble à "%7B%22email...%7D:<sig>" une fois
+  // décodé par URLSearchParams ; s'il reste des séquences "%25xx" c'est qu'un
+  // niveau d'encodage supplémentaire traîne encore — on le retire ici pour
+  // que les anciens liens continuent de fonctionner sans devoir redemander
+  // un nouveau lien.
+  function _corrigerDoubleEncodage(token) {
+    if (!token || !/%25/.test(token)) return token;
+    try {
+      return decodeURIComponent(token);
+    } catch {
+      return token;
+    }
   }
 
   // ── Initialisation ───────────────────────────────────────────
