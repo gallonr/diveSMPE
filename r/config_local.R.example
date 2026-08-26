@@ -1,0 +1,11 @@
+# config_local.R — Configuration locale du pipeline R (NE PAS COMMITER)
+#
+# Instructions :
+#  1. Copier ce fichier : cp r/config_local.R.example r/config_local.R
+#  2. Renseigner l'ID du Google Sheet contenant la BDD des sites (onglet "site")
+#  3. Le fichier r/config_local.R est gitignoré — il ne sera jamais publié
+#
+# L'ID se trouve dans l'URL du Sheet :
+#   https://docs.google.com/spreadsheets/d/CET_ID_ICI/edit
+
+GOOGLE_SHEET_BDD_ID <- "VOTRE_SHEET_ID_ICI"

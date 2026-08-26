@@ -4,30 +4,50 @@
 # Date   : 2026-04-08
 #
 # Tâches couvertes :
-#   2.1 Lecture du XLSX avec readxl
+#   2.1 Lecture de la BDD (Google Sheet) avec googlesheets4
 #   2.2 Conversion en objet sf + vérification CRS WGS84
 #   2.3 Sélection et renommage des colonnes utiles
 #   2.4 Export data/sites.geojson
+#
+# La BDD source n'est plus un fichier XLSX versionne (migration de securite
+# 2026-08-26 : ne plus exposer la BDD complete sur le depot public). Elle vit
+# desormais dans un Google Sheet, identifie par GOOGLE_SHEET_BDD_ID defini
+# dans r/config_local.R (gitignore, cf. r/config_local.R.example). Auth via
+# googlesheets4::gs4_auth() -- navigateur au premier lancement, token mis en
+# cache localement ensuite.
 # =============================================================================
 
-library(readxl)
+library(googlesheets4)
 library(sf)
 library(jsonlite)
 
-# Chemins (lancer depuis la racine du projet)
-PATH_XLSX    <- "bdd/bddAtlasPlongeeSMPE.xlsx"
+# Config locale (gitignoree) : GOOGLE_SHEET_BDD_ID
+CONFIG_LOCAL <- "r/config_local.R"
+if (!file.exists(CONFIG_LOCAL)) {
+  stop(sprintf(
+    "Fichier manquant : %s\nCopier r/config_local.R.example vers r/config_local.R et renseigner GOOGLE_SHEET_BDD_ID.",
+    CONFIG_LOCAL
+  ))
+}
+source(CONFIG_LOCAL)
+stopifnot(
+  "GOOGLE_SHEET_BDD_ID doit etre defini dans r/config_local.R" =
+    exists("GOOGLE_SHEET_BDD_ID") && nzchar(GOOGLE_SHEET_BDD_ID)
+)
+
 PATH_GEOJSON <- "data/sites.geojson"
 
 cat("=============================================================\n")
-cat("PHASE 2 — Preprocessing BDD : Excel → GeoJSON\n")
+cat("PHASE 2 -- Preprocessing BDD : Google Sheet -> GeoJSON\n")
 cat("=============================================================\n\n")
 
 # =============================================================================
-# 2.1 — Lecture du XLSX
+# 2.1 — Lecture de la BDD (Google Sheet)
 # =============================================================================
-cat("--- 2.1 Lecture du XLSX ---\n")
+cat("--- 2.1 Lecture de la BDD (Google Sheet) ---\n")
 
-df_raw <- read_excel(PATH_XLSX, sheet = "site")
+gs4_auth()  # navigateur au premier lancement, token cache ensuite
+df_raw <- read_sheet(GOOGLE_SHEET_BDD_ID, sheet = "site")
 
 cat(sprintf("Chargé : %d lignes × %d colonnes\n", nrow(df_raw), ncol(df_raw)))
 cat("Colonnes disponibles :", paste(names(df_raw), collapse = ", "), "\n\n")

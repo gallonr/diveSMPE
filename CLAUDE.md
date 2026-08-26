@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Description du projet
 
 Application de catalogue et d'aide à la navigation pour les sites de plongée du club **SMPE** (Saint-Malo Plongée Emeraude), couvrant la **Baie de Saint-Malo**. Deux contextes d'utilisation :
-- **Au centre de plongée** (PC) : preprocessing R/Python à partir de la BDD Excel et du LiDAR
+- **Au centre de plongée** (PC) : preprocessing R/Python à partir de la BDD (Google Sheet) et du LiDAR
 - **En mer sur tablette** : PWA consultée 100% offline (Service Worker)
 
 Cycle de mise à jour : modifier la BDD → `build_all.R` → `./sync_docs.sh` → tablette sur WiFi → SW met à jour automatiquement.
@@ -15,7 +15,7 @@ Cycle de mise à jour : modifier la BDD → `build_all.R` → `./sync_docs.sh` �
 ### 1. Pipeline preprocessing (centre)
 
 `r/build_all.R` est le script maître. Il enchaîne :
-1. **`r/02_process_bdd.R`** — XLSX (`bdd/bddAtlasPlongeeSMPE.xlsx`) → `data/sites.geojson` (60 sites, WGS84)
+1. **`r/02_process_bdd.R`** — Google Sheet (`GOOGLE_SHEET_BDD_ID` dans `r/config_local.R`, gitignoré, cf. `bdd/README.md`) → `data/sites.geojson` (60 sites, WGS84)
 2. **`r/01_process_las.R`** — LiDAR LITTO3D (~3,8 Go) → `data/bathy_sites.json` + miniatures PNG dans `pwa/data/thumbs/` (44 sites couverts)
 3. **`r/03_generate_profile.R`** — profils bathymétriques + transects
 4. **`r/04_marees_fes.py`** — atlas FES2022 → `data/marees.json` (PM/BM ±1 an, 34 constituantes harmoniques)
@@ -71,7 +71,7 @@ cd pwa && npx http-server -p 8080
 ./sync_docs.sh "feat: …"
 ```
 
-Prérequis : R ≥ 4.3 avec `lidR`, `terra`, `sf`, `readxl`, `jsonlite` ; Python (`.venv/`) avec `pyfes` pour FES2022.
+Prérequis : R ≥ 4.3 avec `lidR`, `terra`, `sf`, `googlesheets4`, `jsonlite` ; Python (`.venv/`) avec `pyfes` pour FES2022.
 
 ## Service Worker — versioning
 
@@ -87,6 +87,7 @@ Voir `.gitignore`. À ne jamais commiter :
 - `currents/` (atlas courants FES)
 - `data/tiles/`, `data/*.tif*` (sorties intermédiaires)
 - `pwa/js/secrets.js`, `pwa/js/tokens.js`, équivalents `docs/js/`
+- `bdd/bddAtlasPlongeeSMPE.xlsx`, `relevesGNSS/siteSMPE21042026.xlsx` (BDD sites — vit désormais dans un Google Sheet, cf. `bdd/README.md`), `r/config_local.R`
 
 ## Secrets / tokens
 
