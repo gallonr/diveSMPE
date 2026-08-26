@@ -58,6 +58,15 @@ const Sites = (() => {
     return CONFIG.TYPE_SITE[typeSite.toLowerCase()] || CONFIG.TYPE_SITE.default;
   }
 
+  // BDD pas encore complètement renseignée pour le mouillage (cf.
+  // specs/2026-07-28-type-mouillage-design.md) : renvoie null si absent ou
+  // valeur non reconnue, pour ne pas afficher de badge "non renseigné" sur
+  // la majorité des sites tant que la BDD n'est pas complétée.
+  function _getMouillageInfo(mouillage) {
+    if (!mouillage) return null;
+    return CONFIG.TYPE_MOUILLAGE[mouillage.toLowerCase()] || null;
+  }
+
   function _afficherListe(sites) {
     const ul = document.getElementById('liste-sites');
     if (!ul) return;
@@ -68,16 +77,23 @@ const Sites = (() => {
     ul.innerHTML = sites.map(f => {
       const p = f.properties;
       const info = _getTypeInfo(p.typeSite);
+      const mInfo = _getMouillageInfo(p.mouillage);
       const metaExtra = p.niveauPlongee ? ` · ${p.niveauPlongee}` : '';
       const etat = _etatsMaree.get(p.siteID);
       const badgeMaree = etat && etat.statut !== 'gris'
         ? `<span class="maree-badge-liste maree-badge-${etat.statut}">${etat.label}</span>`
+        : '';
+      // Badge mouillage omis si non renseigné (58/60 sites au démarrage de
+      // la fonctionnalité) plutôt qu'un badge "?" sur presque toute la liste.
+      const badgeMouillage = mInfo
+        ? `<span class="badge-type ${mInfo.classe}" title="Mouillage ${p.mouillage}">${mInfo.emoji}</span>`
         : '';
       return `
         <li class="site-item" data-id="${p.siteID}" onclick="Sites.selectionner('${p.siteID}')">
           <div class="site-nom">${info.emoji} ${p.siteNom || p.siteID}</div>
           <div class="site-meta">
             <span class="badge-type ${info.classe}">${p.typeSite || '?'}</span>
+            ${badgeMouillage}
             <span>${p.typePlongee || ''}${metaExtra}</span>
             ${badgeMaree}
           </div>
@@ -88,12 +104,18 @@ const Sites = (() => {
 
   // ── Filtres et recherche ─────────────────────────────────────
 
-  function filtrer(terme, typeFilter, profFilter) {
+  function filtrer(terme, typeFilter, profFilter, mouillageFilter) {
     let resultats = _sites;
     if (typeFilter && typeFilter !== 'all') {
       resultats = resultats.filter(f => {
         const t = (f.properties.typeSite || '').toLowerCase();
         return t.includes(typeFilter);
+      });
+    }
+    if (mouillageFilter && mouillageFilter !== 'all') {
+      resultats = resultats.filter(f => {
+        const m = (f.properties.mouillage || '').toLowerCase();
+        return m === mouillageFilter;
       });
     }
     if (profFilter && profFilter !== 'all') {
@@ -163,7 +185,13 @@ const Sites = (() => {
     document.getElementById('f-typePlongee').textContent   = _val(p.typePlongee);
     document.getElementById('f-niveauPlongee').textContent = _val(p.niveauPlongee);
     document.getElementById('f-accessibilite').textContent = _val(p.accessibilite);
-    document.getElementById('f-mouillage').textContent     = _val(p.mouillage);
+    const mInfo = _getMouillageInfo(p.mouillage);
+    const elMouillage = document.getElementById('f-mouillage');
+    if (mInfo) {
+      elMouillage.innerHTML = `<span class="badge-type ${mInfo.classe}">${mInfo.emoji} ${p.mouillage}</span>`;
+    } else {
+      elMouillage.textContent = p.mouillage ? p.mouillage : 'Non renseigné';
+    }
     document.getElementById('f-commentaire').textContent   = _val(p.commentaire);
 
     // Horaires de plongée — pré-remplir depuis la fenêtre de plongée calculée

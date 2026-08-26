@@ -124,6 +124,22 @@ for (col in cols_presentes) {
   }
 }
 
+# Vocabulaire contrôlé pour "mouillage" (fixe/ancre/gueuse/vide) — cf.
+# specs/2026-07-28-type-mouillage-design.md. Les anciennes valeurs texte
+# libre (ex. "Ancre - Tête de roche") pas encore reformulées dans le Sheet
+# ne bloquent pas le build, mais sont signalées ici pour être corrigées.
+if ("mouillage" %in% names(sf_pwa)) {
+  valeurs_autorisees <- c("fixe", "ancre", "gueuse")
+  mouillage_vals <- tolower(trimws(sf_pwa$mouillage))
+  anomalies <- sf_pwa$siteID[!is.na(mouillage_vals) & !(mouillage_vals %in% valeurs_autorisees)]
+  if (length(anomalies) > 0) {
+    warning(sprintf(
+      "Valeurs 'mouillage' non conformes (attendu fixe/ancre/gueuse/vide) pour : %s\n→ À reformuler dans le Google Sheet.",
+      paste(anomalies, collapse = ", ")
+    ))
+  }
+}
+
 # =============================================================================
 # 2.4 — Export GeoJSON
 # =============================================================================

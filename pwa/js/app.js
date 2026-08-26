@@ -8,6 +8,7 @@ const App = (() => {
   let _filtreType = 'all';
   let _termeRecherche = '';
   let _filtreProf = 'all';
+  let _filtreMouillage = 'all';
 
   // ── Initialisation ───────────────────────────────────────────
 
@@ -192,7 +193,7 @@ const App = (() => {
     // ── Recherche sites
     document.getElementById('search-sites')?.addEventListener('input', e => {
       _termeRecherche = e.target.value.trim();
-      Sites.filtrer(_termeRecherche, _filtreType, _filtreProf);
+      Sites.filtrer(_termeRecherche, _filtreType, _filtreProf, _filtreMouillage);
     });
 
     // ── Filtres type
@@ -201,7 +202,7 @@ const App = (() => {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _filtreType = btn.dataset.filter;
-        Sites.filtrer(_termeRecherche, _filtreType, _filtreProf);
+        Sites.filtrer(_termeRecherche, _filtreType, _filtreProf, _filtreMouillage);
       });
     });
 
@@ -211,7 +212,17 @@ const App = (() => {
         document.querySelectorAll('.filter-prof-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         _filtreProf = btn.dataset.prof;
-        Sites.filtrer(_termeRecherche, _filtreType, _filtreProf);
+        Sites.filtrer(_termeRecherche, _filtreType, _filtreProf, _filtreMouillage);
+      });
+    });
+
+    // ── Filtres mouillage
+    document.querySelectorAll('.filter-mouillage-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-mouillage-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        _filtreMouillage = btn.dataset.mouillage;
+        Sites.filtrer(_termeRecherche, _filtreType, _filtreProf, _filtreMouillage);
       });
     });
 

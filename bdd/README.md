@@ -18,6 +18,14 @@ par `r/02_process_bdd.R` via `googlesheets4`.
    tpsEtale | commentaire | photoSite
    ```
 
+   La colonne `mouillage` utilise un vocabulaire contrôlé (cf.
+   `specs/2026-07-28-type-mouillage-design.md`) : uniquement `fixe`, `ancre`,
+   `gueuse`, ou vide si non renseigné. `r/02_process_bdd.R` émet un
+   avertissement au build si une autre valeur (ex. ancien texte libre comme
+   "Ancre - Tête de roche") est détectée. Cette colonne n'est pas encore
+   entièrement remplie pour tous les sites — la PWA gère l'absence de
+   valeur (pas de badge affiché tant que la case est vide).
+
 3. Importer les données de l'ancien `bddAtlasPlongeeSMPE.xlsx` (Fichier >
    Importer, ou copier/coller les valeurs) dans cet onglet.
 4. Copier `r/config_local.R.example` vers `r/config_local.R` et renseigner

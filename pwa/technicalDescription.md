@@ -68,7 +68,7 @@ Page HTML unique de l'application (SPA). Définit la structure complète :
 - **Bandeau offline** — affiché automatiquement quand le réseau est absent
 - **Header fixe** — bouton menu ☰, titre, horloge locale, boutons GPS 📍 et Prévision 🗓
 - **Panneau latéral gauche** — liste des sites avec :
-  - filtres par type (récif 🪸, épave ⚓, roche 🪨)
+  - filtres par type (récif 🪸, épave 🚢, roche 🪨)
   - filtre par profondeur (< 10 m, < 20 m, toutes)
   - champ de recherche textuelle
 - **Carte Leaflet** — conteneur `#map` plein écran

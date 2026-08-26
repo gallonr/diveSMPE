@@ -352,6 +352,29 @@ html, body {
   border-color: #2980b9;
 }
 
+.filter-bar-mouillage {
+  border-bottom: 1px solid rgba(58,175,168,0.18);
+  background: rgba(58,175,168,0.04);
+}
+.filter-mouillage-btn {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(196,127,23,0.45);
+  background: transparent;
+  color: var(--gris-texte);
+  font-size: 11px;
+  font-family: var(--font-title);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.filter-mouillage-btn.active, .filter-mouillage-btn:hover {
+  background: #c47f17;
+  color: var(--blanc);
+  border-color: #c47f17;
+}
+
 .liste-sites {
   list-style: none;
   overflow-y: auto;
@@ -385,6 +408,10 @@ html, body {
 .badge-epave   { background: #7d5a3c;             color: #fff; }
 .badge-roche   { background: #4a6060;             color: #fff; }
 .badge-default { background: var(--gris-card);    color: var(--gris-texte); }
+
+.badge-fixe    { background: #3d6b8a;             color: #fff; }
+.badge-ancre   { background: #c47f17;             color: #fff; }
+.badge-gueuse  { background: #6b4a8a;             color: #fff; }
 
 /* ── Fiche site ──────────────────────────────────────────────── */
 .fiche-site {
