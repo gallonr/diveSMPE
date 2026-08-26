@@ -39,6 +39,18 @@ cp pwa/manifest.json   docs/manifest.json
 sed 's|https://gallonr.github.io/diveSMPE/guide-utilisateur.html|guide-utilisateur.html|g' \
     pwa/index.html > docs/index.html
 
+# Données (générées par r/build_all.R) — sites.geojson, bathy_sites.json
+# (version allégée), marees.json, courants_grid.json + miniatures bathy.
+# Sans cette étape, docs/ (le site publié) reste figé sur d'anciennes
+# données même après un build_all.R à jour (incident 2026-08-26).
+cp pwa/data/sites.geojson     docs/data/sites.geojson
+cp pwa/data/bathy_sites.json  docs/data/bathy_sites.json
+cp pwa/data/marees.json       docs/data/marees.json
+if [ -f pwa/data/courants_grid.json ]; then
+    cp pwa/data/courants_grid.json docs/data/courants_grid.json
+fi
+rsync -a --delete pwa/data/thumbs/ docs/data/thumbs/
+
 echo "✅ Synchronisation terminée"
 
 # Commit & push
