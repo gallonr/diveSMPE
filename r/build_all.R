@@ -80,12 +80,42 @@ setwd(project_root)
 DATA_DIR <- "data"
 PWA_DATA_DIR <- "pwa/data"
 
-# Fichiers à synchroniser data/ → pwa/data/
+# Fichiers à synchroniser data/ → pwa/data/ AVANT Phase 3 (LiDAR) — sites.geojson
+# doit être frais quand 01_process_las.R le lit pour y fusionner profMin/profMax.
+FILES_TO_SYNC_AVANT_LIDAR <- c(
+    "sites.geojson"
+)
+
+# Fichiers à synchroniser data/ → pwa/data/ APRÈS coup — uniquement ceux que
+# 01_process_las.R n'écrit pas déjà lui-même directement dans pwa/data/
+# (sites.geojson et bathy_sites.json y sont écrits en versions fusionnée/allégée
+# par 01_process_las.R — les resynchroniser ici écraserait ce travail avec les
+# versions brutes de data/, cf. incident 2026-08-26).
 FILES_TO_SYNC <- c(
-    "sites.geojson",
-    "bathy_sites.json",
     "marees.json"
 )
+
+.sync_data_to_pwa <- function(files) {
+    if (!dir.exists(PWA_DATA_DIR)) {
+        dir.create(PWA_DATA_DIR, recursive = TRUE)
+        .log(sprintf("Dossier créé : %s", PWA_DATA_DIR))
+    }
+    for (f in files) {
+        src <- file.path(DATA_DIR, f)
+        dest <- file.path(PWA_DATA_DIR, f)
+        if (!file.exists(src)) {
+            .log(sprintf("ABSENT (ignoré) : %s", src), level = "WARN")
+            next
+        }
+        ok <- file.copy(src, dest, overwrite = TRUE)
+        if (ok) {
+            size_kb <- round(file.info(dest)$size / 1024, 1)
+            .log(sprintf("Copié : %s → %s  (%s Ko)", src, dest, size_kb))
+        } else {
+            .log(sprintf("Échec copie : %s → %s", src, dest), level = "ERROR")
+        }
+    }
+}
 
 # ---------------------------------------------------------------------------
 # ÉTAPE 1 — BDD Excel → GeoJSON  (Phase 2)
@@ -93,6 +123,10 @@ FILES_TO_SYNC <- c(
 
 .step("Phase 2 — BDD → GeoJSON", {
     source("r/02_process_bdd.R", echo = FALSE, local = new.env())
+})
+
+.step("Phase 2 bis — Synchro sites.geojson avant fusion LiDAR", {
+    .sync_data_to_pwa(FILES_TO_SYNC_AVANT_LIDAR)
 })
 
 # ---------------------------------------------------------------------------
@@ -120,35 +154,12 @@ FILES_TO_SYNC <- c(
 })
 
 # ---------------------------------------------------------------------------
-# ÉTAPE 4 — Copie data/ → pwa/data/
+# ÉTAPE 4 — Copie data/ → pwa/data/ (fichiers non déjà gérés par Phase 3)
 # ---------------------------------------------------------------------------
 
 .step("Phase 5.3 — Copie data/ → pwa/data/", {
-    if (!dir.exists(PWA_DATA_DIR)) {
-        dir.create(PWA_DATA_DIR, recursive = TRUE)
-        .log(sprintf("Dossier créé : %s", PWA_DATA_DIR))
-    }
-
-    for (f in FILES_TO_SYNC) {
-        src <- file.path(DATA_DIR, f)
-        dest <- file.path(PWA_DATA_DIR, f)
-        if (!file.exists(src)) {
-            .log(sprintf("ABSENT (ignoré) : %s", src), level = "WARN")
-            next
-        }
-        ok <- file.copy(src, dest, overwrite = TRUE)
-        if (ok) {
-            size_kb <- round(file.info(dest)$size / 1024, 1)
-            .log(sprintf("Copié : %s → %s  (%s Ko)", src, dest, size_kb))
-        } else {
-            .log(sprintf("Échec copie : %s → %s", src, dest), level = "ERROR")
-        }
-    }
-
-    # Copie du dossier thumbs/ (miniatures bathymétriques)
-    src_thumbs <- file.path("pwa", "data", "thumbs") # déjà géré par 01_process_las.R
-    # (les thumbs sont directement écrits dans pwa/data/thumbs par le script LiDAR)
-    .log("Dossier thumbs/ géré directement par 01_process_las.R — pas de copie supplémentaire.")
+    .sync_data_to_pwa(FILES_TO_SYNC)
+    .log("sites.geojson et bathy_sites.json déjà synchronisés par 01_process_las.R (versions fusionnée/allégée) — pas de re-copie.")
 })
 
 # ---------------------------------------------------------------------------
@@ -157,6 +168,10 @@ FILES_TO_SYNC <- c(
 
 .step("Phase 5.4 — Validation", {
     errors <- character(0)
+
+    # jsonlite simplifie certains JSON en data.frame (length() = nb colonnes)
+    # et d'autres en liste nommée (length() = nb entrées) selon leur forme.
+    .n_entries <- function(x) if (is.data.frame(x)) nrow(x) else length(x)
 
     # Fichiers attendus
     expected_files <- c(
@@ -192,7 +207,7 @@ FILES_TO_SYNC <- c(
     if (file.exists(marees_path)) {
         library(jsonlite)
         mr <- fromJSON(marees_path)
-        n <- nrow(mr)
+        n <- .n_entries(mr)
         .log(sprintf("marees.json : %d jours", n))
         if (n < 360) errors <- c(errors, sprintf("marees.json : seulement %d jours (attendu ≥ 360)", n))
     }
@@ -202,7 +217,7 @@ FILES_TO_SYNC <- c(
     if (file.exists(bathy_path)) {
         library(jsonlite)
         bs <- fromJSON(bathy_path)
-        n <- length(bs)
+        n <- .n_entries(bs)
         .log(sprintf("bathy_sites.json : %d sites", n))
         if (n < 40) errors <- c(errors, sprintf("bathy_sites.json : seulement %d sites (attendu ≥ 40)", n))
     }
