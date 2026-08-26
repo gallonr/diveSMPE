@@ -153,7 +153,7 @@ const App = (() => {
 
     // ── Header : Déconnexion
     document.getElementById('btn-logout')?.addEventListener('click', () => {
-      if (confirm('Se déconnecter ?')) Auth.logout();
+      Auth.logout();
     });
 
     // ── Header : Menu secondaire (···)
