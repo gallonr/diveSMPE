@@ -58,13 +58,22 @@ const Sites = (() => {
     return CONFIG.TYPE_SITE[typeSite.toLowerCase()] || CONFIG.TYPE_SITE.default;
   }
 
-  // BDD pas encore complètement renseignée pour le mouillage (cf.
-  // specs/2026-07-28-type-mouillage-design.md) : renvoie null si absent ou
-  // valeur non reconnue, pour ne pas afficher de badge "non renseigné" sur
-  // la majorité des sites tant que la BDD n'est pas complétée.
+  // BDD pas encore complètement renseignée/reformulée pour le mouillage (cf.
+  // specs/2026-07-28-type-mouillage-design.md) : certains sites portent
+  // encore l'ancienne valeur texte libre (ex. "Ancre - Tête de roche" au
+  // lieu de "ancre"). On recherche donc le mot-clé contenu dans la valeur
+  // plutôt qu'une égalité stricte, pour afficher quand même le bon badge.
+  // Renvoie null si absent ou valeur non reconnue, pour ne pas afficher de
+  // badge "non renseigné" sur la majorité des sites tant que la BDD n'est
+  // pas complétée.
   function _getMouillageInfo(mouillage) {
     if (!mouillage) return null;
-    return CONFIG.TYPE_MOUILLAGE[mouillage.toLowerCase()] || null;
+    const val = mouillage.toLowerCase();
+    if (CONFIG.TYPE_MOUILLAGE[val]) return CONFIG.TYPE_MOUILLAGE[val];
+    for (const cle of ['fixe', 'ancre', 'gueuse']) {
+      if (val.includes(cle)) return CONFIG.TYPE_MOUILLAGE[cle];
+    }
+    return null;
   }
 
   function _afficherListe(sites) {
@@ -115,7 +124,10 @@ const Sites = (() => {
     if (mouillageFilter && mouillageFilter !== 'all') {
       resultats = resultats.filter(f => {
         const m = (f.properties.mouillage || '').toLowerCase();
-        return m === mouillageFilter;
+        // .includes() plutôt qu'égalité stricte : certaines valeurs XLSX pas
+        // encore reformulées portent un suffixe libre (ex. "Ancre - Tête de
+        // roche") — cf. specs/2026-07-28-type-mouillage-design.md.
+        return m.includes(mouillageFilter);
       });
     }
     if (profFilter && profFilter !== 'all') {
