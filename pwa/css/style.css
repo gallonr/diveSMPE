@@ -1437,27 +1437,29 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 .port-ok  { color: #2ecc71; }
 .port-bloque { color: #e74c3c; }
 
-/* ── Widget filtre mouillage (carte, coin haut-droit) ────────
+/* ── Widget filtre mouillage (contrôle Leaflet, coin haut-droit) ────
    FAB toujours visible + panneau déroulant, pour appliquer le filtre
-   mouillage sans devoir ouvrir le panneau latéral (utile sur smartphone). */
+   mouillage sans devoir ouvrir le panneau latéral (utile sur smartphone).
+   Injecté comme contrôle Leaflet (position 'topright') dans carte.js afin
+   de s'empiler proprement sous le sélecteur de couches (même coin) sans
+   superposition — donc position relative au conteneur Leaflet, pas fixed. */
 .map-filtre-mouillage {
-  position: fixed;
-  top: calc(var(--header-h) + var(--bandeau-h) + 12px);
-  right: 12px;
-  z-index: 810;
+  position: relative;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 .btn-filtre-mouillage {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1px solid rgba(58, 175, 168, 0.35);
-  background: rgba(3, 31, 27, 0.92);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: var(--blanc);
-  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 4px;
+  border: 2px solid rgba(0,0,0,0.2);
+  background: var(--blanc);
+  color: #333;
+  font-size: 17px;
   cursor: pointer;
-  box-shadow: var(--shadow);
+  box-shadow: 0 1px 5px rgba(0,0,0,0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1467,10 +1469,11 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 .btn-filtre-mouillage.filtre-actif {
   background: #c47f17;
   border-color: #c47f17;
+  color: var(--blanc);
 }
 .panel-filtre-mouillage {
   position: absolute;
-  top: 52px;
+  top: 40px;
   right: 0;
   background: rgba(3, 31, 27, 0.95);
   backdrop-filter: blur(6px);

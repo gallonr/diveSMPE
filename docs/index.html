@@ -145,23 +145,10 @@
   ══════════════════════════════════════════════════════════════ -->
   <div id="port-widget" class="port-widget hidden"></div>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       WIDGET FILTRE MOUILLAGE (flottant sur la carte, coin haut-droit)
-       Bouton FAB toujours visible (même panneau sites fermé) pour
-       sélectionner/appliquer le filtre mouillage sans ouvrir le menu.
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="map-filtre-mouillage" class="map-filtre-mouillage">
-    <button id="btn-filtre-mouillage" class="btn-filtre-mouillage" title="Filtrer par mouillage" aria-label="Filtrer par mouillage">
-      ⚓
-    </button>
-    <div id="panel-filtre-mouillage" class="panel-filtre-mouillage hidden">
-      <div class="panel-filtre-titre">Mouillage</div>
-      <button class="filter-mouillage-btn active" data-mouillage="all">Tous</button>
-      <button class="filter-mouillage-btn" data-mouillage="fixe">🧱 Fixe</button>
-      <button class="filter-mouillage-btn" data-mouillage="ancre">⚓ Ancre</button>
-      <button class="filter-mouillage-btn" data-mouillage="gueuse">🟠 Gueuse</button>
-    </div>
-  </div>
+  <!-- Widget filtre mouillage : injecté dynamiquement comme contrôle
+       Leaflet (carte.js, _ajouterControleFiltreMouillage) en position
+       'topright', pour s'empiler proprement sous le sélecteur de couches
+       sans superposition, plutôt qu'en position:fixed dans le HTML. -->
 
   <!-- ═══════════════════════════════════════════════════════════
        HUD NAVIGATION (flottant sur la carte, coin bas-gauche)

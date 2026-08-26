@@ -159,6 +159,11 @@ const Carte = (() => {
     // Contrôle vent Open-Meteo (aucune clé requise)
     _ajouterControleVent();
 
+    // Widget filtre mouillage — vrai contrôle Leaflet (position 'topright')
+    // pour que Leaflet l'empile automatiquement sous le contrôle des
+    // couches, sans superposition (les deux partagent le même coin).
+    _ajouterControleFiltreMouillage();
+
     return _map;
   }
 
@@ -376,6 +381,36 @@ const Carte = (() => {
     return { temperature, ventBarbules, precipitation };
   }
 
+  // ── Contrôle filtre mouillage ────────────────────────────────
+  // Vrai contrôle Leaflet (pas un <div> flottant en position:fixed) pour
+  // profiter de l'empilement automatique des contrôles dans le même coin
+  // ('topright', partagé avec le sélecteur de couches) et éviter toute
+  // superposition, quelle que soit la taille d'écran.
+
+  function _ajouterControleFiltreMouillage() {
+    const FiltreMouillageControl = L.Control.extend({
+      options: { position: 'topright' },
+
+      onAdd() {
+        const div = L.DomUtil.create('div', 'map-filtre-mouillage');
+        div.innerHTML = `
+          <button id="btn-filtre-mouillage" class="btn-filtre-mouillage" title="Filtrer par mouillage" aria-label="Filtrer par mouillage">⚓</button>
+          <div id="panel-filtre-mouillage" class="panel-filtre-mouillage hidden">
+            <div class="panel-filtre-titre">Mouillage</div>
+            <button class="filter-mouillage-btn active" data-mouillage="all">Tous</button>
+            <button class="filter-mouillage-btn" data-mouillage="fixe">🧱 Fixe</button>
+            <button class="filter-mouillage-btn" data-mouillage="ancre">⚓ Ancre</button>
+            <button class="filter-mouillage-btn" data-mouillage="gueuse">🟠 Gueuse</button>
+          </div>
+        `;
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+        return div;
+      },
+    });
+    new FiltreMouillageControl().addTo(_map);
+  }
+
   // ── Contrôle vent Open-Meteo ─────────────────────────────────
 
   function _directionVentCarte(deg) {
@@ -588,6 +623,24 @@ const Carte = (() => {
 
   function getMap() { return _map; }
 
+  // ── Filtrage des marqueurs (recherche + filtres type/prof/mouillage) ──
+
+  /**
+   * Affiche uniquement les marqueurs dont le siteID figure dans l'ensemble
+   * fourni (résultat de Sites.filtrer). `null`/`undefined` réaffiche tout.
+   * @param {Set<string>|null} idsVisibles
+   */
+  function filtrerMarqueurs(idsVisibles) {
+    if (!_layerSites) return;
+    _layerSites.eachLayer(layer => {
+      const props = layer.feature && layer.feature.properties;
+      if (!props) return;
+      const visible = !idsVisibles || idsVisibles.has(props.siteID);
+      const el = layer.getElement && layer.getElement();
+      if (el) el.style.display = visible ? '' : 'none';
+    });
+  }
+
   return {
     init,
     afficherSites,
@@ -600,6 +653,7 @@ const Carte = (() => {
     setOverlayOpacity,
     getOverlayOpacity,
     majEtatsMaree,
+    filtrerMarqueurs,
     getMap,
   };
 })();

@@ -154,6 +154,16 @@ const Sites = (() => {
       });
     }
     _afficherListe(resultats);
+
+    // Filtrer aussi les marqueurs sur la carte (pas seulement la liste),
+    // pour que la sélection type/profondeur/mouillage se reflète visuellement.
+    if (typeof Carte !== 'undefined' && Carte.filtrerMarqueurs) {
+      const auMoinsUnFiltre = (typeFilter && typeFilter !== 'all')
+        || (profFilter && profFilter !== 'all')
+        || (mouillageFilter && mouillageFilter !== 'all')
+        || !!terme;
+      Carte.filtrerMarqueurs(auMoinsUnFiltre ? new Set(resultats.map(f => f.properties.siteID)) : null);
+    }
   }
 
   // ── Sélection d'un site ───────────────────────────────────────
