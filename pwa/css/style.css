@@ -1445,15 +1445,21 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
    superposition — donc position relative au conteneur Leaflet, pas fixed. */
 .map-filtre-mouillage {
   position: relative;
-  margin: 0 !important;
+  /* Écart plus marqué que le margin-top:10px par défaut de Leaflet entre
+     ce contrôle et le sélecteur de couches juste au-dessus, pour bien les
+     distinguer visuellement (au lieu de margin:0 qui les collait). */
+  margin: 22px 10px 0 0 !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }
 .btn-filtre-mouillage {
-  width: 34px;
-  height: 34px;
-  border-radius: 4px;
+  /* Mêmes dimensions que .leaflet-control-layers-toggle (36px, 44px sur
+     tactile) pour un alignement pixel-perfect avec le sélecteur de couches
+     juste au-dessus (sinon les deux boutons semblent désalignés/décalés). */
+  width: 36px;
+  height: 36px;
+  border-radius: 5px;
   border: 2px solid rgba(0,0,0,0.2);
   background: var(--blanc);
   color: #333;
@@ -1465,6 +1471,10 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
   justify-content: center;
   transition: all var(--transition);
 }
+.leaflet-touch .btn-filtre-mouillage {
+  width: 44px;
+  height: 44px;
+}
 .btn-filtre-mouillage:hover,
 .btn-filtre-mouillage.filtre-actif {
   background: #c47f17;
@@ -1473,7 +1483,7 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 .panel-filtre-mouillage {
   position: absolute;
-  top: 40px;
+  top: 42px;
   right: 0;
   background: rgba(3, 31, 27, 0.95);
   backdrop-filter: blur(6px);
