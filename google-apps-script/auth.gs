@@ -62,7 +62,13 @@ function _demanderLien(payload, props) {
   const exp = Date.now() + SESSION_DUREE_MS;
   const token = _construireToken(email, exp, props.getProperty('AUTH_TOKEN_SECRET'));
   const pwaUrl = props.getProperty('PWA_URL') || 'https://gallonr.github.io/diveSMPE/';
-  const lien = pwaUrl + '?token=' + encodeURIComponent(token);
+  // NB : `token` est déjà de la forme `<payload URI-encodé>:<signature hex>`
+  // (cf. _construireToken). Ne PAS ré-encoder ici avec encodeURIComponent,
+  // sinon le lien contient un double encodage (%2522 au lieu de %22) que
+  // URLSearchParams ne décode qu'une fois côté client, ce qui casse la
+  // signature à la vérification. Le ':' et les '%xx' déjà présents sont
+  // sans danger dans une query string.
+  const lien = pwaUrl + '?token=' + token;
 
   MailApp.sendEmail({
     to: email,
