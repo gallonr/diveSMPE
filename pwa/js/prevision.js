@@ -211,6 +211,11 @@ const Prevision = (() => {
       if (biEl) biEl.classList.remove('hidden');
       // Déléguer au module BiPlongee (conteneur = prev-bi-resultats)
       if (typeof BiPlongee !== 'undefined') {
+        if (BiPlongee.definirIntervalleSurface) {
+          const sMin = Number(document.getElementById('prev-surface-min')?.value);
+          const sMax = Number(document.getElementById('prev-surface-max')?.value);
+          BiPlongee.definirIntervalleSurface(sMin, sMax);
+        }
         BiPlongee.afficher(dateStr, 'prev-bi-resultats');
       }
       return;
@@ -461,8 +466,10 @@ const Prevision = (() => {
       _mode2tanks = e.target.checked;
       const infoEl    = document.getElementById('prev-2tanks-info');
       const timeRow   = document.getElementById('prev-time-row');
+      const surfaceEl = document.getElementById('prev-surface-reglage');
       if (_mode2tanks) {
         infoEl?.classList.remove('hidden');
+        surfaceEl?.classList.remove('hidden');
         timeRow?.classList.add('hidden');    // champ heure inutile en mode 2 tanks
         // Vider la zone résultats bi-journée sans lancer le calcul
         const biEl = document.getElementById('prev-bi-resultats');
@@ -475,6 +482,7 @@ const Prevision = (() => {
         document.getElementById('prev-port')?.classList.add('hidden');
       } else {
         infoEl?.classList.add('hidden');
+        surfaceEl?.classList.add('hidden');
         timeRow?.classList.remove('hidden'); // restaurer le champ heure
         document.getElementById('prev-bi-resultats')?.classList.add('hidden');
         document.getElementById('prev-sites')?.classList.remove('hidden');
@@ -484,6 +492,17 @@ const Prevision = (() => {
         _calculer();
       }
     });
+
+    // Intervalle de surface (mode 2 tanks) — appliqué au prochain calcul
+    const _appliquerIntervalleSurface = () => {
+      if (typeof BiPlongee === 'undefined' || !BiPlongee.definirIntervalleSurface) return;
+      const min = Number(document.getElementById('prev-surface-min')?.value);
+      const max = Number(document.getElementById('prev-surface-max')?.value);
+      BiPlongee.definirIntervalleSurface(min, max);
+      if (_mode2tanks) _calculer();
+    };
+    document.getElementById('prev-surface-min')?.addEventListener('change', _appliquerIntervalleSurface);
+    document.getElementById('prev-surface-max')?.addEventListener('change', _appliquerIntervalleSurface);
 
     // Bascule sites prioritaires / tous les sites
     document.getElementById('btn-prev-tous-sites')?.addEventListener('click', () => {

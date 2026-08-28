@@ -2166,6 +2166,28 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   padding: 2px 8px;
 }
 
+.prev-surface-reglage {
+  padding: 6px 16px 8px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--gris-texte);
+}
+.prev-surface-reglage.hidden { display: none; }
+.prev-surface-label { white-space: nowrap; }
+.prev-surface-input {
+  width: 56px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,180,216,0.35);
+  background: transparent;
+  color: var(--texte-clair);
+  font-size: 12px;
+}
+.prev-surface-unite { color: var(--gris-texte); }
+
 /* ── Résultats bi-journée dans modal Prévision ───────────────── */
 
 .prev-bi-resultats {

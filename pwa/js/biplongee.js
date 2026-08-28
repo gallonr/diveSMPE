@@ -8,7 +8,8 @@
  *     → les distances sont calculées à vol d'oiseau et multipliées par 1.35
  *       pour estimer le chemin réel (contournement des hauts-fonds / chenaux)
  *   Durée par plongée   : 45 min
- *   Intervalle surface  : ≥ 60 min (inclut le transit A→B)
+ *   Intervalle surface  : réglable à l'écran (30 min à 3h par défaut,
+ *     cf. definirIntervalleSurface), inclut le transit A→B
  *   Profil interdit     : 2e plongée > 1re + tolérance
  *     • Si profondeur réelle dive-2 ≤ 20 m → tolérance 5 m
  *     • Si profondeur réelle dive-2 > 20 m → 0 m (strictement égal ou moins profond)
@@ -26,13 +27,19 @@ const BiPlongee = (() => {
   const VITESSE_KTS    = 15;    // nœuds
   const NAV_COEFF      = 1.35;  // multiplicateur distance vol d'oiseau → chenal estimé
   const DIVE_DUREE_MIN = 45;    // minutes par plongée
-  const SURFACE_MIN    = 60;    // intervalle surface minimum (min)
-  const SURFACE_MAX    = 180;   // intervalle surface maximum (min) — au-delà la paire est exclue
 
   // ── État interne ──────────────────────────────────────────────
 
   let _geojson = null;   // FeatureCollection des sites
   let _fenetresCache = new Map(); // Map<"siteID|dateStr", [{debutMin, finMin}]>
+  let _surfaceMin = 30;   // intervalle surface minimum (min), réglable à l'écran
+  let _surfaceMax = 180;  // intervalle surface maximum (min) — au-delà la paire est exclue
+
+  /** Règle l'intervalle de surface autorisé entre 2 plongées (en minutes). */
+  function definirIntervalleSurface(min, max) {
+    if (Number.isFinite(min) && min >= 0) _surfaceMin = min;
+    if (Number.isFinite(max) && max >= _surfaceMin) _surfaceMax = max;
+  }
 
   // ── Initialisation ────────────────────────────────────────────
 
@@ -153,9 +160,9 @@ const BiPlongee = (() => {
 
         // Transit Site A → Site B (surface + déplacement)
         const transitAB      = _transitMin(latA, lonA, latB, lonB);
-        const surfaceTotale  = Math.max(SURFACE_MIN, transitAB);
-        // Exclure si l'intervalle surface dépasse 3h (trop long)
-        if (surfaceTotale > SURFACE_MAX) continue;
+        const surfaceTotale  = Math.max(_surfaceMin, transitAB);
+        // Exclure si l'intervalle surface dépasse la borne max réglée
+        if (surfaceTotale > _surfaceMax) continue;
         const arriveeB_min   = finP1_min + surfaceTotale;
         const finP2_min      = arriveeB_min + DIVE_DUREE_MIN;
 
@@ -285,11 +292,12 @@ const BiPlongee = (() => {
       : `${_minToHHMM(r.deptMin)} – ${_minToHHMM(r.deptMax)} (${_formatDuree(fenDuree)})`;
 
     // Infos surface inter-plongée
+    const surfaceMinStr = _formatDuree(_surfaceMin);
     let surfaceNote;
-    if (r.transitAB_min >= SURFACE_MIN) {
-      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} (≥ 1h ✓)`;
+    if (r.transitAB_min >= _surfaceMin) {
+      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} (≥ ${surfaceMinStr} ✓)`;
     } else {
-      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} + attente ${_formatDuree(SURFACE_MIN - r.transitAB_min)} = 1h`;
+      surfaceNote = `Transit ${_formatDuree(r.transitAB_min)} + attente ${_formatDuree(_surfaceMin - r.transitAB_min)} = ${surfaceMinStr}`;
     }
 
     return `
@@ -428,8 +436,8 @@ const BiPlongee = (() => {
 
           // Transit A→B constant pour cette paire
           const transitAB     = _transitMin(cA.lat, cA.lon, cB.lat, cB.lon);
-          const surfaceTotale = Math.max(SURFACE_MIN, transitAB);
-          if (surfaceTotale > SURFACE_MAX) continue;
+          const surfaceTotale = Math.max(_surfaceMin, transitAB);
+          if (surfaceTotale > _surfaceMax) continue;
 
           const distAB_nm     = Math.round((transitAB / 60) * VITESSE_KTS / NAV_COEFF * 10) / 10;
           const transitRetour = _transitMin(cB.lat, cB.lon, latP, lonP);
@@ -619,6 +627,6 @@ const BiPlongee = (() => {
     // Tout est piloté depuis Prevision.js via afficher()
   }
 
-  return { init, calculerPaires, afficher, _ouvrirSite, _filtrer };
+  return { init, calculerPaires, afficher, _ouvrirSite, _filtrer, definirIntervalleSurface };
 
 })();
