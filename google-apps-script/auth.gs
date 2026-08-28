@@ -64,12 +64,9 @@ function _demanderLien(payload, props) {
   const exp = Date.now() + SESSION_DUREE_MS;
   const token = _construireToken(email, exp, deviceId, props.getProperty('AUTH_TOKEN_SECRET'));
   const pwaUrl = props.getProperty('PWA_URL') || 'https://gallonr.github.io/diveSMPE/';
-  // NB : `token` est déjà de la forme `<payload URI-encodé>:<signature hex>`
-  // (cf. _construireToken). Ne PAS ré-encoder ici avec encodeURIComponent,
-  // sinon le lien contient un double encodage (%2522 au lieu de %22) que
-  // URLSearchParams ne décode qu'une fois côté client, ce qui casse la
-  // signature à la vérification. Le ':' et les '%xx' déjà présents sont
-  // sans danger dans une query string.
+  // `token` est en base64url (alphabet [A-Za-z0-9_-] + '.') : aucun caractère
+  // n'y nécessite d'encodage URI, donc rien à casser même si un client mail
+  // ou un scanner de liens ("safe links") ré-encode/redirige l'URL en route.
   const lien = pwaUrl + '?token=' + token;
 
   MailApp.sendEmail({
@@ -123,32 +120,52 @@ function _trouverUtilisateur(email, props) {
   return null;
 }
 
+// Token = base64url(JSON) + '.' + signature hex. Le base64url (alphabet
+// [A-Za-z0-9_-]) ne contient aucun caractère réservé en URI : rien à
+// percent-encoder, donc rien qu'un client mail / scanner de liens / clic
+// navigateur puisse décoder différemment selon le chemin (clic vs collage).
+// Ancien format (JSON + encodeURIComponent, séparateur ':') abandonné après
+// des échecs de clic en conditions réelles (le décodage variait selon que
+// le lien passait par un simple clic ou une réécriture par le client mail).
+// Cf. specs/2026-08-25-auth-utilisateur-token-design.md.
 function _construireToken(email, exp, deviceId, secret) {
-  const payloadStr = encodeURIComponent(JSON.stringify({ email: email, exp: exp, device_id: deviceId }));
-  return payloadStr + ':' + _hmacHex(payloadStr, secret);
+  const payloadB64 = _b64UrlEncode(JSON.stringify({ email: email, exp: exp, device_id: deviceId }));
+  return payloadB64 + '.' + _hmacHex(payloadB64, secret);
 }
 
 // `deviceId` = identifiant local envoyé par le client qui présente le token
 // (pas celui du payload signé). Un token copié/collé sur un autre appareil
 // porte un `device_id` de payload différent de celui de l'appareil qui
 // tente de le vérifier : rejeté ici, même si la signature HMAC est valide.
-// Cf. specs/2026-08-25-auth-utilisateur-token-design.md.
 function _verifierToken(token, deviceId, secret) {
-  const idx = String(token).indexOf(':');
+  const idx = String(token).lastIndexOf('.');
   if (idx === -1) return null;
-  const payloadStr = token.slice(0, idx);
+  const payloadB64 = token.slice(0, idx);
   const sig = token.slice(idx + 1);
-  if (!secret || sig !== _hmacHex(payloadStr, secret)) return null;
+  if (!secret || sig !== _hmacHex(payloadB64, secret)) return null;
 
   let donnees;
   try {
-    donnees = JSON.parse(decodeURIComponent(payloadStr));
+    donnees = JSON.parse(_b64UrlDecode(payloadB64));
   } catch (err) {
     return null;
   }
   if (!donnees.email || !donnees.exp || Date.now() > donnees.exp) return null;
   if (!donnees.device_id || donnees.device_id !== deviceId) return null;
   return donnees;
+}
+
+function _b64UrlEncode(str) {
+  return Utilities.base64EncodeWebSafe(str).replace(/=+$/, '');
+}
+
+function _b64UrlDecode(str) {
+  let s = String(str);
+  const pad = s.length % 4;
+  if (pad === 2) s += '==';
+  else if (pad === 3) s += '=';
+  else if (pad !== 0) throw new Error('base64url invalide');
+  return Utilities.newBlob(Utilities.base64DecodeWebSafe(s)).getDataAsString();
 }
 
 function _hmacHex(payloadStr, secret) {

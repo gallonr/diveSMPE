@@ -136,3 +136,27 @@ Correctif : `auth.js` génère un `device_id` aléatoire (`crypto.randomUUID()`,
 Limite assumée : une copie complète de `localStorage` (et pas seulement du token) vers un autre navigateur contournerait la protection — hors périmètre, cohérent avec le niveau de menace « interne au club » déjà accepté ailleurs (cf. commentaire sur la comparaison non constant-time du secret dans `auth.gs`).
 
 Fichiers modifiés : `pwa/js/auth.js`, `google-apps-script/auth.gs` (redéploiement manuel requis, cf. `google-apps-script/README-auth.md`), `pwa/sw.js` (bump `VERSION`).
+
+### Bug découvert en testant le device binding — parsing du token après un clic
+
+En testant le correctif ci-dessus, le clic sur le lien magique échouait ("Lien invalide ou expiré") alors que coller le même token dans le champ dédié fonctionnait. Cause, dans `_verifierToken` (`auth.gs`), préexistante au `device_id` :
+
+- Le token a la forme `<JSON encodé via encodeURIComponent>:<signature hex>`.
+- Un token **collé** depuis le texte de l'email reste sous cette forme encodée : un seul `:` littéral (le vrai séparateur), les `:` du JSON étant encore `%3A`.
+- Un token **cliqué** est lu par `URLSearchParams`, qui décode tout le `%`-encodage d'un coup — y compris les `%3A` internes au JSON (`"email":`, `"exp":`, `"device_id":`). Résultat : plusieurs `:` littéraux, et un payload déjà en clair au lieu de la forme encodée qui a servi à signer.
+
+Deux conséquences, deux correctifs dans `_verifierToken` :
+1. `indexOf(':')` tombait sur le premier `:` du JSON au lieu du vrai séparateur → remplacé par `lastIndexOf(':')` (la signature hex n'en contient jamais).
+2. Une fois le bon découpage fait, la signature HMAC ne matchait toujours pas côté clic car elle avait été calculée sur la forme **encodée**, reçue en clair après décodage navigateur → normalisation ajoutée : `decodeURIComponent` (no-op si déjà décodé) puis `encodeURIComponent` pour reconstituer la forme canonique signée, avant comparaison HMAC.
+
+Validé par simulation (Node, reproduisant `URLSearchParams` + HMAC-SHA256) puis par test réel (clic sur un lien reçu par email, sur le même appareil que la demande).
+
+### Échec persistant en conditions réelles → migration vers base64url
+
+Après le correctif ci-dessus, un **nouveau** lien (généré après redéploiement) échouait encore au clic, alors que coller le même token fonctionnait — signe que le token lui-même était valide (signature, `device_id` OK) mais que la chaîne recevait une transformation supplémentaire quelque part entre l'envoi de l'email et l'ouverture du lien dans le navigateur (probablement un client mail/webmail ou un scanner de liens de type "safe links" qui ré-échappe ou ré-encode l'URL). Plutôt que de rustiner encore le format `JSON encodé + ':' + signature`, le format du token a été changé pour **base64url** (alphabet `[A-Za-z0-9_-]` + `.` comme séparateur, façon JWT) :
+
+- Aucun caractère du token n'est un caractère réservé en URI → rien à percent-encoder, donc rien qu'une réécriture d'URL (clic normal, ré-encodage complet, redirecteur type Outlook Safe Links) puisse modifier différemment selon le chemin emprunté.
+- Implémenté avec `Utilities.base64EncodeWebSafe`/`base64DecodeWebSafe` (natif Apps Script, pas de lib externe, padding `=` géré manuellement), cohérent avec le style existant (HMAC déjà fait sans lib externe).
+- Validé par simulation Node sur 4 scénarios : clic normal, lien entièrement ré-encodé, lien passé par un redirecteur type "safe links", collage direct — les 4 donnent le même résultat.
+
+Fichier modifié : `google-apps-script/auth.gs` uniquement (`pwa/js/auth.js` ne parse jamais la structure interne du token, aucun changement requis côté client). Redéploiement manuel requis.
