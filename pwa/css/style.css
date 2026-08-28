@@ -1660,6 +1660,16 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   text-transform: capitalize;
 }
 
+/* Bascule sites prioritaires / tous les sites */
+.prev-priorite-toggle {
+  display: flex;
+  justify-content: center;
+  padding: 8px 12px;
+  background: rgba(0,180,216,0.07);
+  border-top: 1px solid rgba(0,180,216,0.15);
+}
+.prev-priorite-toggle.hidden { display: none; }
+
 /* Filtre profondeur dans la prévision */
 .prev-prof-filter {
   display: flex;

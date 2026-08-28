@@ -96,7 +96,7 @@ cols_voulues <- c(
   "latitude", "longitude",
   "typeSite", "accessibilite", "typePlongee", "niveauPlongee",
   "accesVent", "houle", "mouillage", "maree", "tpsEtale",
-  "commentaire", "photoSite"
+  "commentaire", "photoSite", "prioritePrevision"
 )
 
 cols_absentes <- setdiff(cols_voulues, names(sf_sites))
@@ -138,6 +138,15 @@ if ("mouillage" %in% names(sf_pwa)) {
       paste(anomalies, collapse = ", ")
     ))
   }
+}
+
+# Colonne "prioritePrevision" (VRAI/FAUX) — sites mis en avant par défaut
+# dans l'écran Prévision de plongeabilité (bouton "Voir tous les sites" pour
+# le reste). Optionnelle : si absente ou vide, aucun site n'est prioritaire
+# et la PWA affiche alors tous les sites sans bouton de bascule.
+if ("prioritePrevision" %in% names(sf_pwa)) {
+  vals <- toupper(trimws(as.character(sf_pwa$prioritePrevision)))
+  sf_pwa$prioritePrevision <- vals %in% c("VRAI", "TRUE", "1")
 }
 
 # =============================================================================

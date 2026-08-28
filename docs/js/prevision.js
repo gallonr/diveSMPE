@@ -13,6 +13,7 @@ const Prevision = (() => {
   let _hauteurCourante = null; // hauteur de marée calculée pour la date/heure choisie
   let _filtreProf = 'all';     // filtre profondeur : 'all' | 6 | 10 | 20 | '20+'
   let _mode2tanks = false;     // true = mode bi-journée actif
+  let _tousLesSites = false;   // false = uniquement prioritePrevision=true (si dispo), true = tous
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -178,6 +179,7 @@ const Prevision = (() => {
       // Cacher les éléments mode 1 plongée
       document.getElementById('prev-sites')?.classList.add('hidden');
       document.getElementById('prev-prof-filter')?.classList.add('hidden');
+      document.getElementById('prev-priorite-toggle')?.classList.add('hidden');
       document.getElementById('prev-maree-bloc')?.classList.add('hidden');
       document.getElementById('prev-port')?.classList.add('hidden');
       // Afficher les résultats bi-journée
@@ -235,6 +237,7 @@ const Prevision = (() => {
 
     if (!geojson || !entree) {
       document.getElementById('prev-prof-filter')?.classList.add('hidden');
+      document.getElementById('prev-priorite-toggle')?.classList.add('hidden');
       conteneur.innerHTML = hauteur === null
         ? '<p class="prev-empty">Aucune donnée de marée disponible pour cette date.<br>Les prévisions couvrent la plage de marees.json.</p>'
         : '<p class="prev-empty">Sites non disponibles.</p>';
@@ -245,8 +248,28 @@ const Prevision = (() => {
     const filterBar = document.getElementById('prev-prof-filter');
     if (filterBar) filterBar.classList.remove('hidden');
 
+    // Bascule sites prioritaires / tous les sites — la colonne
+    // `prioritePrevision` (Google Sheet BDD sites) est optionnelle : si elle
+    // n'est pas encore renseignée, aucun site n'est marqué prioritaire et on
+    // affiche tous les sites sans même montrer le bouton de bascule.
+    const toutesFeatures = geojson.features;
+    const featuresPrioritaires = toutesFeatures.filter(f => f.properties.prioritePrevision === true);
+    const toggleEl = document.getElementById('prev-priorite-toggle');
+    const btnToggle = document.getElementById('btn-prev-tous-sites');
+    const aDesPrioritaires = featuresPrioritaires.length > 0 && featuresPrioritaires.length < toutesFeatures.length;
+
+    if (toggleEl) toggleEl.classList.toggle('hidden', !aDesPrioritaires);
+    let features;
+    if (aDesPrioritaires && !_tousLesSites) {
+      features = featuresPrioritaires;
+      if (btnToggle) btnToggle.textContent = `Voir tous les sites (${toutesFeatures.length})`;
+    } else {
+      features = toutesFeatures;
+      if (btnToggle) btnToggle.textContent = `Revenir aux sites prioritaires (${featuresPrioritaires.length})`;
+    }
+
     // Calculer l'état de chaque site pour la date/heure choisie
-    let resultats = geojson.features.map(feat => {
+    let resultats = features.map(feat => {
       const etat = MaréeSite.calculerEtat(feat.properties, entree, targetDate);
       const profMaxZH = feat.properties.profMax;
       const profMaxReelle = (profMaxZH !== null && profMaxZH !== undefined && hauteur !== null)
@@ -439,6 +462,7 @@ const Prevision = (() => {
         biEl?.classList.remove('hidden');
         document.getElementById('prev-sites')?.classList.add('hidden');
         document.getElementById('prev-prof-filter')?.classList.add('hidden');
+        document.getElementById('prev-priorite-toggle')?.classList.add('hidden');
         document.getElementById('prev-maree-bloc')?.classList.add('hidden');
         document.getElementById('prev-port')?.classList.add('hidden');
       } else {
@@ -451,6 +475,12 @@ const Prevision = (() => {
         // Relancer le calcul 1 plongée avec les paramètres actuels
         _calculer();
       }
+    });
+
+    // Bascule sites prioritaires / tous les sites
+    document.getElementById('btn-prev-tous-sites')?.addEventListener('click', () => {
+      _tousLesSites = !_tousLesSites;
+      _calculer();
     });
 
     // Filtre profondeur
