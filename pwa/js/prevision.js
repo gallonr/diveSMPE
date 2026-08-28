@@ -167,6 +167,29 @@ const Prevision = (() => {
     }
   }
 
+  // ── Bascule sites prioritaires / tous les sites ────────────────
+  // Partagée entre le mode 1 plongée (ici) et le mode bi-journée
+  // (biplongee.js, via getFeaturesActives) pour n'avoir qu'un seul bouton
+  // et un seul état. La colonne `prioritePrevision` (Google Sheet BDD
+  // sites) est optionnelle : si elle n'est pas encore renseignée, aucun
+  // site n'est marqué prioritaire et on affiche tous les sites sans même
+  // montrer le bouton de bascule.
+  function _appliquerFiltragePriorite(geojson) {
+    const toutesFeatures = geojson.features;
+    const featuresPrioritaires = toutesFeatures.filter(f => f.properties.prioritePrevision === true);
+    const toggleEl = document.getElementById('prev-priorite-toggle');
+    const btnToggle = document.getElementById('btn-prev-tous-sites');
+    const aDesPrioritaires = featuresPrioritaires.length > 0 && featuresPrioritaires.length < toutesFeatures.length;
+
+    if (toggleEl) toggleEl.classList.toggle('hidden', !aDesPrioritaires);
+    if (aDesPrioritaires && !_tousLesSites) {
+      if (btnToggle) btnToggle.textContent = `Voir tous les sites (${toutesFeatures.length})`;
+      return featuresPrioritaires;
+    }
+    if (btnToggle) btnToggle.textContent = `Revenir aux sites prioritaires (${featuresPrioritaires.length})`;
+    return toutesFeatures;
+  }
+
   // ── Calcul et rendu des résultats ─────────────────────────────
 
   function _calculer() {
@@ -179,7 +202,8 @@ const Prevision = (() => {
       // Cacher les éléments mode 1 plongée
       document.getElementById('prev-sites')?.classList.add('hidden');
       document.getElementById('prev-prof-filter')?.classList.add('hidden');
-      document.getElementById('prev-priorite-toggle')?.classList.add('hidden');
+      // prev-priorite-toggle reste géré par BiPlongee.afficher() ci-dessous
+      // (bouton partagé avec le mode 1 plongée, cf. getFeaturesActives).
       document.getElementById('prev-maree-bloc')?.classList.add('hidden');
       document.getElementById('prev-port')?.classList.add('hidden');
       // Afficher les résultats bi-journée
@@ -248,25 +272,9 @@ const Prevision = (() => {
     const filterBar = document.getElementById('prev-prof-filter');
     if (filterBar) filterBar.classList.remove('hidden');
 
-    // Bascule sites prioritaires / tous les sites — la colonne
-    // `prioritePrevision` (Google Sheet BDD sites) est optionnelle : si elle
-    // n'est pas encore renseignée, aucun site n'est marqué prioritaire et on
-    // affiche tous les sites sans même montrer le bouton de bascule.
-    const toutesFeatures = geojson.features;
-    const featuresPrioritaires = toutesFeatures.filter(f => f.properties.prioritePrevision === true);
-    const toggleEl = document.getElementById('prev-priorite-toggle');
-    const btnToggle = document.getElementById('btn-prev-tous-sites');
-    const aDesPrioritaires = featuresPrioritaires.length > 0 && featuresPrioritaires.length < toutesFeatures.length;
-
-    if (toggleEl) toggleEl.classList.toggle('hidden', !aDesPrioritaires);
-    let features;
-    if (aDesPrioritaires && !_tousLesSites) {
-      features = featuresPrioritaires;
-      if (btnToggle) btnToggle.textContent = `Voir tous les sites (${toutesFeatures.length})`;
-    } else {
-      features = toutesFeatures;
-      if (btnToggle) btnToggle.textContent = `Revenir aux sites prioritaires (${featuresPrioritaires.length})`;
-    }
+    // Bascule sites prioritaires / tous les sites (partagée avec le mode
+    // bi-journée, cf. _appliquerFiltragePriorite / getFeaturesActives).
+    const features = _appliquerFiltragePriorite(geojson);
 
     // Calculer l'état de chaque site pour la date/heure choisie
     let resultats = features.map(feat => {
@@ -494,5 +502,5 @@ const Prevision = (() => {
     });
   }
 
-  return { init, ouvrir, fermer, _toggleRouge, _toggleGris };
+  return { init, ouvrir, fermer, _toggleRouge, _toggleGris, getFeaturesActives: _appliquerFiltragePriorite };
 })();

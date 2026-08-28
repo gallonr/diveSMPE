@@ -359,7 +359,12 @@ const BiPlongee = (() => {
       return;
     }
 
-    const features = geojson.features;
+    // Filtre sites prioritaires partagé avec le mode 1 plongée (même
+    // bouton #btn-prev-tous-sites, même état) — réduit aussi le nombre de
+    // paires à calculer ci-dessous (O(n²)).
+    const features = (typeof Prevision !== 'undefined' && Prevision.getFeaturesActives)
+      ? Prevision.getFeaturesActives(geojson)
+      : geojson.features;
     const n        = features.length;
     _fenetresCache.clear();
     const resultats = [];
