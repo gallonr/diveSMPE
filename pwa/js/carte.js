@@ -101,7 +101,7 @@ const Carte = (() => {
         '⚓ OpenSeaMap':         openSeaMap,
         '🏔️ Litto3D SHOM':      litto3d,
         [labelCourants]:         coucheCourants,
-        '�🌡 Temp.': couchesMeteo.temperature,
+        '🌡 Temp.': couchesMeteo.temperature,
         '🌬 Vent':   couchesMeteo.ventBarbules,
         '🌧 Précipitations':    couchesMeteo.precipitation,
       },
