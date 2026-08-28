@@ -52,7 +52,9 @@ function doPost(e) {
 
 function _demanderLien(payload, props) {
   const email = String(payload.email || '').trim().toLowerCase();
+  const deviceId = String(payload.device_id || '');
   if (!email) return _respond(false, 'Email requis');
+  if (!deviceId) return _respond(false, 'device_id requis');
 
   const utilisateur = _trouverUtilisateur(email, props);
   if (!utilisateur || !utilisateur.actif) {
@@ -60,7 +62,7 @@ function _demanderLien(payload, props) {
   }
 
   const exp = Date.now() + SESSION_DUREE_MS;
-  const token = _construireToken(email, exp, props.getProperty('AUTH_TOKEN_SECRET'));
+  const token = _construireToken(email, exp, deviceId, props.getProperty('AUTH_TOKEN_SECRET'));
   const pwaUrl = props.getProperty('PWA_URL') || 'https://gallonr.github.io/diveSMPE/';
   // NB : `token` est déjà de la forme `<payload URI-encodé>:<signature hex>`
   // (cf. _construireToken). Ne PAS ré-encoder ici avec encodeURIComponent,
@@ -88,7 +90,8 @@ function _demanderLien(payload, props) {
 
 function _verifier(payload, props) {
   const token = String(payload.token || '');
-  const donnees = _verifierToken(token, props.getProperty('AUTH_TOKEN_SECRET'));
+  const deviceId = String(payload.device_id || '');
+  const donnees = _verifierToken(token, deviceId, props.getProperty('AUTH_TOKEN_SECRET'));
   if (!donnees) return _respond(false, 'Token invalide ou expiré');
 
   const utilisateur = _trouverUtilisateur(donnees.email, props);
@@ -120,12 +123,17 @@ function _trouverUtilisateur(email, props) {
   return null;
 }
 
-function _construireToken(email, exp, secret) {
-  const payloadStr = encodeURIComponent(JSON.stringify({ email: email, exp: exp }));
+function _construireToken(email, exp, deviceId, secret) {
+  const payloadStr = encodeURIComponent(JSON.stringify({ email: email, exp: exp, device_id: deviceId }));
   return payloadStr + ':' + _hmacHex(payloadStr, secret);
 }
 
-function _verifierToken(token, secret) {
+// `deviceId` = identifiant local envoyé par le client qui présente le token
+// (pas celui du payload signé). Un token copié/collé sur un autre appareil
+// porte un `device_id` de payload différent de celui de l'appareil qui
+// tente de le vérifier : rejeté ici, même si la signature HMAC est valide.
+// Cf. specs/2026-08-25-auth-utilisateur-token-design.md.
+function _verifierToken(token, deviceId, secret) {
   const idx = String(token).indexOf(':');
   if (idx === -1) return null;
   const payloadStr = token.slice(0, idx);
@@ -139,6 +147,7 @@ function _verifierToken(token, secret) {
     return null;
   }
   if (!donnees.email || !donnees.exp || Date.now() > donnees.exp) return null;
+  if (!donnees.device_id || donnees.device_id !== deviceId) return null;
   return donnees;
 }
 

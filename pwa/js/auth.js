@@ -12,9 +12,29 @@
 const Auth = (() => {
 
   const SESSION_KEY   = 'smpe_auth_v2';
+  const DEVICE_ID_KEY = 'smpe_device_id';
   const SESSION_DUREE_MS = 90 * 24 * 60 * 60 * 1000; // 90 jours, glissant
 
   let _session = null; // { email, nom, token, ts } une fois connecté
+
+  // ── Identifiant d'appareil ───────────────────────────────────
+  // Généré une fois, jamais transmis par email : lie le token signé à
+  // l'appareil qui l'a demandé, pour qu'un token copié/collé (email ou
+  // localStorage) sur un autre appareil soit rejeté par _verifierToken côté
+  // Apps Script. Cf. specs/2026-08-25-auth-utilisateur-token-design.md.
+
+  function _lireOuCreerDeviceId() {
+    try {
+      let id = localStorage.getItem(DEVICE_ID_KEY);
+      if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(DEVICE_ID_KEY, id);
+      }
+      return id;
+    } catch {
+      return crypto.randomUUID(); // stockage indisponible : device_id volatile pour cet onglet
+    }
+  }
 
   // ── Session locale ───────────────────────────────────────────
 
@@ -64,11 +84,14 @@ const Auth = (() => {
   }
 
   async function demanderLien(email) {
-    return _appelWorker('request-link', { email: String(email).trim().toLowerCase() });
+    return _appelWorker('request-link', {
+      email: String(email).trim().toLowerCase(),
+      device_id: _lireOuCreerDeviceId(),
+    });
   }
 
   async function validerToken(token) {
-    const res = await _appelWorker('verify', { token });
+    const res = await _appelWorker('verify', { token, device_id: _lireOuCreerDeviceId() });
     if (res.ok) {
       _session = { email: res.email, nom: res.nom, token, ts: Date.now() };
       _ecrireSession(_session);
@@ -80,7 +103,7 @@ const Auth = (() => {
 
   function _revaliderEnArrierePlan() {
     if (!navigator.onLine || !_session) return;
-    _appelWorker('verify', { token: _session.token }).then(res => {
+    _appelWorker('verify', { token: _session.token, device_id: _lireOuCreerDeviceId() }).then(res => {
       if (res.ok) {
         _session = { email: res.email, nom: res.nom, token: _session.token, ts: Date.now() };
         _ecrireSession(_session);

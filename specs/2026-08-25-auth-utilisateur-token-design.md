@@ -126,3 +126,13 @@ Une PWA ajoutée à l'écran d'accueil (mode standalone) peut ne pas ouvrir un l
 7. Tester un token expiré (modifier manuellement `exp` dans un token de test) et un token malformé collé → vérifier le message d'erreur adapté dans les deux cas.
 8. Vérifier que "rempli par" dans le formulaire retour d'expérience est bien pré-rempli en lecture seule avec le nom de l'utilisateur connecté.
 9. Vérifier sur tablette (après `./sync_docs.sh`) que le SW recharge le nouveau cache (bump `VERSION`).
+
+## Addendum 2026-08-28 — liaison du token à l'appareil (`device_id`)
+
+Problème identifié : le token signé est un bearer token sans liaison à l'appareil. Un poste partagé (ex. ordinateur du club) permet à quiconque de copier le lien/token reçu par email (ou lu dans `localStorage`) et de l'utiliser sur un autre appareil, obtenant un accès personnel non autorisé (session glissante 90 jours).
+
+Correctif : `auth.js` génère un `device_id` aléatoire (`crypto.randomUUID()`, clé `smpe_device_id` en localStorage, distincte de la session, jamais envoyée par email). Il est transmis à `/auth/request-link` et `/auth/verify` (y compris la revalidation silencieuse), embarqué dans le payload signé du token (`{email, exp, device_id}`), et revérifié par `_verifierToken` : un token dont le `device_id` de payload ne correspond pas à celui envoyé par le client est rejeté, même si la signature HMAC est valide.
+
+Limite assumée : une copie complète de `localStorage` (et pas seulement du token) vers un autre navigateur contournerait la protection — hors périmètre, cohérent avec le niveau de menace « interne au club » déjà accepté ailleurs (cf. commentaire sur la comparaison non constant-time du secret dans `auth.gs`).
+
+Fichiers modifiés : `pwa/js/auth.js`, `google-apps-script/auth.gs` (redéploiement manuel requis, cf. `google-apps-script/README-auth.md`), `pwa/sw.js` (bump `VERSION`).
