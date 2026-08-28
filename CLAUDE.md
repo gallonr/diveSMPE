@@ -18,7 +18,7 @@ Cycle de mise à jour : modifier la BDD → `build_all.R` → `./sync_docs.sh` �
 1. **`r/02_process_bdd.R`** — Google Sheet (`GOOGLE_SHEET_BDD_ID` dans `r/config_local.R`, gitignoré, cf. `bdd/README.md`) → `data/sites.geojson` (60 sites, WGS84)
 2. **`r/01_process_las.R`** — LiDAR LITTO3D (~3,8 Go) → `data/bathy_sites.json` + miniatures PNG dans `pwa/data/thumbs/` (44 sites couverts)
 3. **`r/03_generate_profile.R`** — profils bathymétriques + transects
-4. **`r/04_marees_fes.py`** — atlas FES2022 → `data/marees.json` (PM/BM ±1 an, 34 constituantes harmoniques)
+4. **`r/04_marees_fes.py`** — atlas FES2022 → `data/marees.json` (PM/BM depuis aujourd'hui jusqu'au 2028-12-12, cf. `DATE_END`, 34 constituantes harmoniques)
 5. **`r/05_courants_fes.py`** — courants FES2014/2022 → `data/courants_grid.json`
 6. Copie automatique `data/` → `pwa/data/` pour les fichiers synchronisés (`FILES_TO_SYNC` dans `build_all.R:84`)
 7. Validation end-to-end : nombre de features GeoJSON, jours dans `marees.json`, sites dans `bathy_sites.json`

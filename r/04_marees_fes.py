@@ -6,7 +6,8 @@ Stratégie :
   1. Décompresser chaque fichier .nc.xz un par un, extraire amp/phase à Saint-Malo,
      supprimer le .nc temporaire → pas de 18 Go sur disque en simultané.
   2. Sauvegarder les constituantes dans data/constituantes_stmalo.json.
-  3. Calculer les marées ±365 jours via pyfes.evaluate_tide_from_constituents.
+  3. Calculer les marées de date_start à date_end (cf. DATE_END) via
+     pyfes.evaluate_tide_from_constituents.
   4. Détecter PM/BM, calculer les coefficients.
   5. Exporter data/marees.json + pwa/data/marees.json.
 """
@@ -56,13 +57,14 @@ TODAY = date.today()
 DATE_START = TODAY
 
 # La date de fin peut être surchargée via la variable d'environnement
-# MAREES_DATE_END (format YYYY-MM-DD), sinon on garde le comportement
-# par défaut (aujourd'hui + 365 jours).
+# MAREES_DATE_END (format YYYY-MM-DD), sinon on garde la date de fin par
+# défaut ci-dessous (fixée le 2026-08-28 à la demande du club, à repousser
+# quand l'échéance approche).
 _env_end = os.environ.get('MAREES_DATE_END')
 if _env_end:
     DATE_END = date.fromisoformat(_env_end)
 else:
-    DATE_END = TODAY + timedelta(days=365)
+    DATE_END = date.fromisoformat('2028-12-12')
 
 # Pas de temps pour la détection des extrema (10 min)
 DT_MIN = 10
