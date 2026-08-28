@@ -181,21 +181,24 @@ const RetourExperience = (() => {
     if (!dateStr) return { erreur: 'Choisissez une date.' };
     const aujourdhui = _dateLocaleISO();
     if (dateStr > aujourdhui) return { erreur: 'La date ne peut pas être dans le futur.' };
-    if (!hMise || !hSortie) return { erreur: "Renseignez l'heure de mise à l'eau et de sortie." };
-    if (hSortie <= hMise) return { erreur: "L'heure de sortie doit être postérieure à l'heure de mise à l'eau." };
-    if (!bateau) return { erreur: 'Choisissez le bateau.' };
-    if (etatMerDegre === null) return { erreur: "Choisissez l'état de la mer." };
-    if (!ventCode) return { erreur: 'Choisissez le vent.' };
-    if (!courantCode) return { erreur: 'Choisissez le courant ressenti.' };
+    // Seuls site et date sont obligatoires — le reste (heures, bateau, mer,
+    // vent, courant) est utile mais un retour rempli plusieurs jours après
+    // la plongée, sans ces souvenirs précis, doit pouvoir être soumis quand
+    // même (le commentaire libre reste la donnée la plus importante).
+    if (hMise && hSortie && hSortie <= hMise) {
+      return { erreur: "L'heure de sortie doit être postérieure à l'heure de mise à l'eau." };
+    }
 
     const site = Sites.getSiteById(siteID);
     const dMise = _dateHeure(dateStr, hMise);
     const dSortie = _dateHeure(dateStr, hSortie);
-    const etatMer = CONFIG.RETOUR_EXPERIENCE.etatMer.find(e => String(e.degre) === etatMerDegre);
-    const vent = CONFIG.RETOUR_EXPERIENCE.vent.find(v => v.code === ventCode);
-    const etaleMise = Marees.getEtaleProche(dMise);
-    const etaleSortie = Marees.getEtaleProche(dSortie);
-    const entreeJour = Marees.getEntreePourDate(dMise);
+    const etatMer = etatMerDegre !== null
+      ? CONFIG.RETOUR_EXPERIENCE.etatMer.find(e => String(e.degre) === etatMerDegre)
+      : null;
+    const vent = ventCode ? CONFIG.RETOUR_EXPERIENCE.vent.find(v => v.code === ventCode) : null;
+    const etaleMise = dMise ? Marees.getEtaleProche(dMise) : null;
+    const etaleSortie = dSortie ? Marees.getEtaleProche(dSortie) : null;
+    const entreeJour = dMise ? Marees.getEntreePourDate(dMise) : (dSortie ? Marees.getEntreePourDate(dSortie) : null);
 
     return {
       data: {
@@ -205,16 +208,16 @@ const RetourExperience = (() => {
         siteNom: site?.properties?.siteNom || siteID,
         bateau,
         rempliPar,
-        heureMiseEau: hMise,
-        heureSortieEau: hSortie,
-        dureePlongeeMin: Math.round((dSortie - dMise) / 60000),
-        etatMerDegre: Number(etatMerDegre),
+        heureMiseEau: hMise || null,
+        heureSortieEau: hSortie || null,
+        dureePlongeeMin: (dMise && dSortie) ? Math.round((dSortie - dMise) / 60000) : null,
+        etatMerDegre: etatMerDegre !== null ? Number(etatMerDegre) : null,
         etatMerLabel: etatMer?.label || '',
         ventBeaufort: ventCode,
         ventLabel: vent?.label || '',
         courantClasse: courantCode,
-        hauteurEauMiseEau_m: Marees.getHauteurAt(dMise),
-        hauteurEauSortieEau_m: Marees.getHauteurAt(dSortie),
+        hauteurEauMiseEau_m: dMise ? Marees.getHauteurAt(dMise) : null,
+        hauteurEauSortieEau_m: dSortie ? Marees.getHauteurAt(dSortie) : null,
         coefficientJour: entreeJour ? (entreeJour.PM1_coeff || entreeJour.PM2_coeff || null) : null,
         etaleMiseEauType: etaleMise?.type || null,
         etaleMiseEauDeltaMin: etaleMise?.deltaMin ?? null,
