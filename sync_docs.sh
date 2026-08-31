@@ -39,17 +39,26 @@ cp pwa/manifest.json   docs/manifest.json
 sed 's|https://gallonr.github.io/diveSMPE/guide-utilisateur.html|guide-utilisateur.html|g' \
     pwa/index.html > docs/index.html
 
-# Données (générées par r/build_all.R) — sites.geojson, bathy_sites.json
-# (version allégée), marees.json, courants_grid.json + miniatures bathy.
+# Données (générées par r/build_all.R) — bathy_sites.json (version allégée),
+# courants_grid.json + miniatures bathy. sites.geojson et marees.json ne sont
+# plus publiés (servis en live via le Worker Cloudflare) —
+# cf. specs/2026-08-31-live-worker-data-design.md.
 # Sans cette étape, docs/ (le site publié) reste figé sur d'anciennes
 # données même après un build_all.R à jour (incident 2026-08-26).
-cp pwa/data/sites.geojson     docs/data/sites.geojson
 cp pwa/data/bathy_sites.json  docs/data/bathy_sites.json
-cp pwa/data/marees.json       docs/data/marees.json
 if [ -f pwa/data/courants_grid.json ]; then
     cp pwa/data/courants_grid.json docs/data/courants_grid.json
 fi
 rsync -a --delete pwa/data/thumbs/ docs/data/thumbs/
+
+# Marées : publiées dans le KV Cloudflare (données non publiques, cf.
+# specs/2026-08-31-live-worker-data-design.md) plutôt que committées.
+if command -v wrangler >/dev/null 2>&1 && [ -f pwa/data/marees.json ]; then
+    echo "🌊 Publication marees.json dans le KV Cloudflare..."
+    (cd cloudflare-worker && wrangler kv key put "marees" --binding=MAREES_KV --path=../pwa/data/marees.json --remote)
+else
+    echo "⚠️  wrangler introuvable ou pwa/data/marees.json absent — publication KV ignorée."
+fi
 
 echo "✅ Synchronisation terminée"
 
