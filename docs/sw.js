@@ -6,7 +6,7 @@
 
 // ── Configuration ─────────────────────────────────────────────
 const DEBUG   = false;          // Passer à true pour les logs en développement
-const VERSION = 'v56';
+const VERSION = 'v57';
 
 const CACHE_STATIC  = `smpe-static-${VERSION}`;
 const CACHE_DYNAMIC = `smpe-dynamic-${VERSION}`;
@@ -46,8 +46,6 @@ const ASSETS_STATIQUES = [
   BASE + 'js/cgu.js',
   BASE + 'js/tutorial.js',
   BASE + 'js/app.js',
-  BASE + 'data/sites.geojson',
-  BASE + 'data/marees.json',
   BASE + 'data/bathy_sites.json',
   BASE + 'data/courants_grid.json',
   BASE + 'libs/leaflet/leaflet.css',
@@ -103,6 +101,15 @@ self.addEventListener('fetch', event => {
 
   // ── API Open-Meteo (Network First, fallback cache) ──────────
   if (url.hostname.includes('open-meteo.com')) {
+    event.respondWith(_networkFirst(event.request, CACHE_DYNAMIC));
+    return;
+  }
+
+  // ── Worker Cloudflare — /sites et /marees (Network First, fallback cache) ──
+  if (
+    url.hostname === 'mf-wms-proxy.reg-gallon.workers.dev' &&
+    (url.pathname.endsWith('/sites') || url.pathname.endsWith('/marees'))
+  ) {
     event.respondWith(_networkFirst(event.request, CACHE_DYNAMIC));
     return;
   }

@@ -24,6 +24,7 @@ const Sites = (() => {
       const res = await fetch(CONFIG.DATA.sites);
       _geojson = await res.json();
       _sites = _geojson.features;
+      _fusionnerProfondeurs();
       console.log(`✅ ${_sites.length} sites chargés`);
       _majEtatsMaree();
       _afficherListe(_sites);
@@ -40,6 +41,17 @@ const Sites = (() => {
         '<li style="padding:16px;color:#e74c3c;">Erreur de chargement des sites.</li>';
     }
     return _geojson;
+  }
+
+  // profMin/profMax viennent du pipeline LiDAR (bathy_sites.json), pas du
+  // Sheet BDD relayé par le Worker — fusion côté client par siteID.
+  function _fusionnerProfondeurs() {
+    if (typeof Bathy === 'undefined') return;
+    _sites.forEach(f => {
+      const entry = Bathy.get(f.properties.siteID);
+      f.properties.profMin = entry ? entry.profMin : null;
+      f.properties.profMax = entry ? entry.profMax : null;
+    });
   }
 
   function _majEtatsMaree() {

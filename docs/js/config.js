@@ -5,9 +5,9 @@
 const CONFIG = {
   // ── Données ────────────────────────────────────────────────
   DATA: {
-    sites:  'data/sites.geojson',
-    marees: 'data/marees.json',
-    bathy:  'data/bathy_sites.json',   // profils transects LiDAR LITTO3D
+    // sites et marees sont résolues plus bas (après CONFIG.RETOUR_EXPERIENCE),
+    // sur le modèle de CONFIG.RETOUR_EXPERIENCE.bateaux — cf. bas de fichier.
+    bathy: 'data/bathy_sites.json',   // profils transects LiDAR LITTO3D
   },
 
   // ── Carte ──────────────────────────────────────────────────
@@ -205,6 +205,11 @@ const CONFIG = {
 };
 
 CONFIG.RETOUR_EXPERIENCE.bateaux = CONFIG.PORT.bateaux.map(b => b.nom);
+
+// Données servies en live par le Worker (plus de fichiers statiques
+// data/sites.geojson ni data/marees.json — cf. specs/2026-08-31-live-worker-data-design.md)
+CONFIG.DATA.sites  = `${CONFIG.RETOUR_EXPERIENCE.workerUrl}/sites`;
+CONFIG.DATA.marees = `${CONFIG.RETOUR_EXPERIENCE.workerUrl}/marees`;
 
 // Clé de cache Service Worker (incrémentez à chaque mise à jour)
 const SW_CACHE_VERSION = 'smpe-v9';
