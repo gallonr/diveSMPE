@@ -53,11 +53,21 @@ rsync -a --delete pwa/data/thumbs/ docs/data/thumbs/
 
 # Marées : publiées dans le KV Cloudflare (données non publiques, cf.
 # specs/2026-08-31-live-worker-data-design.md) plutôt que committées.
-if command -v wrangler >/dev/null 2>&1 && [ -f pwa/data/marees.json ]; then
-    echo "🌊 Publication marees.json dans le KV Cloudflare..."
-    (cd cloudflare-worker && wrangler kv key put "marees" --binding=MAREES_KV --path=../pwa/data/marees.json --remote)
+# wrangler peut être installé globalement (wrangler dans le PATH) ou n'être
+# joignable que via npx — on gère les deux cas.
+if command -v wrangler >/dev/null 2>&1; then
+    WRANGLER_CMD="wrangler"
+elif command -v npx >/dev/null 2>&1 && (cd cloudflare-worker && npx wrangler --version >/dev/null 2>&1); then
+    WRANGLER_CMD="npx wrangler"
 else
-    echo "⚠️  wrangler introuvable ou pwa/data/marees.json absent — publication KV ignorée."
+    WRANGLER_CMD=""
+fi
+
+if [ -n "$WRANGLER_CMD" ] && [ -f pwa/data/marees.json ]; then
+    echo "🌊 Publication marees.json dans le KV Cloudflare ($WRANGLER_CMD)..."
+    (cd cloudflare-worker && $WRANGLER_CMD kv key put "marees" --binding=MAREES_KV --path=../pwa/data/marees.json --remote)
+else
+    echo "⚠️  wrangler introuvable (ni global ni via npx) ou pwa/data/marees.json absent — publication KV ignorée."
 fi
 
 echo "✅ Synchronisation terminée"
