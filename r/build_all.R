@@ -82,6 +82,10 @@ PWA_DATA_DIR <- "pwa/data"
 
 # Fichiers à synchroniser data/ → pwa/data/ AVANT Phase 3 (LiDAR) — sites.geojson
 # doit être frais quand 01_process_las.R le lit pour y fusionner profMin/profMax.
+# Ce fichier reste un artefact interne : il n'est plus publié dans docs/ ni
+# lu par la PWA (qui récupère les métadonnées sites en live via le Worker,
+# cf. specs/2026-08-31-live-worker-data-design.md). sync_docs.sh ne le copie
+# donc plus vers docs/data/.
 FILES_TO_SYNC_AVANT_LIDAR <- c(
     "sites.geojson"
 )
@@ -174,6 +178,9 @@ FILES_TO_SYNC <- c(
     .n_entries <- function(x) if (is.data.frame(x)) nrow(x) else length(x)
 
     # Fichiers attendus
+    # sites.geojson et marees.json ne sont plus publiés (docs/) — ils
+    # restent des artefacts internes (data/, pwa/data/) consommés par
+    # 01_process_las.R et par la publication KV du Worker (sync_docs.sh).
     expected_files <- c(
         file.path(DATA_DIR, "sites.geojson"),
         file.path(DATA_DIR, "bathy_sites.json"),
