@@ -1,3 +1,8 @@
 name = "mf-wms-proxy"
 main = "mf-wms-proxy.js"
 compatibility_date = "2024-01-01"
+
+# Créé via `wrangler kv namespace create MAREES_KV`.
+[[kv_namespaces]]
+binding = "MAREES_KV"
+id = "98e0febf3ad64029b03c01c3904cda4d"

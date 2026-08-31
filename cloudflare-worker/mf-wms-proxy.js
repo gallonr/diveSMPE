@@ -30,6 +30,47 @@ const MF_ENDPOINTS = {
   aromepi: 'https://public-api.meteofrance.fr/public/aromepi/1.0/wms/MF-NWP-HIGHRES-AROMEPI-001-FRANCE-WMS/GetMap',
 };
 
+// ── Colonnes retenues pour /sites — miroir de cols_voulues dans r/02_process_bdd.R ──
+const SITE_COLUMNS = [
+  'siteID', 'siteNom',
+  'latitude', 'longitude',
+  'typeSite', 'accessibilite', 'typePlongee', 'niveauPlongee',
+  'accesVent', 'houle', 'mouillage', 'maree', 'tpsEtale',
+  'commentaire', 'photoSite', 'prioritePrevision',
+];
+
+// Convertit les lignes brutes du Sheet (rows de bdd.gs) en FeatureCollection GeoJSON.
+function _buildSitesGeoJSON(rows) {
+  const features = [];
+  for (const row of rows) {
+    const lat = parseFloat(row.latitude);
+    const lon = parseFloat(row.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue; // sans coordonnées, exclu comme côté R
+
+    const properties = {};
+    for (const col of SITE_COLUMNS) {
+      let val = row[col];
+      if (typeof val === 'string') {
+        val = val.trim();
+        if (val === '') val = null;
+      }
+      properties[col] = (val === undefined || val === '') ? null : val;
+    }
+    properties.latitude = lat;
+    properties.longitude = lon;
+    properties.prioritePrevision = ['VRAI', 'TRUE', '1'].includes(
+      String(row.prioritePrevision || '').trim().toUpperCase()
+    );
+
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [lon, lat] },
+      properties,
+    });
+  }
+  return { type: 'FeatureCollection', features };
+}
+
 // Origines autorisées (ajouter votre domaine custom si besoin)
 const ALLOWED_ORIGINS = [
   'https://gallonr.github.io',
@@ -39,7 +80,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     // ── CORS preflight ──────────────────────────────────────────
@@ -66,6 +107,14 @@ export default {
 
     if (path === 'auth') {
       return handleAuth(request, env, corsHeaders, segments[1]);
+    }
+
+    if (path === 'sites') {
+      return handleSites(request, env, corsHeaders, ctx);
+    }
+
+    if (path === 'marees') {
+      return handleMarees(request, env, corsHeaders);
     }
 
     const endpoint = MF_ENDPOINTS[path];
@@ -196,5 +245,101 @@ async function handleAuth(request, env, corsHeaders, action) {
   return new Response(JSON.stringify(gasJson), {
     status: gasJson.ok ? 200 : 502,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+// ── Route /sites — relais vers Google Apps Script (bdd.gs) ───────
+// L'Apps Script est lent et irrégulier (constaté : 2–15 s, parfois timeout).
+// On protège donc la route par :
+//  - un timeout explicite sur l'appel amont (évite un hang de 30 s / une 1101) ;
+//  - une validation stricte de la réponse + un try/catch autour de la
+//    transformation GeoJSON (une réponse amont malformée renvoie une 502
+//    propre, jamais une exception Worker) ;
+//  - un cache edge (TTL 5 min) qui sert aussi de filet : si l'amont est
+//    injoignable/invalide, on renvoie la dernière version connue.
+async function handleSites(request, env, corsHeaders, ctx) {
+  if (request.method !== 'GET') {
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+  }
+  if (!env.BDD_APPSCRIPT_URL || !env.BDD_APPSCRIPT_SECRET) {
+    return new Response('Route non configurée (BDD_APPSCRIPT_URL/BDD_APPSCRIPT_SECRET manquants)', { status: 500, headers: corsHeaders });
+  }
+
+  const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
+  const cache = caches.default;
+  const cacheKey = new Request(new URL(request.url).origin + '/__sites_cache');
+
+  // Renvoie la dernière version en cache edge si elle existe, sinon `fallback`.
+  const serveCachedOr = async (fallback) => {
+    const hit = await cache.match(cacheKey);
+    if (hit) {
+      return new Response(hit.body, { status: 200, headers: { ...jsonHeaders, 'X-Cache': 'stale' } });
+    }
+    return fallback;
+  };
+
+  let gasJson;
+  try {
+    const gasRes = await fetch(env.BDD_APPSCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret: env.BDD_APPSCRIPT_SECRET }),
+      signal: AbortSignal.timeout(20000),
+    });
+    gasJson = await gasRes.json();
+  } catch (e) {
+    return serveCachedOr(new Response(JSON.stringify({ error: 'Apps Script injoignable' }), {
+      status: 502, headers: jsonHeaders,
+    }));
+  }
+
+  if (!gasJson || !gasJson.ok || !Array.isArray(gasJson.rows)) {
+    return serveCachedOr(new Response(JSON.stringify({ error: (gasJson && gasJson.error) || 'Réponse Apps Script invalide' }), {
+      status: 502, headers: jsonHeaders,
+    }));
+  }
+
+  let body;
+  try {
+    body = JSON.stringify(_buildSitesGeoJSON(gasJson.rows));
+  } catch (e) {
+    return serveCachedOr(new Response(JSON.stringify({ error: 'Transformation GeoJSON échouée' }), {
+      status: 502, headers: jsonHeaders,
+    }));
+  }
+
+  // Mémoriser pour le prochain appel / comme filet de secours (TTL 5 min).
+  const toCache = new Response(body, {
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=300' },
+  });
+  if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, toCache));
+  else await cache.put(cacheKey, toCache);
+
+  return new Response(body, {
+    status: 200,
+    headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=300' },
+  });
+}
+
+// ── Route /marees — relais KV (marees.json publié par sync_docs.sh) ──
+async function handleMarees(request, env, corsHeaders) {
+  if (request.method !== 'GET') {
+    return new Response('Method not allowed', { status: 405, headers: corsHeaders });
+  }
+  if (!env.MAREES_KV) {
+    return new Response('Route non configurée (binding MAREES_KV manquant)', { status: 500, headers: corsHeaders });
+  }
+
+  const json = await env.MAREES_KV.get('marees');
+  if (!json) {
+    return new Response(JSON.stringify({ error: 'Données marées non disponibles' }), {
+      status: 404,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  return new Response(json, {
+    status: 200,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
   });
 }
