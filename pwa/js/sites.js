@@ -11,6 +11,7 @@ const Sites = (() => {
   let _onSiteSelectionne = null; // callback externe
   let _etatsMaree = new Map();   // siteID → etat (calculé par MaréeSite)
   let _intervalMaree = null;     // timer rafraîchissement
+  let _dernierChargement = 0;    // horodatage du dernier fetch /sites réussi (throttle de rafraichir)
 
   // ── État transect libre ──────────────────────────────────────
   let _transectMode = false;     // true = mode sélection actif
@@ -18,13 +19,20 @@ const Sites = (() => {
 
   // ── Chargement ───────────────────────────────────────────────
 
+  async function _chargerSites(force) {
+    // force = true → cache:'reload' pour contourner le cache navigateur
+    // (utilisé par rafraichir() après une modif du Google Sheet).
+    const res = await fetch(CONFIG.DATA.sites, force ? { cache: 'reload' } : undefined);
+    _geojson = await res.json();
+    _sites = _geojson.features;
+    _fusionnerProfondeurs();
+    _dernierChargement = Date.now();
+  }
+
   async function init(onSiteSelectionne) {
     _onSiteSelectionne = onSiteSelectionne;
     try {
-      const res = await fetch(CONFIG.DATA.sites);
-      _geojson = await res.json();
-      _sites = _geojson.features;
-      _fusionnerProfondeurs();
+      await _chargerSites();
       console.log(`✅ ${_sites.length} sites chargés`);
       _majEtatsMaree();
       _afficherListe(_sites);
@@ -35,12 +43,40 @@ const Sites = (() => {
         // Mettre à jour le bloc marée dans la fiche si ouverte
         if (_siteActif) _majBlocMareeF(_siteActif.properties);
       }, 60_000);
+      // Recharger les métadonnées BDD (/sites, servi en live par le Worker)
+      // quand l'appli revient au premier plan ou retrouve le réseau — ex.
+      // après une modif du Google Sheet — sans recharger la page.
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') rafraichir();
+      });
+      window.addEventListener('online', rafraichir);
     } catch (e) {
-      console.error('❌ Impossible de charger sites.geojson', e);
+      console.error('❌ Impossible de charger les sites', e);
       document.getElementById('liste-sites').innerHTML =
         '<li style="padding:16px;color:#e74c3c;">Erreur de chargement des sites.</li>';
     }
     return _geojson;
+  }
+
+  // Recharge /sites sans recharger la page. Throttlé à 30 s. Conserve la
+  // fiche ouverte en la ré-affichant avec les données fraîches.
+  async function rafraichir() {
+    if (Date.now() - _dernierChargement < 30_000) return;
+    const idActif = _siteActif ? _siteActif.properties.siteID : null;
+    try {
+      await _chargerSites(true);
+    } catch (e) {
+      console.warn('Rafraîchissement /sites impossible (hors ligne ?)', e);
+      return;
+    }
+    _majEtatsMaree();
+    _afficherListe(_sites);
+    if (idActif) {
+      _siteActif = _sites.find(f => f.properties.siteID === idActif) || null;
+      const ficheVisible = !document.getElementById('fiche-site')?.classList.contains('hidden');
+      if (_siteActif && ficheVisible) _ouvrirFiche(_siteActif);
+    }
+    console.log('🔄 Sites rechargés depuis le Worker');
   }
 
   // profMin/profMax viennent du pipeline LiDAR (bathy_sites.json), pas du
@@ -661,6 +697,7 @@ const Sites = (() => {
 
   return {
     init,
+    rafraichir,
     filtrer,
     selectionner,
     fermerFiche,
