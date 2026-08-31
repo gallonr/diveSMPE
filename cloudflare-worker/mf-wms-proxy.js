@@ -272,9 +272,14 @@ const SITES_STALE_TTL_S = 24 * 60 * 60;    // survie de la copie KV
 async function _refreshSitesCache(env) {
   let gasRes;
   try {
-    gasRes = await fetch(env.BDD_APPSCRIPT_URL, {
+    // Cache-buster : Google met parfois en cache la réponse de /exec pendant
+    // quelques minutes en frontal de script.googleusercontent.com — un
+    // paramètre unique + no-cache force une exécution fraîche du Sheet.
+    const gasUrl = env.BDD_APPSCRIPT_URL
+      + (env.BDD_APPSCRIPT_URL.includes('?') ? '&' : '?') + 'cb=' + Date.now();
+    gasRes = await fetch(gasUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
       body: JSON.stringify({ secret: env.BDD_APPSCRIPT_SECRET }),
       signal: AbortSignal.timeout(20000),
     });
