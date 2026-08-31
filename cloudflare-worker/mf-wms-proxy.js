@@ -255,8 +255,16 @@ async function handleAuth(request, env, corsHeaders, action) {
 //  - une validation stricte de la réponse + un try/catch autour de la
 //    transformation GeoJSON (une réponse amont malformée renvoie une 502
 //    propre, jamais une exception Worker) ;
-//  - un cache edge (TTL 5 min) qui sert aussi de filet : si l'amont est
-//    injoignable/invalide, on renvoie la dernière version connue.
+//  - un cache KV (binding MAREES_KV, clé `sites_geojson_cache`) : réponse
+//    immédiate si la copie a moins de SITES_FRESH_MS, sinon rafraîchissement
+//    depuis l'Apps Script. En cas d'échec/lenteur/réponse invalide amont, on
+//    sert la dernière copie connue (jusqu'à SITES_STALE_TTL_S). L'API Cache
+//    de Cloudflare (`caches.default`) n'étant pas opérante sur *.workers.dev,
+//    on passe par le KV qui, lui, fonctionne partout.
+const SITES_CACHE_KEY   = 'sites_geojson_cache';
+const SITES_FRESH_MS    = 5 * 60 * 1000;   // fraîcheur : au-delà, on rafraîchit
+const SITES_STALE_TTL_S = 24 * 60 * 60;    // survie de la copie de secours
+
 async function handleSites(request, env, corsHeaders, ctx) {
   if (request.method !== 'GET') {
     return new Response('Method not allowed', { status: 405, headers: corsHeaders });
@@ -266,17 +274,31 @@ async function handleSites(request, env, corsHeaders, ctx) {
   }
 
   const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
-  const cache = caches.default;
-  const cacheKey = new Request(new URL(request.url).origin + '/__sites_cache');
+  const kv = env.MAREES_KV || null;
 
-  // Renvoie la dernière version en cache edge si elle existe, sinon `fallback`.
-  const serveCachedOr = async (fallback) => {
-    const hit = await cache.match(cacheKey);
-    if (hit) {
-      return new Response(hit.body, { status: 200, headers: { ...jsonHeaders, 'X-Cache': 'stale' } });
-    }
-    return fallback;
-  };
+  // Lecture de la copie KV (contenu + date de mise en cache via metadata).
+  let cachedBody = null, cachedTs = 0;
+  if (kv) {
+    try {
+      const { value, metadata } = await kv.getWithMetadata(SITES_CACHE_KEY);
+      if (value) { cachedBody = value; cachedTs = (metadata && metadata.ts) || 0; }
+    } catch (e) { /* KV indisponible → on ignore, on ira taper l'Apps Script */ }
+  }
+
+  // Copie encore fraîche → réponse immédiate, pas d'appel amont.
+  if (cachedBody && (Date.now() - cachedTs) < SITES_FRESH_MS) {
+    return new Response(cachedBody, {
+      status: 200,
+      headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=300', 'X-Cache': 'hit' },
+    });
+  }
+
+  // Sinon : rafraîchir depuis l'Apps Script, avec repli sur la copie KV
+  // (même périmée) en cas d'échec.
+  const serveStaleOr = (fallback) =>
+    cachedBody
+      ? new Response(cachedBody, { status: 200, headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=60', 'X-Cache': 'stale' } })
+      : fallback;
 
   let gasJson;
   try {
@@ -288,13 +310,13 @@ async function handleSites(request, env, corsHeaders, ctx) {
     });
     gasJson = await gasRes.json();
   } catch (e) {
-    return serveCachedOr(new Response(JSON.stringify({ error: 'Apps Script injoignable' }), {
+    return serveStaleOr(new Response(JSON.stringify({ error: 'Apps Script injoignable' }), {
       status: 502, headers: jsonHeaders,
     }));
   }
 
   if (!gasJson || !gasJson.ok || !Array.isArray(gasJson.rows)) {
-    return serveCachedOr(new Response(JSON.stringify({ error: (gasJson && gasJson.error) || 'Réponse Apps Script invalide' }), {
+    return serveStaleOr(new Response(JSON.stringify({ error: (gasJson && gasJson.error) || 'Réponse Apps Script invalide' }), {
       status: 502, headers: jsonHeaders,
     }));
   }
@@ -303,21 +325,23 @@ async function handleSites(request, env, corsHeaders, ctx) {
   try {
     body = JSON.stringify(_buildSitesGeoJSON(gasJson.rows));
   } catch (e) {
-    return serveCachedOr(new Response(JSON.stringify({ error: 'Transformation GeoJSON échouée' }), {
+    return serveStaleOr(new Response(JSON.stringify({ error: 'Transformation GeoJSON échouée' }), {
       status: 502, headers: jsonHeaders,
     }));
   }
 
-  // Mémoriser pour le prochain appel / comme filet de secours (TTL 5 min).
-  const toCache = new Response(body, {
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'max-age=300' },
-  });
-  if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, toCache));
-  else await cache.put(cacheKey, toCache);
+  // Mémoriser dans le KV (contenu frais + horodatage), en tâche de fond.
+  if (kv) {
+    const put = kv.put(SITES_CACHE_KEY, body, {
+      expirationTtl: SITES_STALE_TTL_S,
+      metadata: { ts: Date.now() },
+    });
+    if (ctx && ctx.waitUntil) ctx.waitUntil(put); else await put;
+  }
 
   return new Response(body, {
     status: 200,
-    headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=300' },
+    headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=300', 'X-Cache': cachedBody ? 'refresh' : 'miss' },
   });
 }
 
