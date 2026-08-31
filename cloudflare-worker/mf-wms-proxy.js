@@ -266,30 +266,48 @@ const SITES_CACHE_KEY   = 'sites_geojson_cache';
 const SITES_SWR_MS      = 60 * 1000;       // au-delà : rafraîchissement en tâche de fond
 const SITES_STALE_TTL_S = 24 * 60 * 60;    // survie de la copie KV
 
-// Rafraîchit la copie KV depuis l'Apps Script. Ne jette jamais : en cas
-// d'échec/réponse invalide, la copie existante est laissée intacte.
-// Renvoie le nouveau corps GeoJSON, ou null si le rafraîchissement a échoué.
+// Rafraîchit la copie KV depuis l'Apps Script. Ne jette jamais.
+// Renvoie { ok:true, body, rows } ou { ok:false, error } — l'appelant
+// décide s'il remonte l'erreur ou s'il sert une copie périmée.
 async function _refreshSitesCache(env) {
+  let gasRes;
   try {
-    const gasRes = await fetch(env.BDD_APPSCRIPT_URL, {
+    gasRes = await fetch(env.BDD_APPSCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ secret: env.BDD_APPSCRIPT_SECRET }),
       signal: AbortSignal.timeout(20000),
     });
-    const gasJson = await gasRes.json();
-    if (!gasJson || !gasJson.ok || !Array.isArray(gasJson.rows)) return null;
-    const body = JSON.stringify(_buildSitesGeoJSON(gasJson.rows));
-    if (env.MAREES_KV) {
+  } catch (e) {
+    return { ok: false, error: `Apps Script injoignable (${(e && e.name) || e})` };
+  }
+  let gasJson;
+  try {
+    gasJson = await gasRes.json();
+  } catch (e) {
+    return { ok: false, error: `Réponse Apps Script non-JSON (HTTP ${gasRes.status})` };
+  }
+  if (!gasJson || gasJson.ok !== true) {
+    return { ok: false, error: `Apps Script ok=false : ${(gasJson && gasJson.error) || 'raison inconnue'}` };
+  }
+  if (!Array.isArray(gasJson.rows)) {
+    return { ok: false, error: 'Apps Script : champ "rows" absent ou non-tableau' };
+  }
+  let body;
+  try {
+    body = JSON.stringify(_buildSitesGeoJSON(gasJson.rows));
+  } catch (e) {
+    return { ok: false, error: `Transformation GeoJSON échouée : ${(e && e.message) || e}` };
+  }
+  if (env.MAREES_KV) {
+    try {
       await env.MAREES_KV.put(SITES_CACHE_KEY, body, {
         expirationTtl: SITES_STALE_TTL_S,
         metadata: { ts: Date.now() },
       });
-    }
-    return body;
-  } catch (e) {
-    return null;
+    } catch (e) { /* écriture KV échouée : on renvoie quand même le corps frais */ }
   }
+  return { ok: true, body, rows: gasJson.rows.length };
 }
 
 async function handleSites(request, env, corsHeaders, ctx) {
@@ -302,6 +320,11 @@ async function handleSites(request, env, corsHeaders, ctx) {
 
   const jsonHeaders = { ...corsHeaders, 'Content-Type': 'application/json' };
   const kv = env.MAREES_KV || null;
+  const params = new URL(request.url).searchParams;
+  // ?nocache=1 (alias ?fresh=1) : ignore la copie KV, force un appel Apps
+  // Script synchrone et remonte l'erreur réelle si échec (diagnostic +
+  // bouton « forcer la synchro »).
+  const bypass = params.has('nocache') || params.has('fresh');
 
   // Lecture de la copie KV (contenu + date de mise en cache via metadata).
   let cachedBody = null, cachedTs = 0;
@@ -312,27 +335,45 @@ async function handleSites(request, env, corsHeaders, ctx) {
     } catch (e) { /* KV indisponible → on ira taper l'Apps Script */ }
   }
 
-  // Copie disponible → réponse immédiate (stale-while-revalidate).
-  if (cachedBody) {
+  // Copie disponible et pas de bypass → réponse immédiate (stale-while-revalidate).
+  if (cachedBody && !bypass) {
     const perimee = (Date.now() - cachedTs) > SITES_SWR_MS;
     if (perimee && ctx && ctx.waitUntil) {
       ctx.waitUntil(_refreshSitesCache(env));   // rafraîchit pour le prochain appel
     }
     return new Response(cachedBody, {
       status: 200,
-      headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=30', 'X-Cache': perimee ? 'revalidating' : 'hit' },
+      headers: {
+        ...jsonHeaders,
+        'Cache-Control': 'public, max-age=30',
+        'X-Cache': perimee ? 'revalidating' : 'hit',
+        'X-Cache-Age': String(Math.round((Date.now() - cachedTs) / 1000)),
+      },
     });
   }
 
-  // Aucune copie → appel Apps Script bloquant.
-  const fresh = await _refreshSitesCache(env);
-  if (fresh) {
-    return new Response(fresh, {
+  // Bypass, ou aucune copie → appel Apps Script bloquant.
+  const r = await _refreshSitesCache(env);
+  if (r.ok) {
+    return new Response(r.body, {
       status: 200,
-      headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=30', 'X-Cache': 'miss' },
+      headers: {
+        ...jsonHeaders,
+        'Cache-Control': bypass ? 'no-store' : 'public, max-age=30',
+        'X-Cache': bypass ? 'bypass' : 'miss',
+        'X-Rows': String(r.rows),
+      },
     });
   }
-  return new Response(JSON.stringify({ error: 'Sites indisponibles (Apps Script injoignable, aucune copie en cache)' }), {
+  // Échec amont : servir la copie périmée si on en a une (hors bypass),
+  // sinon remonter l'erreur pour de vrai.
+  if (cachedBody && !bypass) {
+    return new Response(cachedBody, {
+      status: 200,
+      headers: { ...jsonHeaders, 'Cache-Control': 'public, max-age=30', 'X-Cache': 'stale', 'X-Refresh-Error': r.error },
+    });
+  }
+  return new Response(JSON.stringify({ error: r.error }), {
     status: 502, headers: jsonHeaders,
   });
 }
