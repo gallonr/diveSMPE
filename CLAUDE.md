@@ -15,7 +15,7 @@ Cycle de mise à jour : modifier la BDD → `build_all.R` → `./sync_docs.sh` �
 ### 1. Pipeline preprocessing (centre)
 
 `r/build_all.R` est le script maître. Il enchaîne :
-1. **`r/02_process_bdd.R`** — Google Sheet (`GOOGLE_SHEET_BDD_ID` dans `r/config_local.R`, gitignoré, cf. `bdd/README.md`) → `data/sites.geojson` (60 sites, WGS84)
+1. **`r/02_process_bdd.R`** — Google Sheet (`GOOGLE_SHEET_BDD_ID` dans `r/config_local.R`, gitignoré, cf. `bdd/README.md`) → `data/sites.geojson` (60 sites, WGS84). **Ce fichier n'est plus publié** (ni committé, ni copié vers `docs/`) — il reste un artefact interne consommé uniquement par `01_process_las.R` (coordonnées + fusion `profMin`/`profMax`). La PWA récupère les métadonnées sites en direct via le Worker Cloudflare (`GET /sites`, relayant `google-apps-script/bdd.gs`), cf. `specs/2026-08-31-live-worker-data-design.md`.
 2. **`r/01_process_las.R`** — LiDAR LITTO3D (~3,8 Go) → `data/bathy_sites.json` + miniatures PNG dans `pwa/data/thumbs/` (44 sites couverts)
 3. **`r/03_generate_profile.R`** — profils bathymétriques + transects
 4. **`r/04_marees_fes.py`** — atlas FES2022 → `data/marees.json` (PM/BM depuis aujourd'hui jusqu'au 2028-12-12, cf. `DATE_END`, 34 constituantes harmoniques)
@@ -52,7 +52,11 @@ Ce script copie `pwa/{js,css,sw.js,manifest.json,index.html}` → `docs/`, corri
 
 ### 4. Proxy Cloudflare Worker
 
-`cloudflare-worker/mf-wms-proxy.js` — proxy WMS Météo-France (clé API serveur, CORS). Déploiement séparé via Wrangler.
+`cloudflare-worker/mf-wms-proxy.js` — proxy WMS Météo-France (clé API serveur, CORS), relais retour d'expérience et authentification (Apps Script), et depuis le 2026-08-31 :
+- `GET /sites` — relais `google-apps-script/bdd.gs` (lecture Google Sheet BDD), transformé en GeoJSON. Remplace le fichier `sites.geojson` publié.
+- `GET /marees` — sert `marees.json` (généré par `r/04_marees_fes.py`) depuis un binding KV (`MAREES_KV`), publié par `sync_docs.sh`. Remplace le fichier `marees.json` publié.
+
+Ces deux routes existent pour éviter d'exposer ces données (BDD sites, prédictions de marées calibrées) dans le dépôt public GitHub Pages. Déploiement séparé via Wrangler.
 
 ## Commandes
 
@@ -88,6 +92,7 @@ Voir `.gitignore`. À ne jamais commiter :
 - `data/tiles/`, `data/*.tif*` (sorties intermédiaires)
 - `pwa/js/secrets.js`, `pwa/js/tokens.js`, équivalents `docs/js/`
 - `bdd/bddAtlasPlongeeSMPE.xlsx`, `relevesGNSS/siteSMPE21042026.xlsx` (BDD sites — vit désormais dans un Google Sheet, cf. `bdd/README.md`), `r/config_local.R`
+- `data/sites.geojson`, `pwa/data/sites.geojson`, `docs/data/sites.geojson`, `data/marees.json`, `pwa/data/marees.json`, `docs/data/marees.json` (données non publiques désormais servies en live par le Worker — `data/sites.geojson`/`pwa/data/sites.geojson` restent générés localement comme entrée du pipeline LiDAR, cf. `specs/2026-08-31-live-worker-data-design.md`)
 
 ## Secrets / tokens
 
