@@ -44,12 +44,15 @@ const Sites = (() => {
         if (_siteActif) _majBlocMareeF(_siteActif.properties);
       }, 60_000);
       // Recharger les métadonnées BDD (/sites, servi en live par le Worker)
-      // quand l'appli revient au premier plan ou retrouve le réseau — ex.
-      // après une modif du Google Sheet — sans recharger la page.
+      // quand l'appli revient au premier plan / reprend le focus / retrouve
+      // le réseau — ex. après une modif du Google Sheet — sans recharger la
+      // page. + poll de secours toutes les 5 min si l'appli reste ouverte.
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') rafraichir();
       });
+      window.addEventListener('focus', rafraichir);
       window.addEventListener('online', rafraichir);
+      setInterval(rafraichir, 300_000);
     } catch (e) {
       console.error('❌ Impossible de charger les sites', e);
       document.getElementById('liste-sites').innerHTML =
@@ -58,10 +61,10 @@ const Sites = (() => {
     return _geojson;
   }
 
-  // Recharge /sites sans recharger la page. Throttlé à 30 s. Conserve la
+  // Recharge /sites sans recharger la page. Throttlé à 10 s. Conserve la
   // fiche ouverte en la ré-affichant avec les données fraîches.
   async function rafraichir() {
-    if (Date.now() - _dernierChargement < 30_000) return;
+    if (Date.now() - _dernierChargement < 10_000) return;
     const idActif = _siteActif ? _siteActif.properties.siteID : null;
     try {
       await _chargerSites(true);
