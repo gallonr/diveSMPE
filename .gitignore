@@ -13,6 +13,15 @@ bdd/bddAtlasPlongeeSMPE.xlsx
 relevesGNSS/siteSMPE21042026.xlsx
 r/config_local.R
 
+# --- sites.geojson / marees.json — servis en live via le Worker, plus publiés ---
+# (cf. specs/2026-08-31-live-worker-data-design.md)
+data/sites.geojson
+pwa/data/sites.geojson
+docs/data/sites.geojson
+data/marees.json
+pwa/data/marees.json
+docs/data/marees.json
+
 # --- Tokens et clés API (ne jamais commiter) ---
 pwa/js/secrets.js
 docs/js/secrets.js
