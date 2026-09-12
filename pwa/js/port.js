@@ -163,7 +163,7 @@ const Port = (() => {
     `).join('');
 
     el.innerHTML = `
-      <div class="port-widget-titre">⚓ Port — seuil ${CONFIG.PORT.seuilZH} m</div>
+      <div class="port-widget-titre">⚓ Seuil port — ${CONFIG.PORT.seuilZH} m</div>
       ${rows}
     `;
   }
@@ -173,20 +173,22 @@ const Port = (() => {
   /**
    * Remplit le bloc #prev-port dans la modal Prévision.
    * @param {object|null} entree      entrée marees.json du jour choisi
-   * @param {number|null} hauteur     hauteur à l'heure choisie
-   * @param {Date}        [targetDate] date/heure choisie (pour prochainAcces)
+   * @param {number|null} hauteur     hauteur à l'heure choisie (null = pas d'heure précise choisie)
+   * @param {Date|null}   [targetDate] date/heure choisie (pour prochainAcces) ; null = vue journée
    */
   function renderPrevision(entree, hauteur, targetDate = new Date()) {
     const el = document.getElementById('prev-port');
     if (!el) return;
     if (!entree) { el.innerHTML = ''; return; }
 
-    const etatsActuels = getEtatActuel(hauteur, entree, targetDate);
-    const fenetres     = getFenetresJour(entree);
+    // Statut instantané (peut/ne peut pas sortir) uniquement si une heure
+    // précise est choisie — sinon on ne montre que les créneaux bloqués du jour.
+    const etatsActuels = hauteur !== null ? getEtatActuel(hauteur, entree, targetDate) : null;
+    const fenetres      = getFenetresJour(entree);
 
     let html = `
       <div class="prev-port-header" onclick="this.closest('.prev-port').classList.toggle('prev-port-ouvert')" style="cursor:pointer">
-        <span class="prev-port-titre">⚓ Port</span>
+        <span class="prev-port-titre">⚓ Seuil port</span>
         <span class="prev-port-seuil">Seuil ${CONFIG.PORT.seuilZH} m ZH</span>
         <span class="prev-port-toggle-icon">▶</span>
       </div>
@@ -194,13 +196,17 @@ const Port = (() => {
     `;
 
     for (const b of CONFIG.PORT.bateaux) {
-      const etat = etatsActuels.find(e => e.nom === b.nom);
+      const etat = etatsActuels ? etatsActuels.find(e => e.nom === b.nom) : null;
       const fen  = fenetres[b.nom];
 
-      const statutClass = etat.peut ? 'port-badge-ok' : 'port-badge-bloque';
-      const statutText  = etat.peut
-        ? `✅ Peut sortir${etat.prochainBlocage ? ` · ⚠️ bloqué à ${etat.prochainBlocage}` : ''}`
-        : `🚫 Bloqué${etat.prochainAcces ? ` · ⏱ accès à ${etat.prochainAcces}` : ''}`;
+      let statutHtml = '';
+      if (etat) {
+        const statutClass = etat.peut ? 'port-badge-ok' : 'port-badge-bloque';
+        const statutText  = etat.peut
+          ? `✅ Peut sortir${etat.prochainBlocage ? ` · ⚠️ bloqué à ${etat.prochainBlocage}` : ''}`
+          : `🚫 Bloqué${etat.prochainAcces ? ` · ⏱ accès à ${etat.prochainAcces}` : ''}`;
+        statutHtml = `<span class="port-badge ${statutClass}">${statutText}</span>`;
+      }
 
       let blocageHtml;
       if (fen.bloque.length === 0) {
@@ -216,7 +222,7 @@ const Port = (() => {
           <div class="prev-port-row-top">
             <span class="prev-port-nom">${b.nom}</span>
             <span class="prev-port-meta">T = ${b.tirant} m · min ${fen.hMin.toFixed(1)} m</span>
-            <span class="port-badge ${statutClass}">${statutText}</span>
+            ${statutHtml}
           </div>
           <div class="prev-port-blocages">
             <span class="prev-port-label-bloque">🚫 Bloqué :</span>

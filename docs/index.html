@@ -369,11 +369,12 @@
           <input type="date" id="prev-date" class="prev-input" />
         </div>
         <div class="prev-ctrl-group" id="prev-time-row">
-          <label class="prev-label" for="prev-time">⏱ Heure</label>
+          <label class="prev-label" for="prev-time">⏱ Heure (optionnel)</label>
           <input type="time" id="prev-time" class="prev-input" step="900" />
         </div>
         <button id="btn-prev-calculer" class="btn-prev-calc">Calculer</button>
       </div>
+      <p class="prev-heure-hint">Sans heure : fenêtres de plongée de tous les sites sur toute la journée. Avec une heure : statut des sites à cet instant précis.</p>
 
       <!-- Checkbox 2 tanks -->
       <div class="prev-2tanks-bar">
@@ -412,7 +413,7 @@
 
       <!-- Filtre profondeur maximale calculée -->
       <div id="prev-prof-filter" class="prev-prof-filter hidden">
-        <span class="prev-prof-filter-label">🎯 Prof. max réelle :</span>
+        <span id="prev-prof-filter-label" class="prev-prof-filter-label">🎯 Prof. max réelle :</span>
         <div class="prev-prof-btns">
           <button class="prev-prof-btn active" data-prof="all">Toutes</button>
           <button class="prev-prof-btn" data-prof="6">≤ 6 m</button>
@@ -424,7 +425,7 @@
 
       <!-- Liste des sites (mode 1 plongée) -->
       <div id="prev-sites" class="prev-sites">
-        <p class="prev-empty">Choisissez une date et une heure pour voir les sites plongeables.</p>
+        <p class="prev-empty">Choisissez une date (et éventuellement une heure) pour voir les sites plongeables.</p>
       </div>
 
       <!-- Résultats bi-journée (mode 2 tanks) -->

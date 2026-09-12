@@ -20,6 +20,12 @@ const Prevision = (() => {
   /** Pad "7" → "07" */
   function _pad2(n) { return String(n).padStart(2, '0'); }
 
+  /** Minutes depuis minuit → "HH:MM" (accepte >1440, module 24h) */
+  function _minToHHMM(min) {
+    const total = Math.round(((min % 1440) + 1440) % 1440);
+    return `${_pad2(Math.floor(total / 60))}:${_pad2(total % 60)}`;
+  }
+
   /** Date locale au format "YYYY-MM-DD" pour <input type="date"> */
   function _dateLocal(d = new Date()) {
     return `${d.getFullYear()}-${_pad2(d.getMonth() + 1)}-${_pad2(d.getDate())}`;
@@ -126,35 +132,38 @@ const Prevision = (() => {
     ctx.fillStyle = grad;
     ctx.fill();
 
-    // Trait heure choisie
-    const chosenMin = targetDate.getHours() * 60 + targetDate.getMinutes();
-    const xNow = toX(chosenMin);
-    ctx.strokeStyle = 'rgba(255,220,0,0.85)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 3]);
-    ctx.beginPath();
-    ctx.moveTo(xNow, pad.top);
-    ctx.lineTo(xNow, pad.top + h);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Point sur la courbe à l'heure choisie
-    let hChosen = null;
-    for (let i = 0; i < points.length - 1; i++) {
-      if (chosenMin >= points[i].x && chosenMin <= points[i + 1].x) {
-        const frac = (chosenMin - points[i].x) / (points[i + 1].x - points[i].x);
-        hChosen = points[i].h + (points[i + 1].h - points[i].h) * frac;
-        break;
-      }
-    }
-    if (hChosen !== null) {
+    // Trait heure choisie — uniquement si une heure précise est sélectionnée
+    // (en vue journée, targetDate est null : pas de repère instantané)
+    if (targetDate) {
+      const chosenMin = targetDate.getHours() * 60 + targetDate.getMinutes();
+      const xNow = toX(chosenMin);
+      ctx.strokeStyle = 'rgba(255,220,0,0.85)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
       ctx.beginPath();
-      ctx.arc(xNow, toY(hChosen), 5, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ffd700';
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1.5;
+      ctx.moveTo(xNow, pad.top);
+      ctx.lineTo(xNow, pad.top + h);
       ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Point sur la courbe à l'heure choisie
+      let hChosen = null;
+      for (let i = 0; i < points.length - 1; i++) {
+        if (chosenMin >= points[i].x && chosenMin <= points[i + 1].x) {
+          const frac = (chosenMin - points[i].x) / (points[i + 1].x - points[i].x);
+          hChosen = points[i].h + (points[i + 1].h - points[i].h) * frac;
+          break;
+        }
+      }
+      if (hChosen !== null) {
+        ctx.beginPath();
+        ctx.arc(xNow, toY(hChosen), 5, 0, 2 * Math.PI);
+        ctx.fillStyle = '#ffd700';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
     }
 
     // Heures axe X
@@ -165,6 +174,36 @@ const Prevision = (() => {
       const xv = hTick * 60;
       ctx.fillText(`${_pad2(hTick)}h`, toX(xv), H - 4);
     }
+  }
+
+  // ── Ligne PM/BM du jour ─────────────────────────────────────────
+
+  /** Construit la ligne HTML récapitulant les PM/BM du jour (entree marees.json) */
+  function _renderPMBMLine(entree) {
+    if (!entree) return '';
+    const champs = [
+      { key: 'PM1', type: 'PM' }, { key: 'BM1', type: 'BM' },
+      { key: 'PM2', type: 'PM' }, { key: 'BM2', type: 'BM' },
+    ];
+    const items = champs
+      .filter(c => entree[c.key + '_h'])
+      .map(c => {
+        const [hh, mm] = entree[c.key + '_h'].split(':').map(Number);
+        return { type: c.type, h: entree[c.key + '_h'], haut: entree[c.key + '_haut'], tMin: hh * 60 + mm };
+      })
+      .sort((a, b) => a.tMin - b.tMin);
+    if (items.length === 0) return '';
+
+    const fmt = it => `${it.h}${it.haut != null ? ` (${it.haut}m)` : ''}`;
+    const pm = items.filter(i => i.type === 'PM').map(fmt).join(' · ');
+    const bm = items.filter(i => i.type === 'BM').map(fmt).join(' · ');
+
+    return `
+      <div class="prev-pmbm-line">
+        ${pm ? `<span class="prev-pmbm-pm">⬆ PM ${pm}</span>` : ''}
+        ${bm ? `<span class="prev-pmbm-bm">⬇ BM ${bm}</span>` : ''}
+      </div>
+    `;
   }
 
   // ── Bascule sites prioritaires / tous les sites ────────────────
@@ -195,7 +234,7 @@ const Prevision = (() => {
   function _calculer() {
     const dateStr = document.getElementById('prev-date').value;
     const timeStr = document.getElementById('prev-time').value;
-    if (!dateStr || !timeStr) return;
+    if (!dateStr) return;
 
     // ── Mode bi-journée ──────────────────────────────────────
     if (_mode2tanks) {
@@ -227,33 +266,42 @@ const Prevision = (() => {
     document.getElementById('prev-maree-bloc')?.classList.remove('hidden');
     document.getElementById('prev-port')?.classList.remove('hidden');
 
-    const targetDate     = _buildDate(dateStr, timeStr);
-    const entree         = Marees.getEntreePourDate(targetDate);
-    const hauteur        = entree ? Marees.getHauteurAt(targetDate) : null;
-    _hauteurCourante     = hauteur;
+    // Heure optionnelle : si absente, vue "journée" (aucun instant précis).
+    // On utilise midi local pour retrouver l'entrée marees.json du jour sans
+    // risquer un décalage de date via toISOString() (cf. biplongee.js).
+    const hasHeure   = !!timeStr;
+    const targetDate = hasHeure ? _buildDate(dateStr, timeStr) : new Date(`${dateStr}T12:00:00`);
+    const entree     = Marees.getEntreePourDate(targetDate);
+    const hauteur    = (hasHeure && entree) ? Marees.getHauteurAt(targetDate) : null;
+    _hauteurCourante = hauteur;
 
-    // Afficher hauteur + courbe
+    // Afficher hauteur + coeff + PM/BM du jour + courbe
     const hEl = document.getElementById('prev-hauteur');
     if (hEl) {
-      if (hauteur !== null) {
-        const coeff = entree ? (entree.PM1_coeff || entree.PM2_coeff || '?') : '?';
-        const typeEau = (entree && (entree.PM1_coeff || entree.PM2_coeff))
+      if (entree) {
+        const coeff = entree.PM1_coeff || entree.PM2_coeff || '?';
+        const typeEau = (entree.PM1_coeff || entree.PM2_coeff)
           ? ((entree.PM1_coeff || entree.PM2_coeff) <= 70 ? 'morte-eau' : 'vive-eau')
           : '';
+        const hauteurHtml = hauteur !== null
+          ? `<span class="prev-haut-val">${hauteur.toFixed(2)} m</span>`
+          : '';
         hEl.innerHTML = `
-          <span class="prev-haut-val">${hauteur.toFixed(2)} m</span>
+          ${hauteurHtml}
           <span class="prev-coeff-badge">Coeff ${coeff}${typeEau ? ' · ' + typeEau : ''}</span>
+          ${_renderPMBMLine(entree)}
         `;
       } else {
         hEl.innerHTML = `<span class="prev-haut-absent">Aucune donnée de marée pour cette date</span>`;
       }
     }
 
-    _dessinerMiniCourbe('canvas-prev', entree, targetDate);
+    _dessinerMiniCourbe('canvas-prev', entree, hasHeure ? targetDate : null);
 
-    // Bloc Port : état des bateaux à l'heure choisie
+    // Bloc Seuil port : état des bateaux (seulement si une heure est choisie —
+    // sinon les créneaux bloqués du jour restent affichés sans statut instantané)
     if (typeof Port !== 'undefined') {
-      Port.renderPrevision(entree, hauteur, targetDate);
+      Port.renderPrevision(entree, hauteur, hasHeure ? targetDate : null);
     }
 
     // Calculer le statut de tous les sites
@@ -276,10 +324,21 @@ const Prevision = (() => {
     // Afficher le filtre profondeur si des données sont disponibles
     const filterBar = document.getElementById('prev-prof-filter');
     if (filterBar) filterBar.classList.remove('hidden');
+    const filterLabel = document.getElementById('prev-prof-filter-label');
+    if (filterLabel) {
+      filterLabel.textContent = hasHeure ? '🎯 Prof. max réelle :' : '🎯 Prof. max (ZH) :';
+    }
 
     // Bascule sites prioritaires / tous les sites (partagée avec le mode
     // bi-journée, cf. _appliquerFiltragePriorite / getFeaturesActives).
     const features = _appliquerFiltragePriorite(geojson);
+
+    // ── Vue journée (pas d'heure choisie) : fenêtres de plongée du jour
+    // pour tous les sites, indépendamment d'un instant précis ────────
+    if (!hasHeure) {
+      _rendreVueJournee(features, entree, conteneur);
+      return;
+    }
 
     // Calculer l'état de chaque site pour la date/heure choisie
     let resultats = features.map(feat => {
@@ -346,6 +405,87 @@ const Prevision = (() => {
 
     if (html === '') html = '<p class="prev-empty">Aucun site à afficher.</p>';
     conteneur.innerHTML = html;
+  }
+
+  // ── Vue journée : fenêtres de plongée de tous les sites ────────
+  // (indépendant d'un instant précis — cf. MaréeSite.getFenetres, déjà
+  // utilisé par le mode bi-journée)
+
+  function _rendreVueJournee(features, entree, conteneur) {
+    let resultats = features.map(feat => {
+      const props = feat.properties;
+      const sansContrainte = !props.maree;
+      const fenetres = MaréeSite.getFenetres(props, entree);
+      return { props, fenetres, sansContrainte };
+    });
+
+    // Filtre profondeur : pas de hauteur instantanée en vue journée,
+    // on filtre sur la profondeur max ZH brute (BDD).
+    if (_filtreProf !== 'all') {
+      resultats = resultats.filter(r => {
+        const p = r.props.profMax;
+        if (p === null || p === undefined) return true; // pas de données → on garde
+        if (_filtreProf === '20+') return p > 20;
+        return p <= Number(_filtreProf);
+      });
+    }
+
+    // Un site "sans contrainte" a une fenêtre unique [0, 1440] (cf. getFenetres) :
+    // on le distingue via sansContrainte plutôt que via la forme de la fenêtre.
+    const avecFenetre = resultats.filter(r => !r.sansContrainte && r.fenetres.length > 0);
+    const autres       = resultats.filter(r => r.sansContrainte || r.fenetres.length === 0);
+
+    avecFenetre.sort((a, b) => a.fenetres[0].debutMin - b.fenetres[0].debutMin);
+
+    let html = '';
+    if (avecFenetre.length > 0) {
+      html += `<div class="prev-groupe-titre prev-titre-vert">🕐 Fenêtres de plongée aujourd'hui (${avecFenetre.length})</div>`;
+      html += avecFenetre.map(r => _renderSiteCardJournee(r)).join('');
+    }
+    if (autres.length > 0) {
+      html += `<div class="prev-groupe-titre prev-titre-gris">— Sans contrainte de marée / données insuffisantes (${autres.length})
+        <button class="prev-toggle-gris btn-icon" onclick="Prevision._toggleGris(this)">▼</button>
+      </div>`;
+      html += `<div class="prev-gris-liste">` + autres.map(r => _renderSiteCardJournee(r)).join('') + `</div>`;
+    }
+
+    if (html === '') html = '<p class="prev-empty">Aucun site à afficher.</p>';
+    conteneur.innerHTML = html;
+  }
+
+  function _renderSiteCardJournee(r) {
+    const p    = r.props;
+    const nom  = p.siteNom || p.siteID;
+    const type = p.typeSite || '';
+    const profZH = (p.profMin !== null && p.profMin !== undefined && p.profMax !== null && p.profMax !== undefined)
+      ? `${p.profMin}–${p.profMax} m ZH`
+      : null;
+
+    let fenetresHtml;
+    if (r.sansContrainte) {
+      fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-libre">Aucune contrainte de marée</span>`;
+    } else if (r.fenetres.length === 0) {
+      fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-absente">Données insuffisantes</span>`;
+    } else {
+      fenetresHtml = r.fenetres.map(f =>
+        `<span class="prev-fenetre-chip" title="${f.etaleLabel}">🕐 ${_minToHHMM(f.debutMin)}–${_minToHHMM(f.finMin)}</span>`
+      ).join('');
+    }
+
+    const cardClass = (r.sansContrainte || r.fenetres.length === 0) ? 'prev-card-gris' : 'prev-card-vert';
+
+    return `
+      <div class="prev-site-card ${cardClass}" onclick="Sites.selectionner('${p.siteID}'); Prevision.fermer()">
+        <div class="prev-site-header">
+          <span class="prev-site-nom">${nom}</span>
+        </div>
+        <div class="prev-site-fenetres">${fenetresHtml}</div>
+        <div class="prev-site-meta">
+          ${profZH ? `<span class="prev-prof-zh">📏 ${profZH}</span>` : ''}
+          ${type ? `<span class="prev-site-type">${type}</span>` : ''}
+        </div>
+      </div>
+    `;
   }
 
   /** Convertit un angle en degrés en flèche directionnelle Unicode */
