@@ -369,12 +369,15 @@
           <input type="date" id="prev-date" class="prev-input" />
         </div>
         <div class="prev-ctrl-group" id="prev-time-row">
-          <label class="prev-label" for="prev-time">⏱ Heure (optionnel)</label>
-          <input type="time" id="prev-time" class="prev-input" step="900" />
+          <label class="prev-heure-check-label" for="prev-heure-check">
+            <input type="checkbox" id="prev-heure-check" class="prev-heure-checkbox" />
+            ⏱ Filtrer par heure précise
+          </label>
+          <input type="time" id="prev-time" class="prev-input hidden" step="900" />
         </div>
         <button id="btn-prev-calculer" class="btn-prev-calc">Calculer</button>
       </div>
-      <p class="prev-heure-hint">Sans heure : fenêtres de plongée de tous les sites sur toute la journée. Avec une heure : statut des sites à cet instant précis.</p>
+      <p class="prev-heure-hint">Par défaut : heures d'étale et fenêtres de plongée de tous les sites sur toute la journée. Cochez « Filtrer par heure » pour voir le statut des sites (plongeable / bientôt / non plongeable) à un instant précis.</p>
 
       <!-- Checkbox 2 tanks -->
       <div class="prev-2tanks-bar">

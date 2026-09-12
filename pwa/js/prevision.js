@@ -266,10 +266,12 @@ const Prevision = (() => {
     document.getElementById('prev-maree-bloc')?.classList.remove('hidden');
     document.getElementById('prev-port')?.classList.remove('hidden');
 
-    // Heure optionnelle : si absente, vue "journée" (aucun instant précis).
+    // Heure filtrée uniquement si la case "Filtrer par heure précise" est
+    // cochée (et une heure renseignée) ; sinon vue "journée" par défaut.
     // On utilise midi local pour retrouver l'entrée marees.json du jour sans
     // risquer un décalage de date via toISOString() (cf. biplongee.js).
-    const hasHeure   = !!timeStr;
+    const heureCheck = document.getElementById('prev-heure-check');
+    const hasHeure   = !!(heureCheck && heureCheck.checked && timeStr);
     const targetDate = hasHeure ? _buildDate(dateStr, timeStr) : new Date(`${dateStr}T12:00:00`);
     const entree     = Marees.getEntreePourDate(targetDate);
     const hauteur    = (hasHeure && entree) ? Marees.getHauteurAt(targetDate) : null;
@@ -467,9 +469,10 @@ const Prevision = (() => {
     } else if (r.fenetres.length === 0) {
       fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-absente">Données insuffisantes</span>`;
     } else {
-      fenetresHtml = r.fenetres.map(f =>
-        `<span class="prev-fenetre-chip" title="${f.etaleLabel}">🕐 ${_minToHHMM(f.debutMin)}–${_minToHHMM(f.finMin)}</span>`
-      ).join('');
+      fenetresHtml = r.fenetres.map(f => {
+        const arrow = f.type === 'PM' ? '⬆' : '⬇';
+        return `<span class="prev-fenetre-chip" title="${f.etaleLabel}">${arrow} Étale ${_minToHHMM(f.etaleMin)} · fenêtre ${_minToHHMM(f.debutMin)}–${_minToHHMM(f.finMin)}</span>`;
+      }).join('');
     }
 
     const cardClass = (r.sansContrainte || r.fenetres.length === 0) ? 'prev-card-gris' : 'prev-card-vert';
@@ -562,7 +565,8 @@ const Prevision = (() => {
     const modal = document.getElementById('modal-prevision');
     if (!modal) return;
 
-    // Pré-remplir date/heure courante
+    // Pré-remplir la date courante ; l'heure reste prête (mais masquée et
+    // inactive) tant que la case "Filtrer par heure précise" n'est pas cochée.
     const now = new Date();
     const dateIn = document.getElementById('prev-date');
     const timeIn = document.getElementById('prev-time');
@@ -600,6 +604,18 @@ const Prevision = (() => {
     // Bouton calculer (unique déclencheur)
     const btnCalc = document.getElementById('btn-prev-calculer');
     if (btnCalc) btnCalc.addEventListener('click', _calculer);
+
+    // Case "Filtrer par heure précise" : bascule vue journée ↔ vue instant
+    document.getElementById('prev-heure-check')?.addEventListener('change', e => {
+      const timeInput = document.getElementById('prev-time');
+      if (e.target.checked) {
+        timeInput?.classList.remove('hidden');
+        if (timeInput && !timeInput.value) timeInput.value = _timeLocal(new Date());
+      } else {
+        timeInput?.classList.add('hidden');
+      }
+      if (!_mode2tanks) _calculer();
+    });
 
     // Checkbox 2 tanks
     document.getElementById('prev-2tanks')?.addEventListener('change', e => {

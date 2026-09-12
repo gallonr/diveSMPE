@@ -427,6 +427,8 @@ const MaréeSite = (() => {
         }
         fenetres.push({
           etaleLabel: `${code.type === 'PM' ? 'PM' : 'BM'} ${code.eau === 'ME' ? 'morte-eau' : 'vive-eau'} à ${_minToHHMM(etale.tMin)}`,
+          etaleMin: etale.tMin,
+          type: code.type, // 'PM' | 'BM' — pour affichage direct de l'heure d'étale
           debutMin,
           finMin,
         });

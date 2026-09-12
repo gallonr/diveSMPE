@@ -1204,6 +1204,22 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+.prev-heure-check-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--gris-texte);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.prev-heure-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--bleu-ciel);
+  cursor: pointer;
+}
 .prev-input {
   background: #0f2e2c;
   border: 1px solid rgba(58,175,168,0.35);
