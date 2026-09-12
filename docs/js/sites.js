@@ -82,14 +82,19 @@ const Sites = (() => {
     console.log('🔄 Sites rechargés depuis le Worker');
   }
 
-  // profMin/profMax viennent du pipeline LiDAR (bathy_sites.json), pas du
-  // Sheet BDD relayé par le Worker — fusion côté client par siteID.
+  // profMin/profMax : priorité à la saisie manuelle du Sheet (relayée par le
+  // Worker /sites) ; on ne comble avec le pipeline LiDAR (bathy_sites.json)
+  // que si le Sheet n'a rien renseigné pour ce site.
   function _fusionnerProfondeurs() {
     if (typeof Bathy === 'undefined') return;
     _sites.forEach(f => {
-      const entry = Bathy.get(f.properties.siteID);
-      f.properties.profMin = entry ? entry.profMin : null;
-      f.properties.profMax = entry ? entry.profMax : null;
+      const p = f.properties;
+      const manquant = (v) => v === null || v === undefined;
+      if (manquant(p.profMin) || manquant(p.profMax)) {
+        const entry = Bathy.get(p.siteID);
+        if (manquant(p.profMin)) p.profMin = entry ? entry.profMin : null;
+        if (manquant(p.profMax)) p.profMax = entry ? entry.profMax : null;
+      }
     });
   }
 
