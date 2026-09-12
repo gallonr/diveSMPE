@@ -15,6 +15,7 @@ const Prevision = (() => {
   let _mode2tanks = false;     // true = mode bi-journée actif
   let _tousLesSites = false;   // false = uniquement prioritePrevision=true (si dispo), true = tous
   let _journeeParSite = new Map(); // siteID → résultat vue journée (pour le popup détail au clic)
+  let _dateCourante = null;    // "YYYY-MM-DD" de la dernière date calculée (pour reconstituer les Date des fenêtres)
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -236,6 +237,7 @@ const Prevision = (() => {
     const dateStr = document.getElementById('prev-date').value;
     const timeStr = document.getElementById('prev-time').value;
     if (!dateStr) return;
+    _dateCourante = dateStr;
 
     // ── Mode bi-journée ──────────────────────────────────────
     if (_mode2tanks) {
@@ -353,9 +355,9 @@ const Prevision = (() => {
         : null;
       // Courant au point du site
       let courant = null;
+      const lat = feat.properties.latitude ?? (feat.geometry?.coordinates?.[1]);
+      const lon = feat.properties.longitude ?? (feat.geometry?.coordinates?.[0]);
       if (typeof Courants !== 'undefined' && Courants.getVitesseSite) {
-        const lat = feat.properties.latitude ?? (feat.geometry?.coordinates?.[1]);
-        const lon = feat.properties.longitude ?? (feat.geometry?.coordinates?.[0]);
         if (lat != null && lon != null) {
           courant = Courants.getVitesseSite(lat, lon, targetDate);
         }
@@ -364,7 +366,7 @@ const Prevision = (() => {
       // de l'instant choisi — cf. _afficherDetailSite / _renderTimelineRow)
       const fenetres = MaréeSite.getFenetres(feat.properties, entree);
       const sansContrainte = !feat.properties.maree;
-      const r = { props: feat.properties, etat, profMaxReelle, courant, fenetres, sansContrainte };
+      const r = { props: feat.properties, etat, profMaxReelle, courant, fenetres, sansContrainte, lat, lon };
       _journeeParSite.set(feat.properties.siteID, r);
       return r;
     });
@@ -489,6 +491,20 @@ const Prevision = (() => {
 
   // ── Popup détail site (heures d'étale précises, au clic sur une ligne) ──
 
+  /** Construit une Date locale à partir de "YYYY-MM-DD" + minutes depuis minuit */
+  function _dateFromMin(dateStr, min) {
+    const [Y, M, D] = dateStr.split('-').map(Number);
+    return new Date(Y, M - 1, D, 0, 0 + Math.round(min), 0, 0);
+  }
+
+  /** Ligne "départ cale du Naye HH:MM" estimée pour arriver au site à `arriveeDate` */
+  function _departNayeHtml(lat, lon, arriveeDate) {
+    if (lat == null || lon == null || typeof BiPlongee === 'undefined' || !BiPlongee.calculerDepartCale) return '';
+    const { departDate, transitMin } = BiPlongee.calculerDepartCale(lat, lon, arriveeDate);
+    const heureDepart = `${String(departDate.getHours()).padStart(2, '0')}:${String(departDate.getMinutes()).padStart(2, '0')}`;
+    return ` / départ cale du Naye <strong>${heureDepart}</strong> <span class="prev-detail-transit">(trajet ~${Math.round(transitMin)} min)</span>`;
+  }
+
   function _afficherDetailSite(siteID) {
     const r = _journeeParSite.get(siteID);
     const modal = document.getElementById('modal-prev-detail');
@@ -498,9 +514,6 @@ const Prevision = (() => {
     const titreEl = document.getElementById('prev-detail-titre');
     if (titreEl) titreEl.textContent = p.siteNom || p.siteID;
 
-    const profZH = (p.profMin !== null && p.profMin !== undefined && p.profMax !== null && p.profMax !== undefined)
-      ? `📏 ${p.profMin}–${p.profMax} m ZH`
-      : '';
     const type = p.typeSite ? `<span class="prev-site-type">${p.typeSite}</span>` : '';
 
     let corpsHtml;
@@ -511,11 +524,15 @@ const Prevision = (() => {
       corpsHtml = `<p class="prev-detail-vide">Aucune fenêtre de plongée dans les horaires du club (${cfg.heureDebut}–${cfg.heureFin}) pour cette date.</p>`;
     } else {
       corpsHtml = r.fenetres.map(f => {
-        const arrow = f.type === 'PM' ? '⬆' : '⬇';
+        const etaleHHMM = f.etaleMin != null ? _minToHHMM(f.etaleMin) : '?';
+        let departHtml = '';
+        if (_dateCourante) {
+          const arriveeDate = _dateFromMin(_dateCourante, f.debutMin);
+          departHtml = _departNayeHtml(r.lat, r.lon, arriveeDate);
+        }
         return `
           <div class="prev-detail-fenetre">
-            <div class="prev-detail-etale">${arrow} ${f.etaleLabel}</div>
-            <div class="prev-detail-plage">🕐 Fenêtre de plongée : ${_minToHHMM(f.debutMin)} – ${_minToHHMM(f.finMin)}</div>
+            <div class="prev-detail-plage">🕐 Fenêtre de plongée : ${_minToHHMM(f.debutMin)} – ${_minToHHMM(f.finMin)} (étale ${etaleHHMM})${departHtml}</div>
           </div>
         `;
       }).join('');
@@ -524,7 +541,7 @@ const Prevision = (() => {
     const contenuEl = document.getElementById('prev-detail-contenu');
     if (contenuEl) {
       contenuEl.innerHTML = `
-        <div class="prev-detail-meta">${profZH}${type}</div>
+        <div class="prev-detail-meta">${type}</div>
         ${corpsHtml}
       `;
     }
@@ -544,7 +561,9 @@ const Prevision = (() => {
       const props = feat.properties;
       const sansContrainte = !props.maree;
       const fenetres = MaréeSite.getFenetres(props, entree);
-      const r = { props, fenetres, sansContrainte };
+      const lat = props.latitude ?? (feat.geometry?.coordinates?.[1]);
+      const lon = props.longitude ?? (feat.geometry?.coordinates?.[0]);
+      const r = { props, fenetres, sansContrainte, lat, lon };
       _journeeParSite.set(props.siteID, r);
       return r;
     });

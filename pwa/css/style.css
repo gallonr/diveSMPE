@@ -1785,6 +1785,22 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   text-transform: capitalize;
 }
 
+/* Popup détail site (frise horaire) */
+.prev-detail-fenetre {
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.prev-detail-fenetre:last-child { border-bottom: none; }
+.prev-detail-plage {
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.9);
+  line-height: 1.5;
+}
+.prev-detail-transit {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+}
+
 /* Bascule sites prioritaires / tous les sites */
 .prev-priorite-toggle {
   display: flex;

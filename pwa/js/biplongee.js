@@ -71,6 +71,21 @@ const BiPlongee = (() => {
     return (dNM / VITESSE_KTS) * 60;
   }
 
+  /**
+   * Calcule l'heure de départ estimée de la Cale du Naye pour arriver sur
+   * le site (lat, lon) à l'heure `arriveeDate` (Date locale).
+   * Réutilise les paramètres du planificateur bi-journée (Maclow, 15 kt,
+   * coefficient chenal 1.35) pour une estimation cohérente dans toute l'app.
+   *
+   * @returns {{ transitMin: number, departDate: Date, distNM: number }}
+   */
+  function calculerDepartCale(lat, lon, arriveeDate) {
+    const transitMin = _transitMin(NAYE.lat, NAYE.lon, lat, lon);
+    const distNM = _distanceNM(NAYE.lat, NAYE.lon, lat, lon) * NAV_COEFF;
+    const departDate = new Date(arriveeDate.getTime() - Math.round(transitMin) * 60000);
+    return { transitMin, departDate, distNM };
+  }
+
   // ── Fenêtres de plongeabilité ─────────────────────────────────
 
   /**
@@ -627,6 +642,6 @@ const BiPlongee = (() => {
     // Tout est piloté depuis Prevision.js via afficher()
   }
 
-  return { init, calculerPaires, afficher, _ouvrirSite, _filtrer, definirIntervalleSurface };
+  return { init, calculerPaires, afficher, _ouvrirSite, _filtrer, definirIntervalleSurface, calculerDepartCale };
 
 })();
