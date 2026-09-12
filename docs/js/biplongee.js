@@ -117,18 +117,20 @@ const BiPlongee = (() => {
   /**
    * Profondeur réelle maximum au centre d'une plongée.
    * = profMax_ZH + hauteur_marée_à_T
-   * Retourne null si LiDAR non disponible pour ce site.
+   * profMax_ZH vient de props.profMax (déjà fusionné par Sites.js — priorité
+   * à la saisie manuelle du Sheet, complétée par le LiDAR sinon). Retourne
+   * null si aucune des deux sources n'a de valeur pour ce site.
    */
-  function _profReelleMax(siteID, midpointMin, dateStr) {
-    const entry = Bathy.get(siteID);
-    if (!entry) return null;
+  function _profReelleMax(props, midpointMin, dateStr) {
+    const profMax = props.profMax;
+    if (profMax === null || profMax === undefined) return null;
     // Construire la date complète à partir de dateStr + heure du midpoint
     const [Y, M, D] = dateStr.split('-').map(Number);
     const H  = Math.floor(midpointMin / 60);
     const Mi = Math.round(midpointMin % 60);
     const dt = new Date(Y, M - 1, D, H, Mi, 0);
     const hMaree = Marees.getHauteurAt(dt) ?? 0;
-    return Number(entry.profMax) + hMaree;
+    return Number(profMax) + hMaree;
   }
 
   // ── Algorithme principal ──────────────────────────────────────
@@ -193,8 +195,8 @@ const BiPlongee = (() => {
 
         const midP1 = arriveeA_min + DIVE_DUREE_MIN / 2;
         const midP2 = arriveeB_min + DIVE_DUREE_MIN / 2;
-        const profA = _profReelleMax(pA.siteID, midP1, dateStr);
-        const profB = _profReelleMax(pB.siteID, midP2, dateStr);
+        const profA = _profReelleMax(pA, midP1, dateStr);
+        const profB = _profReelleMax(pB, midP2, dateStr);
 
         let profilOk   = true;
         let profilNote = '';
@@ -473,8 +475,8 @@ const BiPlongee = (() => {
             if (!_couvreIntervalle(arriveeB, finP2, cB.fenetres, MARGE_FIN_P2)) continue;
 
             // Profil anti-inversion
-            const profA = _profReelleMax(cA.p.siteID, arriveeA + DIVE_DUREE_MIN / 2, dateStr);
-            const profB = _profReelleMax(cB.p.siteID, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
+            const profA = _profReelleMax(cA.p, arriveeA + DIVE_DUREE_MIN / 2, dateStr);
+            const profB = _profReelleMax(cB.p, arriveeB + DIVE_DUREE_MIN / 2, dateStr);
 
             let profilOk = true, profilNote = '', profilWarning = false;
             if (profA !== null && profB !== null) {
