@@ -190,14 +190,19 @@ const MaréeSite = (() => {
         return true;
       });
 
-      // Si pas d'étale compatible avec le coeff du jour, accepter quand même
-      // (mieux que rien — données partielles)
+      // Fallback UNIQUEMENT si le type d'eau du jour est inconnu (pas de coeff
+      // dans les données) — dans ce cas on ne peut pas filtrer, donc on garde
+      // toutes les étales du bon type PM/BM. Si le type d'eau du jour EST
+      // connu mais ne correspond pas à ce code (ex. code ME un jour de VE),
+      // ce code ne s'applique pas aujourd'hui : ne pas créer de fenêtre
+      // fantôme (sinon on obtient une fenêtre par code ME/VE au lieu d'une
+      // seule pour le jour choisi).
       const etalesRef = etalesCompatibles.length > 0
         ? etalesCompatibles
-        : etalesJour.filter(e => e.typeEtale === code.type);
+        : (typeEauJour ? [] : etalesJour.filter(e => e.typeEtale === code.type));
 
-      // Si vraiment aucune étale du bon type (PM/BM) dans les données du jour,
-      // passer au code suivant sans créer de fenêtre fantôme
+      // Si aucune étale applicable aujourd'hui, passer au code suivant sans
+      // créer de fenêtre fantôme
       if (etalesRef.length === 0) continue;
 
       for (const etale of etalesRef) {
@@ -427,7 +432,10 @@ const MaréeSite = (() => {
       });
       const etalesRef = etalesCompatibles.length > 0
         ? etalesCompatibles
-        : etalesJour.filter(e => e.typeEtale === code.type);
+        // Fallback uniquement si le type d'eau du jour est inconnu (cf.
+        // calculerEtat ci-dessus) — sinon un code ME/VE non applicable au
+        // jour choisi ne doit pas générer de fenêtre fantôme.
+        : (typeEauJour ? [] : etalesJour.filter(e => e.typeEtale === code.type));
       if (etalesRef.length === 0) continue;
 
       for (const etale of etalesRef) {
