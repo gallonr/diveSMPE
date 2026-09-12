@@ -14,6 +14,7 @@ const Prevision = (() => {
   let _filtreProf = 'all';     // filtre profondeur : 'all' | 6 | 10 | 20 | '20+'
   let _mode2tanks = false;     // true = mode bi-journée actif
   let _tousLesSites = false;   // false = uniquement prioritePrevision=true (si dispo), true = tous
+  let _journeeParSite = new Map(); // siteID → résultat vue journée (pour le popup détail au clic)
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -343,6 +344,7 @@ const Prevision = (() => {
     }
 
     // Calculer l'état de chaque site pour la date/heure choisie
+    _journeeParSite = new Map();
     let resultats = features.map(feat => {
       const etat = MaréeSite.calculerEtat(feat.properties, entree, targetDate);
       const profMaxZH = feat.properties.profMax;
@@ -358,7 +360,13 @@ const Prevision = (() => {
           courant = Courants.getVitesseSite(lat, lon, targetDate);
         }
       }
-      return { props: feat.properties, etat, profMaxReelle, courant };
+      // Fenêtres précises du jour (pour le détail au clic, indépendamment
+      // de l'instant choisi — cf. _afficherDetailSite / _renderTimelineRow)
+      const fenetres = MaréeSite.getFenetres(feat.properties, entree);
+      const sansContrainte = !feat.properties.maree;
+      const r = { props: feat.properties, etat, profMaxReelle, courant, fenetres, sansContrainte };
+      _journeeParSite.set(feat.properties.siteID, r);
+      return r;
     });
 
     // Appliquer filtre profondeur
@@ -460,33 +468,85 @@ const Prevision = (() => {
       trackHtml = `<div class="prev-timeline-empty">Aucune fenêtre</div>`;
       rowClass = 'prev-timeline-row-vide';
     } else {
+      // Pas de label d'étale sur la frise : déjà visible dans le marégramme
+      // (bloc hauteur/courbe au-dessus). Seule la fenêtre (barre) compte ici.
       trackHtml = r.fenetres.map(f => {
         const left  = _pctFromMin(f.debutMin, range);
         const right = _pctFromMin(f.finMin, range);
         const width = Math.max(right - left, 1.5); // largeur mini visible/tapable
-        const arrow = f.type === 'PM' ? '⬆' : '⬇';
         const titre = `${f.etaleLabel} — fenêtre ${_minToHHMM(f.debutMin)}–${_minToHHMM(f.finMin)}`;
-        return `
-          <div class="prev-timeline-bar" style="left:${left}%;width:${width}%" title="${titre}"></div>
-          <span class="prev-timeline-bar-label" style="left:${left}%">${arrow} ${_minToHHMM(f.etaleMin)}</span>
-        `;
+        return `<div class="prev-timeline-bar" style="left:${left}%;width:${width}%" title="${titre}"></div>`;
       }).join('');
     }
 
     return `
-      <div class="prev-timeline-row ${rowClass}" onclick="Sites.selectionner('${p.siteID}'); Prevision.fermer()">
+      <div class="prev-timeline-row ${rowClass}" onclick="Prevision._afficherDetailSite('${p.siteID}')">
         <div class="prev-timeline-label" title="${nom}">${nom}</div>
         <div class="prev-timeline-track">${trackHtml}</div>
       </div>
     `;
   }
 
+  // ── Popup détail site (heures d'étale précises, au clic sur une ligne) ──
+
+  function _afficherDetailSite(siteID) {
+    const r = _journeeParSite.get(siteID);
+    const modal = document.getElementById('modal-prev-detail');
+    if (!r || !modal) return;
+
+    const p = r.props;
+    const titreEl = document.getElementById('prev-detail-titre');
+    if (titreEl) titreEl.textContent = p.siteNom || p.siteID;
+
+    const profZH = (p.profMin !== null && p.profMin !== undefined && p.profMax !== null && p.profMax !== undefined)
+      ? `📏 ${p.profMin}–${p.profMax} m ZH`
+      : '';
+    const type = p.typeSite ? `<span class="prev-site-type">${p.typeSite}</span>` : '';
+
+    let corpsHtml;
+    if (r.sansContrainte) {
+      corpsHtml = `<p class="prev-detail-libre">🟢 Aucune contrainte de marée — site plongeable toute la journée.</p>`;
+    } else if (r.fenetres.length === 0) {
+      const cfg = (typeof CONFIG !== 'undefined' && CONFIG.PLONGEE) ? CONFIG.PLONGEE : { heureDebut: '08:00', heureFin: '22:30' };
+      corpsHtml = `<p class="prev-detail-vide">Aucune fenêtre de plongée dans les horaires du club (${cfg.heureDebut}–${cfg.heureFin}) pour cette date.</p>`;
+    } else {
+      corpsHtml = r.fenetres.map(f => {
+        const arrow = f.type === 'PM' ? '⬆' : '⬇';
+        return `
+          <div class="prev-detail-fenetre">
+            <div class="prev-detail-etale">${arrow} ${f.etaleLabel}</div>
+            <div class="prev-detail-plage">🕐 Fenêtre de plongée : ${_minToHHMM(f.debutMin)} – ${_minToHHMM(f.finMin)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    const contenuEl = document.getElementById('prev-detail-contenu');
+    if (contenuEl) {
+      contenuEl.innerHTML = `
+        <div class="prev-detail-meta">${profZH}${type}</div>
+        ${corpsHtml}
+      `;
+    }
+
+    modal.dataset.siteId = siteID;
+    modal.classList.remove('hidden');
+  }
+
+  function _fermerDetailSite() {
+    document.getElementById('modal-prev-detail')?.classList.add('hidden');
+  }
+
   function _rendreVueJournee(features, entree, conteneur) {
+    _journeeParSite = new Map();
+
     let resultats = features.map(feat => {
       const props = feat.properties;
       const sansContrainte = !props.maree;
       const fenetres = MaréeSite.getFenetres(props, entree);
-      return { props, fenetres, sansContrainte };
+      const r = { props, fenetres, sansContrainte };
+      _journeeParSite.set(props.siteID, r);
+      return r;
     });
 
     // Filtre profondeur : pas de hauteur instantanée en vue journée,
@@ -573,6 +633,8 @@ const Prevision = (() => {
           ${profReelleHtml}
           ${courantHtml}
           ${type ? `<span class="prev-site-type">${type}</span>` : ''}
+          <button class="prev-site-detail-btn" title="Voir les horaires précis des fenêtres de plongée"
+            onclick="event.stopPropagation(); Prevision._afficherDetailSite('${p.siteID}')">🕐 Fenêtres</button>
         </div>
       </div>
     `;
@@ -635,6 +697,22 @@ const Prevision = (() => {
         if (e.target === modal) fermer();
       });
     }
+
+    // ── Modal détail site (frise horaire — vue journée) ──────────
+    document.getElementById('btn-close-prev-detail')?.addEventListener('click', _fermerDetailSite);
+    const modalDetail = document.getElementById('modal-prev-detail');
+    if (modalDetail) {
+      modalDetail.addEventListener('click', e => {
+        if (e.target === modalDetail) _fermerDetailSite();
+      });
+    }
+    document.getElementById('btn-prev-detail-fiche')?.addEventListener('click', () => {
+      const siteId = modalDetail?.dataset.siteId;
+      if (!siteId) return;
+      _fermerDetailSite();
+      fermer();
+      if (typeof Sites !== 'undefined' && Sites.selectionner) Sites.selectionner(siteId);
+    });
 
     // Bouton calculer (unique déclencheur)
     const btnCalc = document.getElementById('btn-prev-calculer');
@@ -712,5 +790,5 @@ const Prevision = (() => {
     });
   }
 
-  return { init, ouvrir, fermer, _toggleRouge, _toggleGris, getFeaturesActives: _appliquerFiltragePriorite };
+  return { init, ouvrir, fermer, _toggleRouge, _toggleGris, _afficherDetailSite, getFeaturesActives: _appliquerFiltragePriorite };
 })();

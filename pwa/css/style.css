@@ -1724,7 +1724,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 0 18px;
+  padding: 7px 0;
   border-bottom: 1px solid rgba(255,255,255,0.05);
   cursor: pointer;
 }
@@ -1754,16 +1754,6 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   min-width: 4px;
   background: var(--vert-ok);
   border-radius: 4px;
-}
-.prev-timeline-bar-label {
-  position: absolute;
-  top: 100%;
-  margin-top: 3px;
-  transform: translateX(-50%);
-  font-size: 0.62rem;
-  font-variant-numeric: tabular-nums;
-  color: #00d4f0;
-  white-space: nowrap;
 }
 .prev-timeline-bar-libre {
   position: static;
@@ -1851,6 +1841,21 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
 .prev-prof-zh {
   font-size: 0.73rem;
   color: rgba(255,255,255,0.45);
+}
+.prev-site-detail-btn {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #ffd700;
+  background: rgba(255,215,0,0.1);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 8px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.prev-site-detail-btn:hover {
+  background: rgba(255,215,0,0.2);
 }
 .prev-prof-reelle {
   font-size: 0.73rem;
@@ -1952,8 +1957,7 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   .prev-timeline-label {
     width: 64px;
   }
-  .prev-timeline-tick,
-  .prev-timeline-bar-label {
+  .prev-timeline-tick {
     font-size: 0.58rem;
   }
 }
