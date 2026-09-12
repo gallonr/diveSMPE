@@ -1249,6 +1249,24 @@ input.heure-plongee:focus { outline: 2px solid var(--emeraude); border-color: va
 }
 .btn-prev-calc:hover { background: var(--emeraude-light); }
 
+.btn-prev-detail-fiche {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 9px 18px;
+  background: var(--emeraude);
+  color: var(--emeraude-deep);
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: center;
+  transition: background var(--transition);
+}
+.btn-prev-detail-fiche:hover { background: var(--emeraude-light); }
+
 /* ── Bloc marée résumé ────────────────────────────────────── */
 .prev-maree-bloc {
   padding: 10px 16px 0;
