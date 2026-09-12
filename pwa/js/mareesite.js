@@ -374,14 +374,31 @@ const MaréeSite = (() => {
   }
 
   /**
+   * Plage horaire d'exploitation du club (CONFIG.PLONGEE) en minutes depuis
+   * minuit. Les étales hors de cette plage sont écartées par getFenetres —
+   * le club n'organise pas de sorties avant l'ouverture ni après la fermeture.
+   * Retourne null si CONFIG.PLONGEE est absent (aucun filtrage).
+   */
+  function _rangeEtalesAutorisees() {
+    if (typeof CONFIG === 'undefined' || !CONFIG.PLONGEE) return null;
+    const { heureDebut, heureFin } = CONFIG.PLONGEE;
+    if (!heureDebut || !heureFin) return null;
+    const [hD, mD] = heureDebut.split(':').map(Number);
+    const [hF, mF] = heureFin.split(':').map(Number);
+    return { debutMin: hD * 60 + mD, finMin: hF * 60 + mF };
+  }
+
+  /**
    * Construit la liste des fenêtres de plongeabilité pour un site et un jour donné,
-   * indépendamment de l'heure actuelle.
+   * indépendamment de l'heure actuelle. Seules les fenêtres dont l'étale tombe
+   * dans la plage CONFIG.PLONGEE (heureDebut–heureFin) sont retenues.
    * Utilisé par BiPlongee pour la planification bi-journée.
    *
    * @param {object} props       - feature.properties du site (maree, tpsEtale)
    * @param {object} entreeMaree - entrée marees.json du jour
-   * @returns {Array<{debutMin:number, finMin:number, etaleLabel:string}>}
-   *          Fenêtres triées par heure de début. Tableau vide si pas de contrainte.
+   * @returns {Array<{debutMin:number, finMin:number, etaleLabel:string, etaleMin:number, type:string}>}
+   *          Fenêtres triées par heure de début. Tableau vide si pas de contrainte
+   *          ou si aucune étale ne tombe dans la plage horaire autorisée.
    */
   function getFenetres(props, entreeMaree) {
     const codeRaw = props.maree;
@@ -435,8 +452,15 @@ const MaréeSite = (() => {
       }
     }
 
-    fenetres.sort((a, b) => a.debutMin - b.debutMin);
-    return fenetres;
+    // Ne garder que les étales dans la plage d'exploitation du club
+    // (CONFIG.PLONGEE.heureDebut–heureFin, ex. 08:00–22:30).
+    const range = _rangeEtalesAutorisees();
+    const fenetresRetenues = range
+      ? fenetres.filter(f => f.etaleMin >= range.debutMin && f.etaleMin <= range.finMin)
+      : fenetres;
+
+    fenetresRetenues.sort((a, b) => a.debutMin - b.debutMin);
+    return fenetresRetenues;
   }
 
   /**

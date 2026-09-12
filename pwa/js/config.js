@@ -103,6 +103,15 @@ const CONFIG = {
     MSL_OFFSET_M: 6.5278,  // offset MSL FES2022 → ZH SHOM Saint-Malo (m)
   },
 
+  // ── Plongée — plage horaire d'exploitation du club ────────
+  // Les étales (et donc les fenêtres de plongée) hors de cette plage ne
+  // sont pas retenues (cf. MaréeSite.getFenetres) : le club n'organise pas
+  // de sorties avant l'ouverture ni après la fermeture.
+  PLONGEE: {
+    heureDebut: '08:00',
+    heureFin:   '22:30',
+  },
+
   // ── Port (seuil + pieds de pilote des bateaux) ────────────
   PORT: {
     // Hauteur du seuil d'entrée du port au-dessus du zéro hydrographique (m ZH)

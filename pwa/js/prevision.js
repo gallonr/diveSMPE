@@ -445,7 +445,7 @@ const Prevision = (() => {
       html += avecFenetre.map(r => _renderSiteCardJournee(r)).join('');
     }
     if (autres.length > 0) {
-      html += `<div class="prev-groupe-titre prev-titre-gris">— Sans contrainte de marée / données insuffisantes (${autres.length})
+      html += `<div class="prev-groupe-titre prev-titre-gris">— Sans contrainte de marée / aucune fenêtre disponible (${autres.length})
         <button class="prev-toggle-gris btn-icon" onclick="Prevision._toggleGris(this)">▼</button>
       </div>`;
       html += `<div class="prev-gris-liste">` + autres.map(r => _renderSiteCardJournee(r)).join('') + `</div>`;
@@ -467,7 +467,7 @@ const Prevision = (() => {
     if (r.sansContrainte) {
       fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-libre">Aucune contrainte de marée</span>`;
     } else if (r.fenetres.length === 0) {
-      fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-absente">Données insuffisantes</span>`;
+      fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-absente">Aucune fenêtre (données manquantes ou hors horaires club)</span>`;
     } else {
       fenetresHtml = r.fenetres.map(f => {
         const arrow = f.type === 'PM' ? '⬆' : '⬇';
