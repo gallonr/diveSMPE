@@ -37,6 +37,7 @@ const SITE_COLUMNS = [
   'typeSite', 'accessibilite', 'typePlongee', 'niveauPlongee',
   'accesVent', 'houle', 'mouillage', 'maree', 'tpsEtale',
   'commentaire', 'photoSite', 'prioritePrevision',
+  'profMin', 'profMax',
 ];
 
 // Convertit les lignes brutes du Sheet (rows de bdd.gs) en FeatureCollection GeoJSON.
@@ -61,6 +62,12 @@ function _buildSitesGeoJSON(rows) {
     properties.prioritePrevision = ['VRAI', 'TRUE', '1'].includes(
       String(row.prioritePrevision || '').trim().toUpperCase()
     );
+    // profMin/profMax : nombre ou null (le Sheet peut renvoyer un number,
+    // une string, ou une cellule vide selon le format de colonne)
+    for (const col of ['profMin', 'profMax']) {
+      const n = parseFloat(row[col]);
+      properties[col] = Number.isFinite(n) ? n : null;
+    }
 
     features.push({
       type: 'Feature',

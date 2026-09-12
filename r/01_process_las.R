@@ -416,15 +416,29 @@ sites_wgs_updated <- sites_wgs
 if (!("profMin" %in% names(sites_wgs_updated))) sites_wgs_updated$profMin <- NA_real_
 if (!("profMax" %in% names(sites_wgs_updated))) sites_wgs_updated$profMax <- NA_real_
 
+# Priorité à la saisie manuelle (Google Sheet, cf. r/02_process_bdd.R) sur le
+# calcul automatique LiDAR : on ne comble ici que les profMin/profMax encore
+# vides (NA), on n'écrase jamais une valeur déjà renseignée à la main.
+n_manuel <- 0L
+n_lidar <- 0L
 for (res in bathy_results_clean) {
   if (!is.na(res$profMin)) {
     idx <- which(sites_wgs_updated$siteID == res$siteID)
     if (length(idx) == 1) {
-      sites_wgs_updated$profMin[idx] <- res$profMin
-      sites_wgs_updated$profMax[idx] <- res$profMax
+      if (is.na(sites_wgs_updated$profMin[idx])) {
+        sites_wgs_updated$profMin[idx] <- res$profMin
+        sites_wgs_updated$profMax[idx] <- res$profMax
+        n_lidar <- n_lidar + 1L
+      } else {
+        n_manuel <- n_manuel + 1L
+      }
     }
   }
 }
+cat(sprintf(
+  "profMin/profMax : %d site(s) comblés par LiDAR, %d site(s) conservés (saisie manuelle prioritaire)\n",
+  n_lidar, n_manuel
+))
 
 writeLines(
   jsonlite::toJSON(bathy_results_clean, auto_unbox = TRUE, digits = NA),

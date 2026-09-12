@@ -46,7 +46,7 @@ cat("=============================================================\n\n")
 # =============================================================================
 cat("--- 2.1 Lecture de la BDD (Google Sheet) ---\n")
 
-gs4_auth()  # navigateur au premier lancement, token cache ensuite
+gs4_auth() # navigateur au premier lancement, token cache ensuite
 df_raw <- read_sheet(GOOGLE_SHEET_BDD_ID, sheet = "site")
 
 cat(sprintf("Chargé : %d lignes × %d colonnes\n", nrow(df_raw), ncol(df_raw)))
@@ -60,15 +60,17 @@ cat("--- 2.2 Conversion sf + CRS WGS84 ---\n")
 # Supprimer les lignes sans coordonnées (sites SR047–SR053, SE015)
 df_coords <- df_raw[!is.na(df_raw$latitude) & !is.na(df_raw$longitude), ]
 n_sans_coords <- nrow(df_raw) - nrow(df_coords)
-cat(sprintf("Sites sans coordonnées exclus : %d  (conservés : %d)\n",
-            n_sans_coords, nrow(df_coords)))
+cat(sprintf(
+  "Sites sans coordonnées exclus : %d  (conservés : %d)\n",
+  n_sans_coords, nrow(df_coords)
+))
 
 # Conversion en objet sf — coordonnées déjà en WGS84 (degrés décimaux)
 sf_sites <- st_as_sf(
   df_coords,
   coords = c("longitude", "latitude"),
-  crs    = 4326,   # WGS84 — confirmé phase 1
-  remove = FALSE   # Conserver les colonnes lon/lat dans les attributs
+  crs    = 4326, # WGS84 — confirmé phase 1
+  remove = FALSE # Conserver les colonnes lon/lat dans les attributs
 )
 
 cat(sprintf("CRS assigné : %s\n", st_crs(sf_sites)$input))
@@ -96,7 +98,8 @@ cols_voulues <- c(
   "latitude", "longitude",
   "typeSite", "accessibilite", "typePlongee", "niveauPlongee",
   "accesVent", "houle", "mouillage", "maree", "tpsEtale",
-  "commentaire", "photoSite", "prioritePrevision"
+  "commentaire", "photoSite", "prioritePrevision",
+  "profMin", "profMax"
 )
 
 cols_absentes <- setdiff(cols_voulues, names(sf_sites))
@@ -111,9 +114,11 @@ cols_presentes <- intersect(cols_voulues, names(sf_sites))
 # Toujours garder la géométrie (sf la gère automatiquement)
 sf_pwa <- sf_sites[, cols_presentes]
 
-cat(sprintf("Colonnes retenues (%d) : %s\n\n",
-            length(cols_presentes),
-            paste(cols_presentes, collapse = ", ")))
+cat(sprintf(
+  "Colonnes retenues (%d) : %s\n\n",
+  length(cols_presentes),
+  paste(cols_presentes, collapse = ", ")
+))
 
 # Nettoyage des valeurs texte : remplacer NA par NULL (JSON natif)
 # Convertir les colonnes character NA → NA (jsonlite les gérera en null)
@@ -149,6 +154,26 @@ if ("prioritePrevision" %in% names(sf_pwa)) {
   sf_pwa$prioritePrevision <- vals %in% c("VRAI", "TRUE", "1")
 }
 
+# Colonnes "profMin" / "profMax" (saisie manuelle possible depuis les cartes
+# marines, en complément du calcul automatique LiDAR fait par
+# 01_process_las.R). Optionnelles : si absentes/vides dans le Sheet, NA —
+# 01_process_las.R comblera alors avec le calcul bathymétrique. Si une valeur
+# est déjà renseignée ici, 01_process_las.R ne l'écrase PAS (priorité à la
+# saisie manuelle / mesure de terrain sur l'estimation LiDAR automatique).
+for (col in c("profMin", "profMax")) {
+  if (col %in% names(sf_pwa)) {
+    vals_num <- suppressWarnings(as.numeric(as.character(sf_pwa[[col]])))
+    n_invalides <- sum(!is.na(sf_pwa[[col]]) & sf_pwa[[col]] != "" & is.na(vals_num))
+    if (n_invalides > 0) {
+      warning(sprintf(
+        "%d valeur(s) '%s' non numériques ignorées (mises à NA) — vérifier le Google Sheet.",
+        n_invalides, col
+      ))
+    }
+    sf_pwa[[col]] <- vals_num
+  }
+}
+
 # =============================================================================
 # 2.4 — Export GeoJSON
 # =============================================================================
@@ -164,7 +189,7 @@ st_write(
   sf_pwa,
   dsn            = PATH_GEOJSON,
   driver         = "GeoJSON",
-  layer_options  = c("COORDINATE_PRECISION=6"),  # 6 décimales ≈ 11 cm, suffisant
+  layer_options  = c("COORDINATE_PRECISION=6"), # 6 décimales ≈ 11 cm, suffisant
   quiet          = FALSE
 )
 

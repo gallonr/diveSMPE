@@ -15,7 +15,7 @@ par `r/02_process_bdd.R` via `googlesheets4`.
    ```
    siteID | siteNom | latitude | longitude | typeSite | accessibilite |
    typePlongee | niveauPlongee | accesVent | houle | mouillage | maree |
-   tpsEtale | commentaire | photoSite
+   tpsEtale | commentaire | photoSite | profMin | profMax
    ```
 
    La colonne `mouillage` utilise un vocabulaire contrôlé (cf.
@@ -25,6 +25,14 @@ par `r/02_process_bdd.R` via `googlesheets4`.
    "Ancre - Tête de roche") est détectée. Cette colonne n'est pas encore
    entièrement remplie pour tous les sites — la PWA gère l'absence de
    valeur (pas de badge affiché tant que la case est vide).
+
+   Les colonnes `profMin` / `profMax` (profondeurs min/max en mètres,
+   nombres décimaux) sont optionnelles et peuvent être saisies à la main
+   (ex. depuis une carte marine) pour les sites où le calcul automatique
+   LiDAR (`r/01_process_las.R`) échoue ou est absent. **La saisie manuelle
+   dans le Sheet a toujours priorité** : `01_process_las.R` ne comble que
+   les cases vides (NA) et n'écrase jamais une valeur déjà renseignée ici.
+   Laisser la case vide si inconnue — la PWA gère l'absence de valeur.
 
 3. Importer les données de l'ancien `bddAtlasPlongeeSMPE.xlsx` (Fichier >
    Importer, ou copier/coller les valeurs) dans cet onglet.
