@@ -1690,33 +1690,104 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   color: var(--gris-texte);
   line-height: 1.4;
 }
-.prev-site-fenetres {
+/* ── Frise horaire (vue journée) ─────────────────────────────
+   Une ligne par site : label + piste horaire (axe CONFIG.PLONGEE,
+   ex. 08h–22h30) avec une barre par fenêtre de plongée. */
+.prev-timeline-axis {
   display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 4px 12px 10px;
+  position: sticky;
+  top: 0;
+  background: var(--gris-fond);
+  z-index: 2;
 }
-.prev-fenetre-chip {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: #00d4f0;
-  background: rgba(0,180,216,0.13);
-  border-radius: 8px;
-  padding: 2px 8px;
-  font-variant-numeric: tabular-nums;
+.prev-timeline-axis-spacer { width: 84px; flex-shrink: 0; }
+.prev-timeline-axis-track {
+  position: relative;
+  flex: 1;
+  height: 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+.prev-timeline-tick {
+  position: absolute;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  color: var(--gris-texte);
   white-space: nowrap;
 }
-.prev-fenetre-chip.prev-fenetre-libre {
+
+.prev-timeline { padding: 0 12px 8px; }
+.prev-timeline-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+}
+.prev-timeline-row:hover { background: rgba(255,255,255,0.03); }
+.prev-timeline-row:last-child { border-bottom: none; }
+.prev-timeline-label {
+  width: 84px;
+  flex-shrink: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--blanc);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prev-timeline-track {
+  position: relative;
+  flex: 1;
+  height: 16px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+.prev-timeline-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 4px;
+  background: var(--vert-ok);
+  border-radius: 4px;
+}
+.prev-timeline-bar-label {
+  position: absolute;
+  top: 100%;
+  margin-top: 3px;
+  transform: translateX(-50%);
+  font-size: 0.62rem;
+  font-variant-numeric: tabular-nums;
+  color: #00d4f0;
+  white-space: nowrap;
+}
+.prev-timeline-bar-libre {
+  position: static;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(46,204,113,0.2);
   color: #2ecc71;
-  background: rgba(46,204,113,0.12);
+  font-size: 0.68rem;
   font-style: italic;
-  font-weight: 400;
 }
-.prev-fenetre-chip.prev-fenetre-absente {
+.prev-timeline-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 0.68rem;
   color: var(--gris-texte);
-  background: rgba(158,203,200,0.1);
   font-style: italic;
-  font-weight: 400;
 }
+.prev-timeline-row-vide .prev-timeline-track { background: rgba(255,255,255,0.02); }
 .prev-site-type {
   font-size: 0.75rem;
   color: var(--emeraude);
@@ -1869,6 +1940,21 @@ body.widgets-masques .leaflet-bottom.leaflet-left {
   }
   .prev-site-nom {
     font-size: 0.9rem;
+  }
+
+  /* Frise horaire : label plus étroit, marges réduites */
+  .prev-timeline-axis {
+    padding: 4px 8px 8px;
+    gap: 6px;
+  }
+  .prev-timeline { padding: 0 8px 6px; }
+  .prev-timeline-axis-spacer,
+  .prev-timeline-label {
+    width: 64px;
+  }
+  .prev-timeline-tick,
+  .prev-timeline-bar-label {
+    font-size: 0.58rem;
   }
 }
 

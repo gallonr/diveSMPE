@@ -409,9 +409,77 @@ const Prevision = (() => {
     conteneur.innerHTML = html;
   }
 
-  // ── Vue journée : fenêtres de plongée de tous les sites ────────
+  // ── Vue journée : frise horaire des fenêtres de plongée ────────
   // (indépendant d'un instant précis — cf. MaréeSite.getFenetres, déjà
   // utilisé par le mode bi-journée)
+
+  /**
+   * Plage de l'axe horaire de la frise, en minutes depuis minuit.
+   * Alignée par défaut sur CONFIG.PLONGEE (horaires club) — cohérent avec
+   * le filtrage déjà appliqué dans MaréeSite.getFenetres.
+   */
+  function _rangeAxeMin() {
+    const cfg = (typeof CONFIG !== 'undefined' && CONFIG.PLONGEE) ? CONFIG.PLONGEE : null;
+    const [hD, mD] = (cfg?.heureDebut || '08:00').split(':').map(Number);
+    const [hF, mF] = (cfg?.heureFin   || '22:30').split(':').map(Number);
+    return { debutMin: hD * 60 + mD, finMin: hF * 60 + mF };
+  }
+
+  /** Position en % le long de l'axe horaire (bornée à [0, 100]) */
+  function _pctFromMin(min, range) {
+    const pct = (min - range.debutMin) / (range.finMin - range.debutMin) * 100;
+    return Math.max(0, Math.min(100, pct));
+  }
+
+  function _renderTimelineAxis(range) {
+    const ticks = [];
+    for (let m = Math.ceil(range.debutMin / 120) * 120; m < range.finMin; m += 120) ticks.push(m);
+    ticks.unshift(range.debutMin);
+    ticks.push(range.finMin);
+    const ticksHtml = ticks.map(m =>
+      `<span class="prev-timeline-tick" style="left:${_pctFromMin(m, range)}%">${_minToHHMM(m)}</span>`
+    ).join('');
+    return `
+      <div class="prev-timeline-axis">
+        <div class="prev-timeline-axis-spacer"></div>
+        <div class="prev-timeline-axis-track">${ticksHtml}</div>
+      </div>
+    `;
+  }
+
+  function _renderTimelineRow(r, range) {
+    const p   = r.props;
+    const nom = p.siteNom || p.siteID;
+
+    let trackHtml;
+    let rowClass = '';
+    if (r.sansContrainte) {
+      trackHtml = `<div class="prev-timeline-bar prev-timeline-bar-libre" title="Aucune contrainte de marée">Toute la journée</div>`;
+      rowClass = 'prev-timeline-row-libre';
+    } else if (r.fenetres.length === 0) {
+      trackHtml = `<div class="prev-timeline-empty">Aucune fenêtre</div>`;
+      rowClass = 'prev-timeline-row-vide';
+    } else {
+      trackHtml = r.fenetres.map(f => {
+        const left  = _pctFromMin(f.debutMin, range);
+        const right = _pctFromMin(f.finMin, range);
+        const width = Math.max(right - left, 1.5); // largeur mini visible/tapable
+        const arrow = f.type === 'PM' ? '⬆' : '⬇';
+        const titre = `${f.etaleLabel} — fenêtre ${_minToHHMM(f.debutMin)}–${_minToHHMM(f.finMin)}`;
+        return `
+          <div class="prev-timeline-bar" style="left:${left}%;width:${width}%" title="${titre}"></div>
+          <span class="prev-timeline-bar-label" style="left:${left}%">${arrow} ${_minToHHMM(f.etaleMin)}</span>
+        `;
+      }).join('');
+    }
+
+    return `
+      <div class="prev-timeline-row ${rowClass}" onclick="Sites.selectionner('${p.siteID}'); Prevision.fermer()">
+        <div class="prev-timeline-label" title="${nom}">${nom}</div>
+        <div class="prev-timeline-track">${trackHtml}</div>
+      </div>
+    `;
+  }
 
   function _rendreVueJournee(features, entree, conteneur) {
     let resultats = features.map(feat => {
@@ -439,56 +507,23 @@ const Prevision = (() => {
 
     avecFenetre.sort((a, b) => a.fenetres[0].debutMin - b.fenetres[0].debutMin);
 
-    let html = '';
+    const range = _rangeAxeMin();
+    let html = _renderTimelineAxis(range);
+    html += '<div class="prev-timeline">';
     if (avecFenetre.length > 0) {
       html += `<div class="prev-groupe-titre prev-titre-vert">🕐 Fenêtres de plongée aujourd'hui (${avecFenetre.length})</div>`;
-      html += avecFenetre.map(r => _renderSiteCardJournee(r)).join('');
+      html += avecFenetre.map(r => _renderTimelineRow(r, range)).join('');
     }
     if (autres.length > 0) {
       html += `<div class="prev-groupe-titre prev-titre-gris">— Sans contrainte de marée / aucune fenêtre disponible (${autres.length})
         <button class="prev-toggle-gris btn-icon" onclick="Prevision._toggleGris(this)">▼</button>
       </div>`;
-      html += `<div class="prev-gris-liste">` + autres.map(r => _renderSiteCardJournee(r)).join('') + `</div>`;
+      html += `<div class="prev-gris-liste">` + autres.map(r => _renderTimelineRow(r, range)).join('') + `</div>`;
     }
+    html += '</div>';
 
-    if (html === '') html = '<p class="prev-empty">Aucun site à afficher.</p>';
+    if (avecFenetre.length === 0 && autres.length === 0) html = '<p class="prev-empty">Aucun site à afficher.</p>';
     conteneur.innerHTML = html;
-  }
-
-  function _renderSiteCardJournee(r) {
-    const p    = r.props;
-    const nom  = p.siteNom || p.siteID;
-    const type = p.typeSite || '';
-    const profZH = (p.profMin !== null && p.profMin !== undefined && p.profMax !== null && p.profMax !== undefined)
-      ? `${p.profMin}–${p.profMax} m ZH`
-      : null;
-
-    let fenetresHtml;
-    if (r.sansContrainte) {
-      fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-libre">Aucune contrainte de marée</span>`;
-    } else if (r.fenetres.length === 0) {
-      fenetresHtml = `<span class="prev-fenetre-chip prev-fenetre-absente">Aucune fenêtre (données manquantes ou hors horaires club)</span>`;
-    } else {
-      fenetresHtml = r.fenetres.map(f => {
-        const arrow = f.type === 'PM' ? '⬆' : '⬇';
-        return `<span class="prev-fenetre-chip" title="${f.etaleLabel}">${arrow} Étale ${_minToHHMM(f.etaleMin)} · fenêtre ${_minToHHMM(f.debutMin)}–${_minToHHMM(f.finMin)}</span>`;
-      }).join('');
-    }
-
-    const cardClass = (r.sansContrainte || r.fenetres.length === 0) ? 'prev-card-gris' : 'prev-card-vert';
-
-    return `
-      <div class="prev-site-card ${cardClass}" onclick="Sites.selectionner('${p.siteID}'); Prevision.fermer()">
-        <div class="prev-site-header">
-          <span class="prev-site-nom">${nom}</span>
-        </div>
-        <div class="prev-site-fenetres">${fenetresHtml}</div>
-        <div class="prev-site-meta">
-          ${profZH ? `<span class="prev-prof-zh">📏 ${profZH}</span>` : ''}
-          ${type ? `<span class="prev-site-type">${type}</span>` : ''}
-        </div>
-      </div>
-    `;
   }
 
   /** Convertit un angle en degrés en flèche directionnelle Unicode */
